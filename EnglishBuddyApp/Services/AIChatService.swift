@@ -179,24 +179,76 @@ enum AIChatError: Error {
 }
 
 // MARK: - System Prompt Loader
+/// 从本地JSON文件加载系统Prompt
+/// Prompts.json 文件包含敏感的教学内容，不应提交到GitHub
 class SystemPromptLoader {
+    private static let studentName = "kiki"
+    private static let studentAge = "6"
+    private static let studentGender = "女"
+
     static func load(for lessonId: Int) -> String {
-        let prompts: [Int: String] = [
-            0: promptForUnit0(),
-            1: promptForUnit1(),
-            2: promptForUnit2(),
-            3: promptForUnit3(),
-            4: promptForUnit4(),
-            5: promptForUnit5(),
-            6: promptForUnit6(),
-            7: promptForUnit7(),
-            8: promptForUnit8(),
-            9: promptForUnit9()
-        ]
-        return prompts[lessonId] ?? promptForUnit0()
+        guard let promptsData = loadPromptsFromJSON(),
+              let units = promptsData["units"] as? [String: [String: String]],
+              let unitData = units[String(lessonId)] ?? units["0"] else {
+            print("[SystemPromptLoader] 无法加载Prompt数据，返回默认Prompt")
+            return defaultPrompt()
+        }
+
+        let baseTemplate = (promptsData["baseTemplate"] as? String) ?? defaultBaseTemplate()
+
+        var prompt = baseTemplate
+            .replacingOccurrences(of: "{{unitTitle}}", with: unitData["title"] ?? "")
+            .replacingOccurrences(of: "{{unitDesc}}", with: unitData["description"] ?? "")
+            .replacingOccurrences(of: "{{vocabulary}}", with: unitData["vocabulary"] ?? "")
+            .replacingOccurrences(of: "{{patterns}}", with: unitData["patterns"] ?? "")
+            .replacingOccurrences(of: "{{studentName}}", with: studentName)
+            .replacingOccurrences(of: "{{studentAge}}", with: studentAge)
+            .replacingOccurrences(of: "{{studentGender}}", with: studentGender)
+
+        // 添加额外内容（如复习课的特殊说明）
+        if let extra = unitData["extra"] {
+            prompt += extra
+        }
+
+        return prompt
     }
 
-    private static func basePrompt(unitTitle: String, unitDesc: String, vocabulary: String, patterns: String) -> String {
+    private static func loadPromptsFromJSON() -> [String: Any]? {
+        // 尝试多种路径查找Prompts.json
+        let possiblePaths = [
+            Bundle.main.path(forResource: "Prompts", ofType: "json", inDirectory: "Config"),
+            Bundle.main.path(forResource: "Prompts", ofType: "json"),
+            Bundle.main.bundlePath + "/Config/Prompts.json",
+            Bundle.main.bundlePath + "/Prompts.json"
+        ]
+
+        for path in possiblePaths {
+            guard let path = path,
+                  FileManager.default.fileExists(atPath: path),
+                  let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                continue
+            }
+            print("[SystemPromptLoader] 成功从 \(path) 加载Prompts.json")
+            return json
+        }
+
+        print("[SystemPromptLoader] 无法找到或解析 Prompts.json")
+        return nil
+    }
+
+    private static func defaultPrompt() -> String {
+        return defaultBaseTemplate()
+            .replacingOccurrences(of: "{{unitTitle}}", with: "Unit 0 - Hello")
+            .replacingOccurrences(of: "{{unitDesc}}", with: "打招呼和认识新朋友")
+            .replacingOccurrences(of: "{{vocabulary}}", with: "hello, name, nice, meet")
+            .replacingOccurrences(of: "{{patterns}}", with: "What's your name? I'm...")
+            .replacingOccurrences(of: "{{studentName}}", with: studentName)
+            .replacingOccurrences(of: "{{studentAge}}", with: studentAge)
+            .replacingOccurrences(of: "{{studentGender}}", with: studentGender)
+    }
+
+    private static func defaultBaseTemplate() -> String {
         return """
 #角色
 你是儿童英语外教Ian，擅长用有亲和力的语气和专业的教学方式提升儿童的英文口语水平
@@ -208,14 +260,14 @@ class SystemPromptLoader {
 现在需要你和学生进行英语口语练习，开始对话时用简单的方式打招呼（不要超过1句话），然后自然引导进入**课程信息**练习
 
 #课程信息
-**当前课程**：\(unitTitle) - \(unitDesc)
-**核心词汇**：\(vocabulary)
-**核心句型**：\(patterns)
+**当前课程**：{{unitTitle}} - {{unitDesc}}
+**核心词汇**：{{vocabulary}}
+**核心句型**：{{patterns}}
 
 #学生信息
-- 姓名：kiki
-- 年龄：6岁
-- 性别：女
+- 姓名：{{studentName}}
+- 年龄：{{studentAge}}岁
+- 性别：{{studentGender}}
 - 英语水平：初级，词汇量较少、语法不熟悉，只能进行非常简单的口语表达，可能会有语法或表达错误
 - 性格：比较内向，害怕说错，可能会不敢表达
 
@@ -239,95 +291,5 @@ class SystemPromptLoader {
 - 用户通过语音输入，可能因为发音不标准导致识别结果奇怪或为空
 - 如果用户消息不清晰、过短，请温柔地说："I didn't hear you clearly. Can you say that again?"
 """
-    }
-
-    private static func promptForUnit0() -> String {
-        return basePrompt(
-            unitTitle: "Unit 0 - Hello",
-            unitDesc: "打招呼和认识新朋友",
-            vocabulary: "red, blue, green, yellow, orange, pink, purple, brown, black, white, grey, one, two, three, four, five, six, seven, eight, nine, ten",
-            patterns: "What's your name? I'm... / How old are you? I'm... / I like..."
-        )
-    }
-
-    private static func promptForUnit1() -> String {
-        return basePrompt(
-            unitTitle: "Unit 1 - Our new school",
-            unitDesc: "我们的新学校",
-            vocabulary: "pencil, rubber, crayon, bag, chair, book, pen, pencil case, desk, teacher, classroom, door, window, wall, board, ruler, bookcase, cupboard, paper, playground",
-            patterns: "What's this? It's a... / Where is...? It's on/in/under/next to... / Do you have...? Yes, I do. / No, I don't."
-        )
-    }
-
-    private static func promptForUnit2() -> String {
-        return basePrompt(
-            unitTitle: "Unit 2 - All about us",
-            unitDesc: "关于我们",
-            vocabulary: "family, mum, dad, sister, brother, baby, head, eyes, ears, nose, mouth, hair, brown, green, blue, black, blonde",
-            patterns: "Who is she/he? She's/He's my... / Have you got...? Yes, I have. / No, I haven't."
-        )
-    }
-
-    private static func promptForUnit3() -> String {
-        return basePrompt(
-            unitTitle: "Unit 3 - Fun on the farm",
-            unitDesc: "农场的乐趣",
-            vocabulary: "cat, dog, chicken, cow, horse, sheep, small, big, long, short",
-            patterns: "It's a [adjective] [noun]. / Has it got...? Yes, it has. / No, it hasn't."
-        )
-    }
-
-    private static func promptForUnit4() -> String {
-        return basePrompt(
-            unitTitle: "Unit 4 - Food with friends",
-            unitDesc: "与朋友分享食物",
-            vocabulary: "apple, banana, orange, pear, carrot, chocolate, chicken, eggs, water, juice, like, don't like",
-            patterns: "Do you like...? Yes, I do. / No, I don't. / Would you like...? Yes, please. / No, thank you."
-        )
-    }
-
-    private static func promptForUnit5() -> String {
-        return basePrompt(
-            unitTitle: "Unit 5 - Happy birthday",
-            unitDesc: "生日快乐",
-            vocabulary: "January, February, March, April, May, June, July, August, September, October, November, December, ball, bike, kite, robot, teddy, toy car",
-            patterns: "When is your birthday? It's in [month]. / Whose...? It's my/your/his/her... / I want..."
-        )
-    }
-
-    private static func promptForUnit6() -> String {
-        return basePrompt(
-            unitTitle: "Unit 6 - A day out",
-            unitDesc: "外出游玩",
-            vocabulary: "zoo, park, beach, mountain, bus, car, bike, helicopter, crocodile, elephant, giraffe, hippo",
-            patterns: "There is/are... / Is there...? / Are there...? / Let's... / By [transport]"
-        )
-    }
-
-    private static func promptForUnit7() -> String {
-        return basePrompt(
-            unitTitle: "Unit 7 - Let's play",
-            unitDesc: "一起玩耍",
-            vocabulary: "football, basketball, tennis, swim, run, jump, walk, sing, dance, play, ride, fly",
-            patterns: "What are you doing? I'm [verb+ing]. / Can you...? Yes, I can. / No, I can't. / Let's..."
-        )
-    }
-
-    private static func promptForUnit8() -> String {
-        return basePrompt(
-            unitTitle: "Unit 8 - At home",
-            unitDesc: "在家里",
-            vocabulary: "house, living room, bedroom, kitchen, bathroom, garden, TV, bed, table, sofa, cupboard, mat",
-            patterns: "Where is the [furniture]? It's in the [room]. / Can you...?"
-        )
-    }
-
-    private static func promptForUnit9() -> String {
-        return basePrompt(
-            unitTitle: "Unit 9 - Happy holidays",
-            unitDesc: "节日快乐（综合复习课）",
-            vocabulary: "hot, cold, sunny, rainy, snowy, windy, spring, summer, autumn, winter, happy, sad, tired, hungry",
-            patterns: "How's the weather? / I like/enjoy [verb+ing]. / Me too! / How do you feel?"
-        ) + "\n\n这是综合复习课，请综合运用 Units 0-8 的所有内容与学生练习。"
     }
 }
