@@ -5,13 +5,10 @@ class AIChatService {
 
     private var user: User { DataStore.loadUser() }
 
-    // 临时使用硬编码的 API Key（确保正确）
-    private let apiKey: String = "sk-638ec91a361f4c4abd386ea346f51c14"
-
-    private let model = "qwen3.5-plus"
-
-    // 使用 OpenAI 兼容模式调用 DashScope API
-    private let baseURL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+    // 使用 APIConfig 中的配置
+    private let apiKey: String = APIConfig.dashScopeAPIKey
+    private let model = APIConfig.chatModel
+    private let baseURL = APIConfig.dashScopeBaseURL
 
     private init() {}
 

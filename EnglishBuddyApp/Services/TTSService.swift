@@ -17,11 +17,11 @@ class TTSService: NSObject {
         synthesizer.delegate = self
     }
 
-    private let apiKey = "sk-638ec91a361f4c4abd386ea346f51c14"
-    private let ttsURL = "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
-    private let model = "qwen3-tts-instruct-flash-2026-01-26"
-    private let voice = "Cherry"
-    private let instructions = "采用标准英式英语，单词发音清晰精准且不要连读，每个标点符号之间有一个明显的停顿，语速极慢，适合与英语初学者进行对话。"
+    private let apiKey = APIConfig.dashScopeAPIKey
+    private let ttsURL = APIConfig.dashScopeTTSURL
+    private let model = APIConfig.ttsModel
+    private let voice = APIConfig.ttsVoice
+    private let instructions = APIConfig.ttsInstructions
 
     /// 播放指定文本的语音（同步版本，用于兼容旧代码）
     /// - forceSystemTTS: 强制使用系统TTS（用于ChatTestView）

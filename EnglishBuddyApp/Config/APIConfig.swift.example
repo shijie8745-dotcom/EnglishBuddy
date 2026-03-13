@@ -1,15 +1,21 @@
 import Foundation
 
+/// API配置示例文件
+/// 复制此文件为 APIConfig.swift 并填入你的真实API密钥
 enum APIConfig {
-    // SiliconFlow API (对话AI)
-    static let siliconFlowAPIKey = "YOUR_SILICONFLOW_API_KEY_HERE"
-    static let siliconFlowBaseURL = "https://api.siliconflow.cn/v1/chat/completions"
-    static let siliconFlowModel = "Qwen/Qwen2.5-72B-Instruct"
-    
-    // Azure TTS API (可选，备用语音服务)
-    static let azureTTSKey = "YOUR_AZURE_TTS_KEY_HERE"
-    static let azureTTSRegion = "eastasia"
-    
-    // DashScope API (阿里云TTS) - 在TTSService.swift中直接配置
-    // static let dashScopeAPIKey = "YOUR_DASHSCOPE_API_KEY_HERE"
+    // MARK: - 阿里云 DashScope API (对话AI + TTS)
+    /// DashScope API密钥 - 从阿里云百炼控制台获取
+    static let dashScopeAPIKey = "YOUR_DASHSCOPE_API_KEY_HERE"
+    /// DashScope OpenAI兼容模式URL
+    static let dashScopeBaseURL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+    /// DashScope TTS URL
+    static let dashScopeTTSURL = "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
+    /// 对话模型
+    static let chatModel = "qwen3.5-plus"
+    /// TTS模型
+    static let ttsModel = "qwen3-tts-instruct-flash"
+    /// TTS声音
+    static let ttsVoice = "Cherry"
+    /// TTS指令（控制发音风格）
+    static let ttsInstructions = "采用标准英式英语，单词发音清晰精准且不要连读，每个标点符号之间有一个明显的停顿，语速极慢，适合与英语初学者进行对话。"
 }
