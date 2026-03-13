@@ -1,0 +1,311 @@
+{
+  "lessons": [
+    {
+      "id": 0,
+      "title": "Hello!",
+      "subtitle": "问候与认识新朋友",
+      "description": "学习基本问候语、自我介绍、颜色和数字",
+      "vocabulary": [
+        {"word": "red", "meaning": "红色", "phonetic": "/red/", "category": "颜色"},
+        {"word": "yellow", "meaning": "黄色", "phonetic": "/ˈjeləʊ/", "category": "颜色"},
+        {"word": "orange", "meaning": "橙色", "phonetic": "/ˈɒrɪndʒ/", "category": "颜色"},
+        {"word": "pink", "meaning": "粉色", "phonetic": "/pɪŋk/", "category": "颜色"},
+        {"word": "black", "meaning": "黑色", "phonetic": "/blæk/", "category": "颜色"},
+        {"word": "brown", "meaning": "棕色", "phonetic": "/braʊn/", "category": "颜色"},
+        {"word": "blue", "meaning": "蓝色", "phonetic": "/bluː/", "category": "颜色"},
+        {"word": "green", "meaning": "绿色", "phonetic": "/ɡriːn/", "category": "颜色"},
+        {"word": "purple", "meaning": "紫色", "phonetic": "/ˈpɜːpl/", "category": "颜色"},
+        {"word": "grey", "meaning": "灰色", "phonetic": "/ɡreɪ/", "category": "颜色"},
+        {"word": "white", "meaning": "白色", "phonetic": "/waɪt/", "category": "颜色"},
+        {"word": "one", "meaning": "一", "phonetic": "/wʌn/", "category": "数字"},
+        {"word": "two", "meaning": "二", "phonetic": "/tuː/", "category": "数字"},
+        {"word": "three", "meaning": "三", "phonetic": "/θriː/", "category": "数字"},
+        {"word": "four", "meaning": "四", "phonetic": "/fɔː(r)/", "category": "数字"},
+        {"word": "five", "meaning": "五", "phonetic": "/faɪv/", "category": "数字"},
+        {"word": "six", "meaning": "六", "phonetic": "/sɪks/", "category": "数字"},
+        {"word": "seven", "meaning": "七", "phonetic": "/ˈsevn/", "category": "数字"},
+        {"word": "eight", "meaning": "八", "phonetic": "/eɪt/", "category": "数字"},
+        {"word": "nine", "meaning": "九", "phonetic": "/naɪn/", "category": "数字"},
+        {"word": "ten", "meaning": "十", "phonetic": "/ten/", "category": "数字"}
+      ],
+      "sentencePatterns": [
+        {"pattern": "Hello!", "meaning": "你好！", "example": "Hello! I'm Sam.", "usage": "打招呼"},
+        {"pattern": "What's your name?", "meaning": "你叫什么名字？", "example": "What's your name? I'm Jenny.", "usage": "询问姓名"},
+        {"pattern": "I'm...", "meaning": "我是...", "example": "I'm Mike.", "usage": "自我介绍"},
+        {"pattern": "How old are you?", "meaning": "你多大了？", "example": "How old are you? I'm six.", "usage": "询问年龄"},
+        {"pattern": "I like...", "meaning": "我喜欢...", "example": "I like red.", "usage": "表达喜好"}
+      ]
+    },
+    {
+      "id": 1,
+      "title": "Our New School",
+      "subtitle": "我们的新学校",
+      "description": "学习学校用品、教室物品和方位表达",
+      "vocabulary": [
+        {"word": "pencil", "meaning": "铅笔", "phonetic": "/ˈpensl/", "category": "学习用品"},
+        {"word": "rubber", "meaning": "橡皮", "phonetic": "/ˈrʌbə(r)/", "category": "学习用品"},
+        {"word": "crayon", "meaning": "蜡笔", "phonetic": "/ˈkreɪən/", "category": "学习用品"},
+        {"word": "bag", "meaning": "书包", "phonetic": "/bæɡ/", "category": "学习用品"},
+        {"word": "chair", "meaning": "椅子", "phonetic": "/tʃeə(r)/", "category": "教室物品"},
+        {"word": "book", "meaning": "书", "phonetic": "/bʊk/", "category": "学习用品"},
+        {"word": "pen", "meaning": "钢笔", "phonetic": "/pen/", "category": "学习用品"},
+        {"word": "pencil case", "meaning": "铅笔盒", "phonetic": "/ˈpensl keɪs/", "category": "学习用品"},
+        {"word": "desk", "meaning": "书桌", "phonetic": "/desk/", "category": "教室物品"},
+        {"word": "teacher", "meaning": "老师", "phonetic": "/ˈtiːtʃə(r)/", "category": "人物"},
+        {"word": "classroom", "meaning": "教室", "phonetic": "/ˈklɑːsruːm/", "category": "教室物品"},
+        {"word": "door", "meaning": "门", "phonetic": "/dɔː(r)/", "category": "教室物品"},
+        {"word": "window", "meaning": "窗户", "phonetic": "/ˈwɪndəʊ/", "category": "教室物品"},
+        {"word": "board", "meaning": "黑板", "phonetic": "/bɔːd/", "category": "教室物品"},
+        {"word": "ruler", "meaning": "尺子", "phonetic": "/ˈruːlə(r)/", "category": "学习用品"},
+        {"word": "playground", "meaning": "操场", "phonetic": "/ˈpleɪɡraʊnd/", "category": "场所"}
+      ],
+      "sentencePatterns": [
+        {"pattern": "What's this?", "meaning": "这是什么？", "example": "What's this? It's a book.", "usage": "询问物品"},
+        {"pattern": "What's that?", "meaning": "那是什么？", "example": "What's that? It's a pen.", "usage": "询问远处物品"},
+        {"pattern": "It's a/an...", "meaning": "它是一个...", "example": "It's a pencil.", "usage": "回答物品"},
+        {"pattern": "Where's...?", "meaning": "...在哪里？", "example": "Where's the crayon? It's on the desk.", "usage": "询问位置"},
+        {"pattern": "in/on/under/next to", "meaning": "在...里面/上面/下面/旁边", "example": "It's on the desk.", "usage": "方位介词"}
+      ]
+    },
+    {
+      "id": 2,
+      "title": "All About Us",
+      "subtitle": "关于我们的一切",
+      "description": "学习身体部位、感觉和动作表达",
+      "vocabulary": [
+        {"word": "head", "meaning": "头", "phonetic": "/hed/", "category": "身体部位"},
+        {"word": "eyes", "meaning": "眼睛", "phonetic": "/aɪz/", "category": "身体部位"},
+        {"word": "ears", "meaning": "耳朵", "phonetic": "/ɪəz/", "category": "身体部位"},
+        {"word": "nose", "meaning": "鼻子", "phonetic": "/nəʊz/", "category": "身体部位"},
+        {"word": "mouth", "meaning": "嘴", "phonetic": "/maʊθ/", "category": "身体部位"},
+        {"word": "hands", "meaning": "手", "phonetic": "/hændz/", "category": "身体部位"},
+        {"word": "arms", "meaning": "手臂", "phonetic": "/ɑːmz/", "category": "身体部位"},
+        {"word": "legs", "meaning": "腿", "phonetic": "/leɡz/", "category": "身体部位"},
+        {"word": "feet", "meaning": "脚", "phonetic": "/fiːt/", "category": "身体部位"},
+        {"word": "happy", "meaning": "开心的", "phonetic": "/ˈhæpi/", "category": "感觉"},
+        {"word": "sad", "meaning": "难过的", "phonetic": "/sæd/", "category": "感觉"},
+        {"word": "tired", "meaning": "累的", "phonetic": "/ˈtaɪəd/", "category": "感觉"},
+        {"word": "hungry", "meaning": "饿的", "phonetic": "/ˈhʌŋɡri/", "category": "感觉"},
+        {"word": "clap", "meaning": "拍手", "phonetic": "/klæp/", "category": "动作"},
+        {"word": "stamp", "meaning": "跺脚", "phonetic": "/stæmp/", "category": "动作"}
+      ],
+      "sentencePatterns": [
+        {"pattern": "I've got...", "meaning": "我有...", "example": "I've got two eyes.", "usage": "描述身体部位"},
+        {"pattern": "Touch your...", "meaning": "摸摸你的...", "example": "Touch your head.", "usage": "指令动作"},
+        {"pattern": "How do you feel?", "meaning": "你感觉怎么样？", "example": "How do you feel? I'm happy.", "usage": "询问感觉"},
+        {"pattern": "I'm happy/sad/tired.", "meaning": "我很开心/难过/累。", "example": "I'm happy!", "usage": "表达感觉"},
+        {"pattern": "Can you...?", "meaning": "你能...吗？", "example": "Can you clap your hands?", "usage": "询问能力"}
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Fun on the Farm",
+      "subtitle": "农场乐趣",
+      "description": "学习农场动物和它们的叫声",
+      "vocabulary": [
+        {"word": "farm", "meaning": "农场", "phonetic": "/fɑːm/", "category": "场所"},
+        {"word": "cow", "meaning": "奶牛", "phonetic": "/kaʊ/", "category": "动物"},
+        {"word": "pig", "meaning": "猪", "phonetic": "/pɪɡ/", "category": "动物"},
+        {"word": "duck", "meaning": "鸭子", "phonetic": "/dʌk/", "category": "动物"},
+        {"word": "horse", "meaning": "马", "phonetic": "/hɔːs/", "category": "动物"},
+        {"word": "chicken", "meaning": "鸡", "phonetic": "/ˈtʃɪkɪn/", "category": "动物"},
+        {"word": "sheep", "meaning": "绵羊", "phonetic": "/ʃiːp/", "category": "动物"},
+        {"word": "dog", "meaning": "狗", "phonetic": "/dɒɡ/", "category": "动物"},
+        {"word": "cat", "meaning": "猫", "phonetic": "/kæt/", "category": "动物"},
+        {"word": "animal", "meaning": "动物", "phonetic": "/ˈænɪml/", "category": "动物"},
+        {"word": "moo", "meaning": "哞", "phonetic": "/muː/", "category": "叫声"},
+        {"word": "oink", "meaning": "哼哼", "phonetic": "/ɔɪŋk/", "category": "叫声"},
+        {"word": "quack", "meaning": "嘎嘎", "phonetic": "/kwæk/", "category": "叫声"},
+        {"word": "neigh", "meaning": "嘶鸣", "phonetic": "/neɪ/", "category": "叫声"},
+        {"word": "cluck", "meaning": "咯咯", "phonetic": "/klʌk/", "category": "叫声"},
+        {"word": "baa", "meaning": "咩咩", "phonetic": "/bɑː/", "category": "叫声"}
+      ],
+      "sentencePatterns": [
+        {"pattern": "What's this? It's a...", "meaning": "这是什么？它是一只...", "example": "What's this? It's a cow.", "usage": "询问动物"},
+        {"pattern": "What does it say?", "meaning": "它怎么叫？", "example": "What does a cow say? Moo!", "usage": "询问动物叫声"},
+        {"pattern": "It says...", "meaning": "它...叫", "example": "It says moo.", "usage": "回答叫声"},
+        {"pattern": "I like...", "meaning": "我喜欢...", "example": "I like ducks.", "usage": "表达喜好"},
+        {"pattern": "Look at the...", "meaning": "看那只...", "example": "Look at the big cow!", "usage": "引起注意"}
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Food With Friends",
+      "subtitle": "与朋友分享美食",
+      "description": "学习食物词汇和用餐表达",
+      "vocabulary": [
+        {"word": "food", "meaning": "食物", "phonetic": "/fuːd/", "category": "食物"},
+        {"word": "apple", "meaning": "苹果", "phonetic": "/ˈæpl/", "category": "水果"},
+        {"word": "banana", "meaning": "香蕉", "phonetic": "/bəˈnɑːnə/", "category": "水果"},
+        {"word": "orange", "meaning": "橙子", "phonetic": "/ˈɒrɪndʒ/", "category": "水果"},
+        {"word": "grapes", "meaning": "葡萄", "phonetic": "/ɡreɪps/", "category": "水果"},
+        {"word": "sandwich", "meaning": "三明治", "phonetic": "/ˈsænwɪdʒ/", "category": "食物"},
+        {"word": "cake", "meaning": "蛋糕", "phonetic": "/keɪk/", "category": "食物"},
+        {"word": "water", "meaning": "水", "phonetic": "/ˈwɔːtə(r)/", "category": "饮料"},
+        {"word": "juice", "meaning": "果汁", "phonetic": "/dʒuːs/", "category": "饮料"},
+        {"word": "milk", "meaning": "牛奶", "phonetic": "/mɪlk/", "category": "饮料"},
+        {"word": "eat", "meaning": "吃", "phonetic": "/iːt/", "category": "动作"},
+        {"word": "drink", "meaning": "喝", "phonetic": "/drɪŋk/", "category": "动作"},
+        {"word": "hungry", "meaning": "饿的", "phonetic": "/ˈhʌŋɡri/", "category": "感觉"},
+        {"word": "thirsty", "meaning": "渴的", "phonetic": "/ˈθɜːsti/", "category": "感觉"},
+        {"word": "yummy", "meaning": "美味的", "phonetic": "/ˈjʌmi/", "category": "描述"}
+      ],
+      "sentencePatterns": [
+        {"pattern": "I'd like...", "meaning": "我想要...", "example": "I'd like an apple.", "usage": "点餐"},
+        {"pattern": "Do you like...?", "meaning": "你喜欢...吗？", "example": "Do you like bananas?", "usage": "询问喜好"},
+        {"pattern": "Yes, I do./No, I don't.", "meaning": "是的，我喜欢。/不，我不喜欢。", "example": "Yes, I do!", "usage": "回答喜好"},
+        {"pattern": "I'm hungry/thirsty.", "meaning": "我饿了/渴了。", "example": "I'm hungry!", "usage": "表达需要"},
+        {"pattern": "Can I have...?", "meaning": "我能要...吗？", "example": "Can I have some water?", "usage": "礼貌请求"}
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Happy Birthday!",
+      "subtitle": "生日快乐！",
+      "description": "学习生日派对相关的词汇和表达",
+      "vocabulary": [
+        {"word": "birthday", "meaning": "生日", "phonetic": "/ˈbɜːθdeɪ/", "category": "节日"},
+        {"word": "party", "meaning": "派对", "phonetic": "/ˈpɑːti/", "category": "聚会"},
+        {"word": "present", "meaning": "礼物", "phonetic": "/ˈpreznt/", "category": "物品"},
+        {"word": "card", "meaning": "卡片", "phonetic": "/kɑːd/", "category": "物品"},
+        {"word": "balloon", "meaning": "气球", "phonetic": "/bəˈluːn/", "category": "物品"},
+        {"word": "candle", "meaning": "蜡烛", "phonetic": "/ˈkændl/", "category": "物品"},
+        {"word": "cake", "meaning": "蛋糕", "phonetic": "/keɪk/", "category": "食物"},
+        {"word": "sing", "meaning": "唱歌", "phonetic": "/sɪŋ/", "category": "动作"},
+        {"word": "dance", "meaning": "跳舞", "phonetic": "/dɑːns/", "category": "动作"},
+        {"word": "fun", "meaning": "乐趣", "phonetic": "/fʌn/", "category": "描述"},
+        {"word": "old", "meaning": "...岁的", "phonetic": "/əʊld/", "category": "年龄"},
+        {"word": "today", "meaning": "今天", "phonetic": "/təˈdeɪ/", "category": "时间"},
+        {"word": "present", "meaning": "礼物", "phonetic": "/ˈpreznt/", "category": "物品"},
+        {"word": "open", "meaning": "打开", "phonetic": "/ˈəʊpən/", "category": "动作"}
+      ],
+      "sentencePatterns": [
+        {"pattern": "Happy birthday!", "meaning": "生日快乐！", "example": "Happy birthday to you!", "usage": "生日祝福"},
+        {"pattern": "How old are you?", "meaning": "你多大了？", "example": "How old are you? I'm seven.", "usage": "询问年龄"},
+        {"pattern": "I'm... today.", "meaning": "我今天...岁了。", "example": "I'm six today!", "usage": "说明年龄"},
+        {"pattern": "Make a wish!", "meaning": "许个愿吧！", "example": "Close your eyes and make a wish!", "usage": "生日许愿"},
+        {"pattern": "Is it a...?", "meaning": "它是不是一个...？", "example": "Is it a car?", "usage": "猜测礼物"}
+      ]
+    },
+    {
+      "id": 6,
+      "title": "A Day Out",
+      "subtitle": "外出一天",
+      "description": "学习交通工具和外出活动",
+      "vocabulary": [
+        {"word": "car", "meaning": "汽车", "phonetic": "/kɑː(r)/", "category": "交通工具"},
+        {"word": "bus", "meaning": "公共汽车", "phonetic": "/bʌs/", "category": "交通工具"},
+        {"word": "bike", "meaning": "自行车", "phonetic": "/baɪk/", "category": "交通工具"},
+        {"word": "walk", "meaning": "走路", "phonetic": "/wɔːk/", "category": "动作"},
+        {"word": "park", "meaning": "公园", "phonetic": "/pɑːk/", "category": "场所"},
+        {"word": "zoo", "meaning": "动物园", "phonetic": "/zuː/", "category": "场所"},
+        {"word": "shop", "meaning": "商店", "phonetic": "/ʃɒp/", "category": "场所"},
+        {"word": "go", "meaning": "去", "phonetic": "/ɡəʊ/", "category": "动作"},
+        {"word": "see", "meaning": "看见", "phonetic": "/siː/", "category": "动作"},
+        {"word": "big", "meaning": "大的", "phonetic": "/bɪɡ/", "category": "描述"},
+        {"word": "small", "meaning": "小的", "phonetic": "/smɔːl/", "category": "描述"},
+        {"word": "tiger", "meaning": "老虎", "phonetic": "/ˈtaɪɡə(r)/", "category": "动物"},
+        {"word": "elephant", "meaning": "大象", "phonetic": "/ˈelɪfənt/", "category": "动物"},
+        {"word": "lion", "meaning": "狮子", "phonetic": "/ˈlaɪən/", "category": "动物"},
+        {"word": "monkey", "meaning": "猴子", "phonetic": "/ˈmʌŋki/", "category": "动物"}
+      ],
+      "sentencePatterns": [
+        {"pattern": "Let's go to...", "meaning": "让我们去...", "example": "Let's go to the zoo!", "usage": "提议"},
+        {"pattern": "How do we go?", "meaning": "我们怎么去？", "example": "How do we go to the park?", "usage": "询问交通方式"},
+        {"pattern": "We go by...", "meaning": "我们乘...去。", "example": "We go by bus.", "usage": "说明交通方式"},
+        {"pattern": "I can see...", "meaning": "我能看见...", "example": "I can see a big tiger!", "usage": "描述所见"},
+        {"pattern": "Look at the...", "meaning": "看那只...", "example": "Look at the elephant!", "usage": "引起注意"}
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Let's Play!",
+      "subtitle": "一起玩！",
+      "description": "学习运动、游戏和玩具词汇",
+      "vocabulary": [
+        {"word": "play", "meaning": "玩", "phonetic": "/pleɪ/", "category": "动作"},
+        {"word": "game", "meaning": "游戏", "phonetic": "/ɡeɪm/", "category": "活动"},
+        {"word": "ball", "meaning": "球", "phonetic": "/bɔːl/", "category": "玩具"},
+        {"word": "doll", "meaning": "玩偶", "phonetic": "/dɒl/", "category": "玩具"},
+        {"word": "kite", "meaning": "风筝", "phonetic": "/kaɪt/", "category": "玩具"},
+        {"word": "robot", "meaning": "机器人", "phonetic": "/ˈrəʊbɒt/", "category": "玩具"},
+        {"word": "teddy", "meaning": "泰迪熊", "phonetic": "/ˈtedi/", "category": "玩具"},
+        {"word": "run", "meaning": "跑", "phonetic": "/rʌn/", "category": "动作"},
+        {"word": "jump", "meaning": "跳", "phonetic": "/dʒʌmp/", "category": "动作"},
+        {"word": "skip", "meaning": "跳绳", "phonetic": "/skɪp/", "category": "动作"},
+        {"word": "kick", "meaning": "踢", "phonetic": "/kɪk/", "category": "动作"},
+        {"word": "throw", "meaning": "扔", "phonetic": "/θrəʊ/", "category": "动作"},
+        {"word": "catch", "meaning": "接", "phonetic": "/kætʃ/", "category": "动作"},
+        {"word": "toy", "meaning": "玩具", "phonetic": "/tɔɪ/", "category": "物品"},
+        {"word": "friend", "meaning": "朋友", "phonetic": "/frend/", "category": "人物"}
+      ],
+      "sentencePatterns": [
+        {"pattern": "Let's play...", "meaning": "让我们玩...", "example": "Let's play football!", "usage": "提议游戏"},
+        {"pattern": "I can...", "meaning": "我能...", "example": "I can jump high!", "usage": "表达会做的事"},
+        {"pattern": "Can you...?", "meaning": "你能...吗？", "example": "Can you catch the ball?", "usage": "询问能力"},
+        {"pattern": "My turn!/Your turn!", "meaning": "轮到我了！/轮到你了！", "example": "Your turn!", "usage": "轮流"},
+        {"pattern": "Throw the ball!", "meaning": "扔球！", "example": "Throw the ball to me!", "usage": "指令"}
+      ]
+    },
+    {
+      "id": 8,
+      "title": "At Home",
+      "subtitle": "在家里",
+      "description": "学习家居用品和日常活动",
+      "vocabulary": [
+        {"word": "home", "meaning": "家", "phonetic": "/həʊm/", "category": "场所"},
+        {"word": "house", "meaning": "房子", "phonetic": "/haʊs/", "category": "建筑"},
+        {"word": "room", "meaning": "房间", "phonetic": "/ruːm/", "category": "房间"},
+        {"word": "bedroom", "meaning": "卧室", "phonetic": "/ˈbedruːm/", "category": "房间"},
+        {"word": "kitchen", "meaning": "厨房", "phonetic": "/ˈkɪtʃɪn/", "category": "房间"},
+        {"word": "bathroom", "meaning": "浴室", "phonetic": "/ˈbɑːθruːm/", "category": "房间"},
+        {"word": "living room", "meaning": "客厅", "phonetic": "/ˈlɪvɪŋ ruːm/", "category": "房间"},
+        {"word": "bed", "meaning": "床", "phonetic": "/bed/", "category": "家具"},
+        {"word": "table", "meaning": "桌子", "phonetic": "/ˈteɪbl/", "category": "家具"},
+        {"word": "sofa", "meaning": "沙发", "phonetic": "/ˈsəʊfə/", "category": "家具"},
+        {"word": "TV", "meaning": "电视", "phonetic": "/ˌtiː ˈviː/", "category": "家电"},
+        {"word": "sleep", "meaning": "睡觉", "phonetic": "/sliːp/", "category": "动作"},
+        {"word": "wake up", "meaning": "醒来", "phonetic": "/ˈweɪk ʌp/", "category": "动作"},
+        {"word": "clean", "meaning": "打扫", "phonetic": "/kliːn/", "category": "动作"},
+        {"word": "help", "meaning": "帮助", "phonetic": "/help/", "category": "动作"}
+      ],
+      "sentencePatterns": [
+        {"pattern": "This is my...", "meaning": "这是我的...", "example": "This is my bedroom.", "usage": "介绍房间"},
+        {"pattern": "Where's...?", "meaning": "...在哪里？", "example": "Where's the TV?", "usage": "询问物品位置"},
+        {"pattern": "It's in the...", "meaning": "它在...里面。", "example": "It's in the living room.", "usage": "说明位置"},
+        {"pattern": "I like to...", "meaning": "我喜欢...", "example": "I like to watch TV.", "usage": "表达喜好"},
+        {"pattern": "Can you help me?", "meaning": "你能帮我吗？", "example": "Can you help me clean?", "usage": "寻求帮助"}
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Happy Holidays!",
+      "subtitle": "节日快乐！",
+      "description": "学习节日相关词汇和庆祝活动",
+      "vocabulary": [
+        {"word": "holiday", "meaning": "节日", "phonetic": "/ˈhɒlədeɪ/", "category": "节日"},
+        {"word": "Christmas", "meaning": "圣诞节", "phonetic": "/ˈkrɪsməs/", "category": "节日"},
+        {"word": "New Year", "meaning": "新年", "phonetic": "/ˌnjuː ˈjɪə(r)/", "category": "节日"},
+        {"word": "tree", "meaning": "树", "phonetic": "/triː/", "category": "物品"},
+        {"word": "star", "meaning": "星星", "phonetic": "/stɑː(r)/", "category": "物品"},
+        {"word": "gift", "meaning": "礼物", "phonetic": "/ɡɪft/", "category": "物品"},
+        {"word": "family", "meaning": "家人", "phonetic": "/ˈfæməli/", "category": "人物"},
+        {"word": "party", "meaning": "派对", "phonetic": "/ˈpɑːti/", "category": "活动"},
+        {"word": "sing", "meaning": "唱歌", "phonetic": "/sɪŋ/", "category": "动作"},
+        {"word": "dance", "meaning": "跳舞", "phonetic": "/dɑːns/", "category": "动作"},
+        {"word": "celebrate", "meaning": "庆祝", "phonetic": "/ˈselɪbreɪt/", "category": "动作"},
+        {"word": " Merry Christmas", "meaning": "圣诞快乐", "phonetic": "/ˈmeri ˈkrɪsməs/", "category": "祝福语"},
+        {"word": "Happy New Year", "meaning": "新年快乐", "phonetic": "/ˈhæpi njuː jɪə/", "category": "祝福语"},
+        {"word": "Santa", "meaning": "圣诞老人", "phonetic": "/ˈsæntə/", "category": "人物"},
+        {"word": "decoration", "meaning": "装饰", "phonetic": "/ˌdekəˈreɪʃn/", "category": "物品"}
+      ],
+      "sentencePatterns": [
+        {"pattern": "Merry Christmas!", "meaning": "圣诞快乐！", "example": "Merry Christmas to all!", "usage": "节日祝福"},
+        {"pattern": "Happy New Year!", "meaning": "新年快乐！", "example": "Happy New Year!", "usage": "新年祝福"},
+        {"pattern": "What do you do for...?", "meaning": "你...做什么？", "example": "What do you do for Christmas?", "usage": "询问庆祝方式"},
+        {"pattern": "We...", "meaning": "我们...", "example": "We sing songs and open gifts.", "usage": "说明活动"},
+        {"pattern": "I got a...", "meaning": "我得到了一个...", "example": "I got a new toy!", "usage": "说礼物"}
+      ]
+    }
+  ]
+}

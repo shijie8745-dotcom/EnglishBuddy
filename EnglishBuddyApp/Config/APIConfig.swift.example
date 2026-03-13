@@ -1,0 +1,15 @@
+import Foundation
+
+enum APIConfig {
+    // SiliconFlow API (对话AI)
+    static let siliconFlowAPIKey = "YOUR_SILICONFLOW_API_KEY_HERE"
+    static let siliconFlowBaseURL = "https://api.siliconflow.cn/v1/chat/completions"
+    static let siliconFlowModel = "Qwen/Qwen2.5-72B-Instruct"
+    
+    // Azure TTS API (可选，备用语音服务)
+    static let azureTTSKey = "YOUR_AZURE_TTS_KEY_HERE"
+    static let azureTTSRegion = "eastasia"
+    
+    // DashScope API (阿里云TTS) - 在TTSService.swift中直接配置
+    // static let dashScopeAPIKey = "YOUR_DASHSCOPE_API_KEY_HERE"
+}
