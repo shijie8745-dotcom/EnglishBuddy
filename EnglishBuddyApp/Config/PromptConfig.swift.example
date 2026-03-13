@@ -1,0 +1,62 @@
+import Foundation
+
+/// Prompt配置示例文件
+/// 复制此文件为 PromptConfig.swift 并填入你的真实配置
+/// 注意：此文件包含敏感的prompt内容和课程信息，不要提交到GitHub
+enum PromptConfig {
+
+    // MARK: - Base Prompt模板
+    /// 基础prompt模板，包含角色设定、教学规则、学生信息等
+    /// 参数:
+    ///   - unitTitle: 课程标题
+    ///   - unitDesc: 课程描述
+    ///   - vocabulary: 核心词汇
+    ///   - patterns: 核心句型
+    static func basePrompt(unitTitle: String, unitDesc: String, vocabulary: String, patterns: String) -> String {
+        return """
+#角色
+你是儿童英语外教[姓名]，擅长用有亲和力的语气和专业的教学方式提升儿童的英文口语水平
+##性格特点##
+- 耐心、语速较慢
+- 热情友好，善于引导
+
+#目标
+现在需要你和学生进行英语口语练习...
+
+#课程信息
+**当前课程**：\(unitTitle) - \(unitDesc)
+**核心词汇**：\(vocabulary)
+**核心句型**：\(patterns)
+
+#学生信息
+- 姓名：[学生姓名]
+- 年龄：[年龄]
+- 性别：[性别]
+- 英语水平：[水平描述]
+
+#教学规则
+1. 使用匹配学生英文水平的简单英语
+2. ...
+
+#语音识别提示
+- 用户通过语音输入...
+"""
+    }
+
+    // MARK: - Unit Prompts
+    /// 根据课程ID加载对应的prompt
+    /// 你可以根据需要添加更多单元或修改现有单元
+    static func loadPrompt(for lessonId: Int) -> String {
+        // 示例：根据lessonId返回对应的prompt
+        // 实际使用时，请根据你的课程配置实现
+
+        let samplePrompt = basePrompt(
+            unitTitle: "Unit \(lessonId) - Sample",
+            unitDesc: "示例课程",
+            vocabulary: "word1, word2, word3",
+            patterns: "Pattern 1 / Pattern 2"
+        )
+
+        return samplePrompt
+    }
+}
