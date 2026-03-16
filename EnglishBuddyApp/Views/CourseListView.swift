@@ -107,6 +107,18 @@ struct CourseListView: View {
 
                         Spacer()
 
+                        // AI Test button (AI测试页入口)
+                        NavigationLink(destination: AIChatTestView(lesson: viewModel.practiceLesson ?? viewModel.lessons.first!)) {
+                            Circle()
+                                .fill(.white.opacity(0.2))
+                                .frame(width: 44, height: 44)
+                                .overlay(
+                                    Image(systemName: "brain.head.profile")
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(.white)
+                                )
+                        }
+
                         // Test Chat button
                         NavigationLink(destination: ChatTestView()) {
                             Circle()
