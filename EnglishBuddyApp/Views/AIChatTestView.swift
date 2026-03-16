@@ -45,10 +45,11 @@ struct AIChatTestView: View {
 
             // AI 头像和名字
             HStack(spacing: 10) {
-                teacherAvatarImage
+                Image(systemName: "person.circle.fill")
                     .resizable()
                     .scaledToFill()
                     .frame(width: 40, height: 40)
+                    .foregroundStyle(Color(hex: "F97316"))
                     .clipShape(Circle())
                     .overlay(Circle().stroke(Color(hex: "FED7AA"), lineWidth: 2))
 
@@ -168,7 +169,7 @@ struct AIChatTestView: View {
 
 // MARK: - ViewModel
 @Observable
-class AIChatTestViewModel {
+class AIChatTestViewModel: NSObject {
     var messages: [ChatMessage] = []
     var inputText: String = ""
     var isLoading: Bool = false
@@ -177,7 +178,8 @@ class AIChatTestViewModel {
     // 系统TTS（不使用API TTS，节省费用）
     private let synthesizer = AVSpeechSynthesizer()
 
-    init() {
+    override init() {
+        super.init()
         synthesizer.delegate = self
     }
 
