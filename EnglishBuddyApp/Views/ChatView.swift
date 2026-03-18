@@ -9,11 +9,7 @@ struct ChatView: View {
 
     var body: some View {
         ZStack {
-            // Background
-            Color(hex: "F8FAFC")
-                .ignoresSafeArea()
-
-            // Main content
+            // Layer 1: Background + Main Content
             VStack(spacing: 0) {
                 // Header
                 chatHeader
@@ -21,30 +17,39 @@ struct ChatView: View {
                 // Messages list - scrollable area
                 messagesList
 
-                // Bottom input area
-                inputArea
+                // Bottom input area (white background, no buttons here during recording)
+                inputAreaBackground
             }
             .ignoresSafeArea(.container, edges: .bottom)
 
-            // Recording overlay - covers middle area but keeps buttons accessible
-            // Placed at root level with lower z-index than recording UI elements
+            // Layer 2: Recording Overlay (covers from header bottom to screen bottom)
             if viewModel.isRecording {
                 VStack(spacing: 0) {
-                    // Header area - no overlay
+                    // Header area - no overlay (clear)
                     Color.clear
                         .frame(height: 60)
 
-                    // Messages area - with overlay
+                    // Messages area + input area background - with overlay
                     Color.black
                         .opacity(0.5)
-
-                    // Input area - no overlay (buttons stay interactive)
-                    Color.clear
-                        .frame(height: 120) // Match input area height
                 }
                 .ignoresSafeArea()
-                .allowsHitTesting(false) // Let touches pass through to buttons
+                .allowsHitTesting(false)
             }
+
+            // Layer 3: Recording UI Elements (above overlay)
+            if viewModel.isRecording {
+                RecordingElements(viewModel: viewModel)
+            }
+
+                    // Layer 4: Input Area with buttons (always on top, always interactive)
+            VStack {
+                Spacer()
+                inputAreaButtons
+            }
+            .ignoresSafeArea(.container, edges: .bottom)
+            // Ensure this layer is always above the overlay
+            .zIndex(100)
         }
         .onAppear {
             viewModel.loadInitialMessages(for: lesson)
@@ -100,33 +105,27 @@ struct ChatView: View {
     // MARK: - Messages List
     private var messagesList: some View {
         ScrollViewReader { proxy in
-            ZStack {
-                // Messages scroll view
-                ScrollView {
-                    LazyVStack(spacing: 24) {
-                        ForEach(viewModel.messages) { message in
-                            ChatBubble(
-                                message: message,
-                                isPlaying: viewModel.currentlyPlayingMessageId == message.id,
-                                onTap: {
-                                    viewModel.togglePlay(for: message)
-                                }
-                            )
-                            .id(message.id)
-                        }
-
-                        if viewModel.isLoading {
-                            TypingIndicator()
-                                .id("typing")
-                        }
+            ScrollView {
+                LazyVStack(spacing: 24) {
+                    ForEach(viewModel.messages) { message in
+                        ChatBubble(
+                            message: message,
+                            isPlaying: viewModel.currentlyPlayingMessageId == message.id,
+                            onTap: {
+                                viewModel.togglePlay(for: message)
+                            }
+                        )
+                        .id(message.id)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.top, 60)
-                    .padding(.bottom, 16)
-                }
 
-                // Recording overlay - only covers chat area
-                RecordingOverlay(viewModel: viewModel)
+                    if viewModel.isLoading {
+                        TypingIndicator()
+                            .id("typing")
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.top, 60)
+                .padding(.bottom, 16)
             }
             .onChange(of: viewModel.messages.count) { _, _ in
                 scrollToBottom(proxy: proxy)
@@ -150,21 +149,28 @@ struct ChatView: View {
         }
     }
 
-    // MARK: - Input Area - WeChat Style Voice Input
-    private var inputArea: some View {
+    // MARK: - Input Area Background (white background only)
+    private var inputAreaBackground: some View {
         VStack(spacing: 0) {
             // Top divider
             Rectangle()
                 .fill(Color(hex: "E5E7EB"))
                 .frame(height: 0.5)
 
-            // Voice input container
-            VoiceInputArea(viewModel: viewModel)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+            // Bottom padding area (buttons are overlaid on top)
+            Color.white
+                .frame(height: 88) // 12 + 56 + 12 + safe area approx
         }
         .background(Color.white)
         .safeAreaPadding(.bottom)
+    }
+
+    // MARK: - Input Area Buttons (voice button + cancel button)
+    private var inputAreaButtons: some View {
+        VoiceInputContainer(viewModel: viewModel)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 12)
+            .safeAreaPadding(.bottom)
     }
 }
 
@@ -326,8 +332,25 @@ struct TypingIndicator: View {
     }
 }
 
-// MARK: - Voice Input Area (WeChat Style)
-struct VoiceInputArea: View {
+// MARK: - Recording Elements (Voice Bubble, appears above overlay)
+struct RecordingElements: View {
+    @Bindable var viewModel: ChatViewModel
+
+    var body: some View {
+        GeometryReader { geometry in
+            // Voice bubble - centered in the screen (below header)
+            VoiceBubble(isInCancelZone: viewModel.isInCancelZone)
+                .frame(width: 140, height: 100)
+                .position(
+                    x: geometry.size.width / 2,
+                    y: (geometry.size.height - 60) / 2 + 60 // Center of area below header
+                )
+        }
+    }
+}
+
+// MARK: - Voice Input Container (Buttons above overlay)
+struct VoiceInputContainer: View {
     @Bindable var viewModel: ChatViewModel
     @State private var isPressed = false
     @State private var isInCancelZone = false
@@ -363,7 +386,6 @@ struct VoiceInputArea: View {
                     Spacer()
                 }
                 .frame(maxHeight: .infinity, alignment: .top)
-                .zIndex(101)
 
                 // Main voice button - at bottom
                 VStack {
@@ -384,9 +406,9 @@ struct VoiceInputArea: View {
                                     }
                                 }
 
-                                // Check if finger is over cancel button (with some padding)
+                                // Check if finger is over cancel button
                                 let fingerLocation = value.location
-                                let expandedFrame = cancelButtonFrame.insetBy(dx: -20, dy: -20) // Add padding for easier hit
+                                let expandedFrame = cancelButtonFrame.insetBy(dx: -20, dy: -20)
                                 let shouldCancel = expandedFrame.contains(fingerLocation)
 
                                 if shouldCancel != isInCancelZone {
@@ -399,10 +421,8 @@ struct VoiceInputArea: View {
                             .onEnded { _ in
                                 isPressed = false
                                 if isInCancelZone {
-                                    // Cancel recording
                                     viewModel.cancelRecording()
                                 } else {
-                                    // Send recording
                                     viewModel.stopRecording()
                                 }
                                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -411,7 +431,6 @@ struct VoiceInputArea: View {
                                 }
                             }
                     )
-                    .zIndex(102)
                 }
             }
         }
