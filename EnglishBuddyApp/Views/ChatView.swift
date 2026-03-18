@@ -9,31 +9,39 @@ struct ChatView: View {
 
     var body: some View {
         ZStack {
-            // Layer 1: Background + Main Content
+            // Layer 1: Background + Main Content (like HTML: header + chat-messages + voice-input-wrapper)
             VStack(spacing: 0) {
-                // Header
+                // Header (fixed height, white background)
                 chatHeader
 
-                // Messages list - scrollable area
-                messagesList
+                // Messages + Input Area (combined, with overlay on top when recording)
+                ZStack {
+                    // Messages list
+                    messagesList
 
-                // Bottom input area (white background with divider)
-                inputArea
+                    // Input area background (white bg + divider) - below overlay
+                    VStack {
+                        Spacer()
+                        inputAreaWithDivider
+                    }
+                }
             }
             .ignoresSafeArea(.container, edges: .bottom)
 
-            // Layer 2: Recording Overlay (covers messages area only, not header)
+            // Layer 2: Recording Overlay (covers messages + input area background, not header)
+            // Positioned like HTML: top: 80px (below header)
             if viewModel.isRecording {
-                // Color clear for header + black for rest
-                VStack(spacing: 0) {
-                    Color.clear
-                        .frame(maxHeight: .infinity, alignment: .top)
-                        .layoutPriority(0)
+                GeometryReader { geometry in
+                    VStack(spacing: 0) {
+                        // Spacer for header
+                        Color.clear
+                            .frame(height: 80)
 
-                    Color.black
-                        .opacity(0.5)
-                        .frame(maxHeight: .infinity)
-                        .layoutPriority(1)
+                        // Overlay for messages + input area
+                        Color.black
+                            .opacity(0.5)
+                            .frame(height: geometry.size.height - 80)
+                    }
                 }
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
@@ -44,12 +52,16 @@ struct ChatView: View {
                 RecordingElements(viewModel: viewModel)
             }
 
-            // Layer 4: Input Area buttons (always on top)
+            // Layer 4: Voice Input Buttons (cancel + voice, always on top like HTML voice-input-wrapper)
             VStack(spacing: 0) {
-                Color.clear
-                    .frame(maxHeight: .infinity) // Push buttons to bottom
+                Spacer()
 
-                inputAreaButtonsWithBackground
+                // Voice input buttons overlay (no background, just buttons)
+                VoiceInputContainer(viewModel: viewModel)
+                    .padding(.horizontal, 16)
+                    .frame(height: 88)
+                    .background(Color.clear) // Transparent, overlay is below
+                    .safeAreaPadding(.bottom)
             }
             .ignoresSafeArea(.container, edges: .bottom)
         }
@@ -151,40 +163,21 @@ struct ChatView: View {
         }
     }
 
-    // MARK: - Input Area (white background with divider - always visible)
-    private var inputArea: some View {
+    // MARK: - Input Area with Divider (white background - visible when not recording, covered when recording)
+    private var inputAreaWithDivider: some View {
         VStack(spacing: 0) {
-            // Top divider
+            // Top divider line
             Rectangle()
                 .fill(Color(hex: "E5E7EB"))
                 .frame(height: 0.5)
 
-            // White background area
+            // White background area for buttons
             Color.white
                 .frame(height: 88)
         }
         .safeAreaPadding(.bottom)
     }
 
-    // MARK: - Input Area Buttons with Background (combined)
-    private var inputAreaButtonsWithBackground: some View {
-        VStack(spacing: 0) {
-            // Top divider
-            Rectangle()
-                .fill(Color(hex: "E5E7EB"))
-                .frame(height: 0.5)
-
-            // White background with buttons
-            ZStack {
-                Color.white
-
-                VoiceInputContainer(viewModel: viewModel)
-                    .padding(.horizontal, 16)
-            }
-            .frame(height: 88)
-        }
-        .safeAreaPadding(.bottom)
-    }
 }
 
 // MARK: - Chat Bubble
