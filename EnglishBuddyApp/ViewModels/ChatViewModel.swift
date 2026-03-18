@@ -262,8 +262,9 @@ class ChatViewModel {
             // Validate the recognized text
             let trimmedText = finalText.trimmingCharacters(in: .whitespacesAndNewlines)
 
-            // Check if speech is too short or contains mostly Chinese (likely recognition failure)
-            if trimmedText.count < 2 || self.isMostlyChinese(trimmedText) {
+            // Check if speech is too short (less than 2 characters)
+            // Note: Removed isMostlyChinese check as we now support Chinese speech recognition
+            if trimmedText.count < 2 {
                 // Add AI message asking user to repeat
                 self.messages.append(ChatMessage(text: "[未听清]", speaker: .user))
                 Task {

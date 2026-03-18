@@ -8,8 +8,23 @@ class SpeechRecognizer: ObservableObject {
     @Published var isRecording = false
 
     private var audioEngine = AVAudioEngine()
-    /// 支持中英文混合识别的语音识别器（使用中文 locale 可以识别中英文）
-    private var recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-CN"))
+    /// 支持中英文混合识别的语音识别器
+    /// 优先使用 zh-CN（支持中英文混合识别），如果不支持则使用 en-US
+    private lazy var recognizer: SFSpeechRecognizer? = {
+        let supportedLocales = SFSpeechRecognizer.supportedLocales()
+        print("[SpeechRecognizer] 系统支持的语音识别语言: \(supportedLocales)")
+
+        // 优先尝试 zh-CN，它支持中英文混合识别
+        let chineseLocale = Locale(identifier: "zh-CN")
+        if supportedLocales.contains(chineseLocale) {
+            print("[SpeechRecognizer] 使用 zh-CN 识别器（支持中英文）")
+            return SFSpeechRecognizer(locale: chineseLocale)
+        }
+
+        // 如果 zh-CN 不支持，使用 en-US（英文识别器对中文识别能力有限）
+        print("[SpeechRecognizer] zh-CN 不可用，使用 en-US 识别器")
+        return SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+    }()
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var task: SFSpeechRecognitionTask?
 
@@ -74,9 +89,26 @@ class SpeechRecognizer: ObservableObject {
     }
 
     func startRecording() throws {
-        guard let recognizer = recognizer, recognizer.isAvailable else {
+        // 检查识别器是否可用
+        guard let recognizer = recognizer else {
+            print("[SpeechRecognizer] 错误: SFSpeechRecognizer 初始化失败")
             throw SpeechRecognizerError.notAvailable
         }
+
+        // 检查识别器是否可用（在某些设备上可能需要下载离线语言包）
+        if !recognizer.isAvailable {
+            print("[SpeechRecognizer] 警告: 识别器当前不可用，可能需要下载语言包")
+            // 尝试创建 en-US 作为备用
+            if let fallbackRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US")),
+               fallbackRecognizer.isAvailable {
+                print("[SpeechRecognizer] 切换到 en-US 备用识别器")
+                self.recognizer = fallbackRecognizer
+            } else {
+                throw SpeechRecognizerError.localeNotAvailable
+            }
+        }
+
+        print("[SpeechRecognizer] 开始录音，识别器 locale: \(recognizer.locale.identifier)")
 
         // Stop any existing recording first
         if audioEngine.isRunning {
@@ -125,17 +157,21 @@ class SpeechRecognizer: ObservableObject {
         try audioEngine.start()
 
         // Start recognition task AFTER audio engine is started
+        print("[SpeechRecognizer] 启动识别任务...")
         task = recognizer.recognitionTask(with: recognitionRequest) { [weak self] result, error in
             guard let self = self else { return }
 
             if let result = result {
+                let text = result.bestTranscription.formattedString
+                print("[SpeechRecognizer] 识别结果: \(text)")
                 DispatchQueue.main.async {
-                    self.transcript = result.bestTranscription.formattedString
+                    self.transcript = text
                 }
             }
 
-            if error != nil {
-                print("Recognition error: \(error?.localizedDescription ?? "Unknown")")
+            if let error = error {
+                print("[SpeechRecognizer] 识别错误: \(error.localizedDescription)")
+                print("[SpeechRecognizer] 错误详情: \(error)")
             }
         }
 
@@ -284,6 +320,7 @@ class SpeechRecognizer: ObservableObject {
 
 enum SpeechRecognizerError: Error {
     case notAvailable
+    case localeNotAvailable
     case requestCreationFailed
     case audioSessionFailed
 }
