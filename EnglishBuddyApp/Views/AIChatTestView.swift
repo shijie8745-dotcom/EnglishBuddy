@@ -25,6 +25,9 @@ struct AIChatTestView: View {
             }
             .ignoresSafeArea(.container, edges: .bottom)
         }
+        .onAppear {
+            viewModel.loadInitialMessages(for: lesson)
+        }
         .navigationBarHidden(true)
         .toolbar(.hidden, for: .navigationBar)
     }
@@ -174,6 +177,7 @@ class AIChatTestViewModel: NSObject {
     var inputText: String = ""
     var isLoading: Bool = false
     var currentlyPlayingMessageId: UUID?
+    var lesson: Lesson?
 
     // 系统TTS（不使用API TTS，节省费用）
     private let synthesizer = AVSpeechSynthesizer()
@@ -181,6 +185,17 @@ class AIChatTestViewModel: NSObject {
     override init() {
         super.init()
         synthesizer.delegate = self
+    }
+
+    func loadInitialMessages(for lesson: Lesson) {
+        self.lesson = lesson
+        messages = []
+        currentlyPlayingMessageId = nil
+
+        // Start with an AI greeting using the lesson
+        Task {
+            await getAIResponse(to: "Hello! I'm ready to learn \(lesson.title).")
+        }
     }
 
     func sendMessage() {
@@ -201,7 +216,8 @@ class AIChatTestViewModel: NSObject {
         isLoading = true
 
         do {
-            let response = try await AIChatService.shared.sendMessage(text, lessonId: 0)
+            let lessonId = lesson?.id ?? 0
+            let response = try await AIChatService.shared.sendMessage(text, lessonId: lessonId)
             isLoading = false
 
             // Add AI message
