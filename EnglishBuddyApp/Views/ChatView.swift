@@ -124,7 +124,7 @@ struct ChatView: View {
         }
     }
 
-    // MARK: - Input Area
+    // MARK: - Input Area - WeChat Style Voice Input
     private var inputArea: some View {
         VStack(spacing: 0) {
             // Top divider
@@ -132,41 +132,19 @@ struct ChatView: View {
                 .fill(Color(hex: "E5E7EB"))
                 .frame(height: 0.5)
 
-            VStack(spacing: 8) {
-                // Real-time transcription display
-                if viewModel.isRecording && !viewModel.recognizedText.isEmpty {
-                    Text(viewModel.recognizedText)
-                        .font(.system(size: 14))
-                        .foregroundStyle(Color(hex: "6B7280"))
-                        .lineLimit(2)
-                        .frame(maxWidth: .infinity)
-                        .padding(.horizontal, 16)
-                        .transition(.opacity)
-                }
-
-                // Microphone button
-                MicrophoneButton(
-                    isRecording: viewModel.isRecording,
-                    onPress: {
-                        viewModel.startRecording()
-                    },
-                    onRelease: {
-                        viewModel.stopRecording()
-                    }
-                )
-
-                // Hint text
-                Text(viewModel.isRecording ? "松开发送" : "按住说话")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color(hex: "9CA3AF"))
-                    .animation(.easeInOut(duration: 0.2), value: viewModel.isRecording)
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 8)
+            // Voice input container
+            VoiceInputArea(viewModel: viewModel)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
         }
         .background(Color.white)
         .safeAreaPadding(.bottom)
+        // Recording overlay
+        .overlay(
+            RecordingOverlay(viewModel: viewModel)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+        )
     }
 }
 
@@ -328,7 +306,257 @@ struct TypingIndicator: View {
     }
 }
 
-// MARK: - Microphone Button
+// MARK: - Voice Input Area (WeChat Style)
+struct VoiceInputArea: View {
+    @Bindable var viewModel: ChatViewModel
+    @State private var isPressed = false
+    @State private var dragOffset: CGSize = .zero
+    @State private var isInCancelZone = false
+
+    var body: some View {
+        VStack(spacing: 12) {
+            // Cancel button (appears when recording)
+            CancelButton(isVisible: viewModel.isRecording, isHighlighted: isInCancelZone)
+
+            // Main voice button
+            VoiceButton(
+                isRecording: viewModel.isRecording,
+                isDimmed: isInCancelZone,
+                text: viewModel.isRecording ? "松开发送" : "按住说话"
+            )
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        if !isPressed {
+                            isPressed = true
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                viewModel.startRecording()
+                            }
+                        }
+
+                        // Check if dragged up enough to cancel (80px)
+                        let shouldCancel = value.translation.height < -80
+                        if shouldCancel != isInCancelZone {
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                isInCancelZone = shouldCancel
+                            }
+                        }
+                    }
+                    .onEnded { _ in
+                        isPressed = false
+                        if isInCancelZone {
+                            // Cancel recording
+                            viewModel.cancelRecording()
+                        } else {
+                            // Send recording
+                            viewModel.stopRecording()
+                        }
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isInCancelZone = false
+                        }
+                    }
+            )
+        }
+    }
+}
+
+// MARK: - Voice Button (Long Rounded Rectangle)
+struct VoiceButton: View {
+    let isRecording: Bool
+    let isDimmed: Bool
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: isRecording ? "waveform" : "mic.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white)
+
+            Text(text)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.white)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 56)
+        .background(
+            LinearGradient(
+                colors: isRecording
+                    ? [Color(hex: "EF4444"), Color(hex: "DC2626")]
+                    : [Color(hex: "F97316"), Color(hex: "EA580C")],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .cornerRadius(28)
+        .shadow(
+            color: (isRecording ? Color.red : Color(hex: "F97316")).opacity(isDimmed ? 0.1 : 0.35),
+            radius: isDimmed ? 4 : 8,
+            x: 0,
+            y: isDimmed ? 2 : 4
+        )
+        .opacity(isDimmed ? 0.5 : 1.0)
+        .scaleEffect(isRecording ? 0.98 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isRecording)
+        .animation(.easeInOut(duration: 0.15), value: isDimmed)
+    }
+}
+
+// MARK: - Cancel Button (Pill Shape)
+struct CancelButton: View {
+    let isVisible: Bool
+    let isHighlighted: Bool
+
+    var body: some View {
+        Text("取消")
+            .font(.system(size: 14, weight: .medium))
+            .foregroundStyle(isHighlighted ? Color(hex: "F97316") : Color(hex: "374151"))
+            .padding(.horizontal, 24)
+            .padding(.vertical, 10)
+            .background(
+                Capsule()
+                    .fill(isHighlighted ? Color.white : Color.white.opacity(0.9))
+                    .shadow(
+                        color: isHighlighted ? Color(hex: "F97316").opacity(0.2) : Color.black.opacity(0.1),
+                        radius: isHighlighted ? 6 : 4,
+                        x: 0,
+                        y: 2
+                    )
+            )
+            .overlay(
+                Capsule()
+                    .stroke(isHighlighted ? Color(hex: "F97316") : Color.gray.opacity(0.2), lineWidth: 1)
+            )
+            .opacity(isVisible ? 1 : 0)
+            .offset(y: isVisible ? 0 : 10)
+            .animation(.easeInOut(duration: 0.2), value: isVisible)
+            .animation(.easeInOut(duration: 0.15), value: isHighlighted)
+    }
+}
+
+// MARK: - Recording Overlay (Full Screen)
+struct RecordingOverlay: View {
+    @Bindable var viewModel: ChatViewModel
+
+    var body: some View {
+        ZStack {
+            // Gray overlay
+            Color.black
+                .opacity(viewModel.isRecording ? 0.5 : 0)
+                .ignoresSafeArea()
+
+            // Content (only visible when recording)
+            if viewModel.isRecording {
+                VStack(spacing: 20) {
+                    Spacer()
+
+                    // Cancel hint text
+                    Text("松手取消")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.white)
+                        .opacity(viewModel.isInCancelZone ? 1 : 0)
+                        .offset(y: viewModel.isInCancelZone ? 0 : 10)
+                        .animation(.easeInOut(duration: 0.2), value: viewModel.isInCancelZone)
+
+                    // Voice bubble
+                    VoiceBubble(isInCancelZone: viewModel.isInCancelZone)
+                        .frame(width: 140, height: 140)
+                        .padding(.bottom, 180)
+                }
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: viewModel.isRecording)
+    }
+}
+
+// MARK: - Voice Bubble with Wave Animation
+struct VoiceBubble: View {
+    let isInCancelZone: Bool
+
+    var body: some View {
+        ZStack {
+            // Bubble background
+            RoundedRectangle(cornerRadius: 24)
+                .fill(
+                    LinearGradient(
+                        colors: isInCancelZone
+                            ? [Color(hex: "F87171"), Color(hex: "EF4444")]
+                            : [Color(hex: "86EFAC"), Color(hex: "4ADE80")],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .shadow(
+                    color: (isInCancelZone ? Color.red : Color.green).opacity(0.4),
+                    radius: 16,
+                    x: 0,
+                    y: 8
+                )
+
+            // Content
+            VStack(spacing: 12) {
+                // Voice wave animation
+                VoiceWaveAnimation()
+                    .frame(height: 40)
+
+                Text("Voice Input")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+        }
+        .overlay(
+            // Triangle pointer at bottom
+            Triangle()
+                .fill(isInCancelZone ? Color(hex: "EF4444") : Color(hex: "4ADE80"))
+                .frame(width: 24, height: 14)
+                .offset(y: 7)
+            , alignment: .bottom
+        )
+        .animation(.easeInOut(duration: 0.2), value: isInCancelZone)
+    }
+}
+
+// MARK: - Voice Wave Animation
+struct VoiceWaveAnimation: View {
+    @State private var isAnimating = false
+
+    let barCount = 8
+    let barWidths: [CGFloat] = [4, 4, 4, 4, 4, 4, 4, 4]
+    let barHeights: [CGFloat] = [12, 24, 32, 28, 36, 20, 32, 16]
+    let delays: [Double] = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+
+    var body: some View {
+        HStack(spacing: 3) {
+            ForEach(0..<barCount, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.white)
+                    .frame(width: barWidths[index], height: isAnimating ? barHeights[index] : barHeights[index] * 0.6)
+                    .animation(
+                        .easeInOut(duration: 0.8)
+                        .repeatForever(autoreverses: true)
+                        .delay(delays[index]),
+                        value: isAnimating
+                    )
+            }
+        }
+        .onAppear {
+            isAnimating = true
+        }
+    }
+}
+
+// MARK: - Triangle Shape (Bubble Pointer)
+struct Triangle: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.closeSubpath()
+        return path
+    }
+}
+
+// MARK: - Legacy Microphone Button (Kept for compatibility)
 struct MicrophoneButton: View {
     let isRecording: Bool
     let onPress: () -> Void

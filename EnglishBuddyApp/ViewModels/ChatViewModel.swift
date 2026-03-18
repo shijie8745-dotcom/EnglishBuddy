@@ -7,6 +7,7 @@ class ChatViewModel {
     var messages: [ChatMessage] = []
     var isLoading = false
     var isRecording = false
+    var isInCancelZone = false
     var recognizedText = ""
     var inputText = ""
     var errorMessage: String?
@@ -213,6 +214,7 @@ class ChatViewModel {
 
         recognizedText = ""
         isRecording = true
+        isInCancelZone = false
 
         do {
             try speechRecognizer?.startRecording()
@@ -221,6 +223,22 @@ class ChatViewModel {
             isRecording = false
             speechRecognizer = nil
         }
+    }
+
+    func cancelRecording() {
+        // 获取录音数据但不发送
+        pendingVoiceData = speechRecognizer?.getRecordedAudioData()
+        _ = speechRecognizer?.stopRecording()
+        isRecording = false
+        recognizedText = ""
+
+        // Clean up
+        cancellables.removeAll()
+        speechRecognizer = nil
+        pendingVoiceData = nil
+
+        // 显示已取消的提示（可选）
+        print("[ChatViewModel] 录音已取消")
     }
 
     /// 临时存储录音数据
