@@ -28,23 +28,12 @@ struct ChatView: View {
             }
             .ignoresSafeArea(.container, edges: .bottom)
 
-            // Layer 2: Recording Overlay (covers messages + input area background, not header)
-            // Positioned like HTML: top: 80px (below header)
+            // Layer 2: Recording Overlay (covers entire screen to top)
             if viewModel.isRecording {
-                GeometryReader { geometry in
-                    VStack(spacing: 0) {
-                        // Spacer for header
-                        Color.clear
-                            .frame(height: 80)
-
-                        // Overlay for messages + input area
-                        Color.black
-                            .opacity(0.5)
-                            .frame(height: geometry.size.height - 80)
-                    }
-                }
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
+                Color.black
+                    .opacity(0.5)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
             }
 
             // Layer 3: Recording UI Elements (Voice bubble, above overlay)
@@ -138,7 +127,7 @@ struct ChatView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.top, 60)
-                .padding(.bottom, 16)
+                .padding(.bottom, 136) // 88pt input area + 48pt spacing (2x bubble spacing)
             }
             .onChange(of: viewModel.messages.count) { _, _ in
                 scrollToBottom(proxy: proxy)
@@ -152,12 +141,13 @@ struct ChatView: View {
     private func scrollToBottom(proxy: ScrollViewProxy) {
         if let lastId = viewModel.messages.last?.id {
             withAnimation {
-                proxy.scrollTo(lastId, anchor: .bottom)
+                // Scroll to make last message visible above input area
+                proxy.scrollTo(lastId, anchor: .top)
             }
         }
         if viewModel.isLoading {
             withAnimation {
-                proxy.scrollTo("typing", anchor: .bottom)
+                proxy.scrollTo("typing", anchor: .top)
             }
         }
     }
@@ -585,7 +575,7 @@ struct VoiceBubble: View {
             Triangle()
                 .fill(isInCancelZone ? Color(hex: "EF4444") : Color(hex: "4ADE80"))
                 .frame(width: 24, height: 12)
-                .offset(y: 6) // Half of triangle height to align top edge with bubble bottom
+                .offset(y: 10) // Triangle top edge aligns with bubble bottom edge
             , alignment: .bottom
         )
         .animation(.easeInOut(duration: 0.2), value: isInCancelZone)
