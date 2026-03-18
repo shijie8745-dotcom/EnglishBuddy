@@ -407,7 +407,7 @@ struct VoiceInputContainer: View {
                 )
                 .position(
                     x: geometry.size.width / 2,
-                    y: geometry.size.height / 2 - 4 // Vertically centered in 88pt container, moved up slightly
+                    y: geometry.size.height / 2 - 6 // Vertically centered in 88pt container, moved up a bit more
                 )
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .global)
