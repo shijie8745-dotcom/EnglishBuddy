@@ -8,7 +8,8 @@ class SpeechRecognizer: ObservableObject {
     @Published var isRecording = false
 
     private var audioEngine = AVAudioEngine()
-    private var recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+    /// 支持中英文混合识别的语音识别器（使用中文 locale 可以识别中英文）
+    private var recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-CN"))
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var task: SFSpeechRecognitionTask?
 
