@@ -24,14 +24,14 @@ struct ChatView: View {
 
             // Layer 2: Recording Overlay (covers from header bottom to screen bottom)
             if viewModel.isRecording {
-                VStack(spacing: 0) {
-                    // Header area - no overlay (clear)
-                    Color.clear
-                        .frame(height: 60)
-
-                    // Messages area + input area background - with overlay
+                GeometryReader { geometry in
                     Color.black
                         .opacity(0.5)
+                        .frame(height: geometry.size.height - 60) // Start after 60pt header
+                        .position(
+                            x: geometry.size.width / 2,
+                            y: (geometry.size.height - 60) / 2 + 60
+                        )
                 }
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
@@ -359,79 +359,86 @@ struct VoiceInputContainer: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Cancel button - positioned above voice button
+                // Cancel hint text + Cancel button - both positioned absolutely above voice button
                 VStack(spacing: 0) {
-                    // Cancel hint text (appears when over cancel button)
+                    // "松开取消" hint text (appears when over cancel button)
+                    // Positioned above cancel button with 8px gap
                     Text("松开取消")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.white)
                         .opacity(viewModel.isRecording && isInCancelZone ? 1 : 0)
                         .offset(y: viewModel.isRecording && isInCancelZone ? 0 : 10)
                         .animation(.easeInOut(duration: 0.2), value: isInCancelZone)
-                        .padding(.bottom, 8)
 
+                    Spacer().frame(height: 8)
+
+                    // Cancel button - positioned 24px above voice button
                     CancelButton(isVisible: viewModel.isRecording, isHighlighted: isInCancelZone)
-                        .padding(.bottom, 24)
                         // Get the frame of cancel button in global coordinates
                         .background(
                             GeometryReader { cancelGeometry in
                                 Color.clear
+                                    .onChange(of: cancelGeometry.frame(in: .global)) { oldFrame, newFrame in
+                                        cancelButtonFrame = newFrame
+                                    }
                                     .onAppear {
-                                        let frame = cancelGeometry.frame(in: .global)
-                                        cancelButtonFrame = frame
+                                        cancelButtonFrame = cancelGeometry.frame(in: .global)
                                     }
                             }
                         )
-
-                    Spacer()
                 }
-                .frame(maxHeight: .infinity, alignment: .top)
+                // Position cancel button area 24px + 56px (voice button) + 24px above bottom
+                .frame(width: geometry.size.width, height: 52 + 8 + 14) // Cancel button + spacing + hint
+                .position(
+                    x: geometry.size.width / 2,
+                    y: geometry.size.height - 56 - 24 - 26 - 8 // Above voice button (24px gap + half cancel height + hint)
+                )
 
-                // Main voice button - at bottom
-                VStack {
-                    Spacer()
-
-                    VoiceButton(
-                        isRecording: viewModel.isRecording,
-                        isDimmed: isInCancelZone,
-                        text: viewModel.isRecording ? "松开发送" : "按住说话"
-                    )
-                    .gesture(
-                        DragGesture(minimumDistance: 0, coordinateSpace: .global)
-                            .onChanged { value in
-                                if !isPressed {
-                                    isPressed = true
-                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                        viewModel.startRecording()
-                                    }
-                                }
-
-                                // Check if finger is over cancel button
-                                let fingerLocation = value.location
-                                let expandedFrame = cancelButtonFrame.insetBy(dx: -20, dy: -20)
-                                let shouldCancel = expandedFrame.contains(fingerLocation)
-
-                                if shouldCancel != isInCancelZone {
-                                    withAnimation(.easeInOut(duration: 0.15)) {
-                                        isInCancelZone = shouldCancel
-                                        viewModel.isInCancelZone = shouldCancel
-                                    }
-                                }
-                            }
-                            .onEnded { _ in
-                                isPressed = false
-                                if isInCancelZone {
-                                    viewModel.cancelRecording()
-                                } else {
-                                    viewModel.stopRecording()
-                                }
+                // Main voice button - at bottom with padding
+                VoiceButton(
+                    isRecording: viewModel.isRecording,
+                    isDimmed: isInCancelZone,
+                    text: viewModel.isRecording ? "松开发送" : "按住说话"
+                )
+                .position(
+                    x: geometry.size.width / 2,
+                    y: geometry.size.height - 28 - 12 // Bottom with 12pt padding
+                )
+                .gesture(
+                    DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                        .onChanged { value in
+                            if !isPressed {
+                                isPressed = true
                                 withAnimation(.easeInOut(duration: 0.2)) {
-                                    isInCancelZone = false
-                                    viewModel.isInCancelZone = false
+                                    viewModel.startRecording()
                                 }
                             }
-                    )
-                }
+
+                            // Check if finger is over cancel button frame
+                            let fingerLocation = value.location
+                            let expandedFrame = cancelButtonFrame.insetBy(dx: -30, dy: -30)
+                            let shouldCancel = expandedFrame.contains(fingerLocation)
+
+                            if shouldCancel != isInCancelZone {
+                                withAnimation(.easeInOut(duration: 0.15)) {
+                                    isInCancelZone = shouldCancel
+                                    viewModel.isInCancelZone = shouldCancel
+                                }
+                            }
+                        }
+                        .onEnded { _ in
+                            isPressed = false
+                            if isInCancelZone {
+                                viewModel.cancelRecording()
+                            } else {
+                                viewModel.stopRecording()
+                            }
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                isInCancelZone = false
+                                viewModel.isInCancelZone = false
+                            }
+                        }
+                )
             }
         }
         .frame(height: 120)
