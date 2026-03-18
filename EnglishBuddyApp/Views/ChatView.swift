@@ -80,27 +80,33 @@ struct ChatView: View {
     // MARK: - Messages List
     private var messagesList: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 24) {
-                    ForEach(viewModel.messages) { message in
-                        ChatBubble(
-                            message: message,
-                            isPlaying: viewModel.currentlyPlayingMessageId == message.id,
-                            onTap: {
-                                viewModel.togglePlay(for: message)
-                            }
-                        )
-                        .id(message.id)
-                    }
+            ZStack {
+                // Messages scroll view
+                ScrollView {
+                    LazyVStack(spacing: 24) {
+                        ForEach(viewModel.messages) { message in
+                            ChatBubble(
+                                message: message,
+                                isPlaying: viewModel.currentlyPlayingMessageId == message.id,
+                                onTap: {
+                                    viewModel.togglePlay(for: message)
+                                }
+                            )
+                            .id(message.id)
+                        }
 
-                    if viewModel.isLoading {
-                        TypingIndicator()
-                            .id("typing")
+                        if viewModel.isLoading {
+                            TypingIndicator()
+                                .id("typing")
+                        }
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.top, 60)
+                    .padding(.bottom, 16)
                 }
-                .padding(.horizontal, 12)
-                .padding(.top, 60)
-                .padding(.bottom, 16)
+
+                // Recording overlay - only covers chat area
+                RecordingOverlay(viewModel: viewModel)
             }
             .onChange(of: viewModel.messages.count) { _, _ in
                 scrollToBottom(proxy: proxy)
@@ -139,12 +145,6 @@ struct ChatView: View {
         }
         .background(Color.white)
         .safeAreaPadding(.bottom)
-        // Recording overlay
-        .overlay(
-            RecordingOverlay(viewModel: viewModel)
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
-        )
     }
 }
 
@@ -314,49 +314,73 @@ struct VoiceInputArea: View {
     @State private var isInCancelZone = false
 
     var body: some View {
-        VStack(spacing: 12) {
-            // Cancel button (appears when recording)
-            CancelButton(isVisible: viewModel.isRecording, isHighlighted: isInCancelZone)
+        ZStack {
+            // Cancel button - positioned above voice button
+            VStack(spacing: 0) {
+                // Cancel hint text (appears when over cancel button)
+                Text("松开取消")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.white)
+                    .opacity(viewModel.isRecording && isInCancelZone ? 1 : 0)
+                    .offset(y: viewModel.isRecording && isInCancelZone ? 0 : 10)
+                    .animation(.easeInOut(duration: 0.2), value: isInCancelZone)
+                    .padding(.bottom, 8)
 
-            // Main voice button
-            VoiceButton(
-                isRecording: viewModel.isRecording,
-                isDimmed: isInCancelZone,
-                text: viewModel.isRecording ? "松开发送" : "按住说话"
-            )
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        if !isPressed {
-                            isPressed = true
+                CancelButton(isVisible: viewModel.isRecording, isHighlighted: isInCancelZone)
+                    .padding(.bottom, 24)
+
+                Spacer()
+            }
+            .frame(maxHeight: .infinity, alignment: .top)
+            .zIndex(101)
+
+            // Main voice button - at bottom
+            VStack {
+                Spacer()
+
+                VoiceButton(
+                    isRecording: viewModel.isRecording,
+                    isDimmed: isInCancelZone,
+                    text: viewModel.isRecording ? "松开发送" : "按住说话"
+                )
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            if !isPressed {
+                                isPressed = true
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    viewModel.startRecording()
+                                }
+                            }
+
+                            // Check if dragged up enough to cancel (80px)
+                            let shouldCancel = value.translation.height < -80
+                            if shouldCancel != isInCancelZone {
+                                withAnimation(.easeInOut(duration: 0.15)) {
+                                    isInCancelZone = shouldCancel
+                                    viewModel.isInCancelZone = shouldCancel
+                                }
+                            }
+                        }
+                        .onEnded { _ in
+                            isPressed = false
+                            if isInCancelZone {
+                                // Cancel recording
+                                viewModel.cancelRecording()
+                            } else {
+                                // Send recording
+                                viewModel.stopRecording()
+                            }
                             withAnimation(.easeInOut(duration: 0.2)) {
-                                viewModel.startRecording()
+                                isInCancelZone = false
+                                viewModel.isInCancelZone = false
                             }
                         }
-
-                        // Check if dragged up enough to cancel (80px)
-                        let shouldCancel = value.translation.height < -80
-                        if shouldCancel != isInCancelZone {
-                            withAnimation(.easeInOut(duration: 0.15)) {
-                                isInCancelZone = shouldCancel
-                            }
-                        }
-                    }
-                    .onEnded { _ in
-                        isPressed = false
-                        if isInCancelZone {
-                            // Cancel recording
-                            viewModel.cancelRecording()
-                        } else {
-                            // Send recording
-                            viewModel.stopRecording()
-                        }
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isInCancelZone = false
-                        }
-                    }
-            )
+                )
+                .zIndex(102)
+            }
         }
+        .frame(height: 120)
     }
 }
 
@@ -401,31 +425,31 @@ struct VoiceButton: View {
     }
 }
 
-// MARK: - Cancel Button (Pill Shape)
+// MARK: - Cancel Button (Fixed width, rounded rectangle)
 struct CancelButton: View {
     let isVisible: Bool
     let isHighlighted: Bool
 
     var body: some View {
         Text("取消")
-            .font(.system(size: 14, weight: .medium))
-            .foregroundStyle(isHighlighted ? Color(hex: "F97316") : Color(hex: "374151"))
-            .padding(.horizontal, 24)
-            .padding(.vertical, 10)
+            .font(.system(size: 16, weight: .medium))
+            .foregroundStyle(isHighlighted ? .white : Color(hex: "374151"))
+            .frame(width: 200, height: 52)
             .background(
-                Capsule()
-                    .fill(isHighlighted ? Color.white : Color.white.opacity(0.9))
+                RoundedRectangle(cornerRadius: 26)
+                    .fill(isHighlighted ? Color(hex: "6B7280") : Color.white.opacity(0.9))
                     .shadow(
-                        color: isHighlighted ? Color(hex: "F97316").opacity(0.2) : Color.black.opacity(0.1),
+                        color: isHighlighted ? Color(hex: "6B7280").opacity(0.4) : Color.black.opacity(0.1),
                         radius: isHighlighted ? 6 : 4,
                         x: 0,
                         y: 2
                     )
             )
             .overlay(
-                Capsule()
-                    .stroke(isHighlighted ? Color(hex: "F97316") : Color.gray.opacity(0.2), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 26)
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
             )
+            .scaleEffect(isHighlighted ? 1.05 : 1.0)
             .opacity(isVisible ? 1 : 0)
             .offset(y: isVisible ? 0 : 10)
             .animation(.easeInOut(duration: 0.2), value: isVisible)
@@ -433,38 +457,31 @@ struct CancelButton: View {
     }
 }
 
-// MARK: - Recording Overlay (Full Screen)
+// MARK: - Recording Overlay (In Chat Area Only)
 struct RecordingOverlay: View {
     @Bindable var viewModel: ChatViewModel
 
     var body: some View {
-        ZStack {
-            // Gray overlay
-            Color.black
-                .opacity(viewModel.isRecording ? 0.5 : 0)
-                .ignoresSafeArea()
+        GeometryReader { geometry in
+            ZStack {
+                // Gray overlay - covers entire parent (which is the ScrollView)
+                Color.black
+                    .opacity(viewModel.isRecording ? 0.5 : 0)
 
-            // Content (only visible when recording)
-            if viewModel.isRecording {
-                VStack(spacing: 20) {
-                    Spacer()
-
-                    // Cancel hint text
-                    Text("松手取消")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.white)
-                        .opacity(viewModel.isInCancelZone ? 1 : 0)
-                        .offset(y: viewModel.isInCancelZone ? 0 : 10)
-                        .animation(.easeInOut(duration: 0.2), value: viewModel.isInCancelZone)
-
-                    // Voice bubble
+                // Content (only visible when recording)
+                if viewModel.isRecording {
+                    // Voice bubble - centered in the available space
                     VoiceBubble(isInCancelZone: viewModel.isInCancelZone)
-                        .frame(width: 140, height: 140)
-                        .padding(.bottom, 180)
+                        .frame(width: 140, height: 100)
+                        .position(
+                            x: geometry.size.width / 2,
+                            y: geometry.size.height / 2
+                        )
                 }
             }
+            .animation(.easeInOut(duration: 0.2), value: viewModel.isRecording)
+            .allowsHitTesting(false)
         }
-        .animation(.easeInOut(duration: 0.2), value: viewModel.isRecording)
     }
 }
 
@@ -492,16 +509,9 @@ struct VoiceBubble: View {
                     y: 8
                 )
 
-            // Content
-            VStack(spacing: 12) {
-                // Voice wave animation
-                VoiceWaveAnimation()
-                    .frame(height: 40)
-
-                Text("Voice Input")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
-            }
+            // Content - only voice wave animation, no text
+            VoiceWaveAnimation()
+                .frame(height: 40)
         }
         .overlay(
             // Triangle pointer at bottom
