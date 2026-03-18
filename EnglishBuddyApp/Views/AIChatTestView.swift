@@ -217,7 +217,9 @@ class AIChatTestViewModel: NSObject {
 
         do {
             let lessonId = lesson?.id ?? 0
-            let response = try await AIChatService.shared.sendMessage(text, lessonId: lessonId)
+            // Get current messages as history (excluding the last user message we just added)
+            let historyMessages = messages.dropLast()
+            let response = try await AIChatService.shared.sendMessage(text, lessonId: lessonId, historyMessages: Array(historyMessages))
             isLoading = false
 
             // Add AI message

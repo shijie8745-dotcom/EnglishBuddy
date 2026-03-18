@@ -12,16 +12,28 @@ class AIChatService {
 
     private init() {}
 
-    func sendMessage(_ message: String, lessonId: Int) async throws -> String {
+    func sendMessage(_ message: String, lessonId: Int, historyMessages: [ChatMessage] = []) async throws -> String {
         let systemPrompt = PromptConfig.loadPrompt(for: lessonId)
+
+        // Build messages array with history
+        var messagesArray: [[String: String]] = [
+            ["role": "system", "content": systemPrompt]
+        ]
+
+        // Add history messages (excluding the last user message which will be added separately)
+        for chatMessage in historyMessages {
+            // OpenAI API uses "assistant" for AI messages, "user" for user messages
+            let role = chatMessage.speaker == .user ? "user" : "assistant"
+            messagesArray.append(["role": role, "content": chatMessage.text])
+        }
+
+        // Add current user message
+        messagesArray.append(["role": "user", "content": message])
 
         // OpenAI 兼容格式
         let requestBody: [String: Any] = [
             "model": model,
-            "messages": [
-                ["role": "system", "content": systemPrompt],
-                ["role": "user", "content": message]
-            ],
+            "messages": messagesArray,
             "temperature": 0.7,
             "max_tokens": 200,
             "enable_thinking": false
