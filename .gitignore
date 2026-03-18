@@ -32,3 +32,6 @@ EnglishBuddyApp/Config/PromptConfig.swift
 
 # App specific
 *.log
+
+# Project documentation (local only)
+CLAUDE.md
