@@ -25,6 +25,26 @@ struct ChatView: View {
                 inputArea
             }
             .ignoresSafeArea(.container, edges: .bottom)
+
+            // Recording overlay - covers middle area but keeps buttons accessible
+            // Placed at root level with lower z-index than recording UI elements
+            if viewModel.isRecording {
+                VStack(spacing: 0) {
+                    // Header area - no overlay
+                    Color.clear
+                        .frame(height: 60)
+
+                    // Messages area - with overlay
+                    Color.black
+                        .opacity(0.5)
+
+                    // Input area - no overlay (buttons stay interactive)
+                    Color.clear
+                        .frame(height: 120) // Match input area height
+                }
+                .ignoresSafeArea()
+                .allowsHitTesting(false) // Let touches pass through to buttons
+            }
         }
         .onAppear {
             viewModel.loadInitialMessages(for: lesson)
@@ -132,28 +152,18 @@ struct ChatView: View {
 
     // MARK: - Input Area - WeChat Style Voice Input
     private var inputArea: some View {
-        ZStack {
-            // Normal input area
-            VStack(spacing: 0) {
-                // Top divider
-                Rectangle()
-                    .fill(Color(hex: "E5E7EB"))
-                    .frame(height: 0.5)
+        VStack(spacing: 0) {
+            // Top divider
+            Rectangle()
+                .fill(Color(hex: "E5E7EB"))
+                .frame(height: 0.5)
 
-                // Voice input container
-                VoiceInputArea(viewModel: viewModel)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-            }
-            .background(Color.white)
-
-            // Recording overlay - covers input area when recording
-            if viewModel.isRecording {
-                Color.black
-                    .opacity(0.5)
-                    .ignoresSafeArea()
-            }
+            // Voice input container
+            VoiceInputArea(viewModel: viewModel)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
         }
+        .background(Color.white)
         .safeAreaPadding(.bottom)
     }
 }
