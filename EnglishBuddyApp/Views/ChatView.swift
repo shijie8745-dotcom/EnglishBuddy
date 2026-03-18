@@ -57,12 +57,14 @@ struct ChatView: View {
                 Spacer()
 
                 // Voice input buttons overlay (no background, just buttons)
+                // Positioned within the 88pt white background area
                 VoiceInputContainer(viewModel: viewModel)
                     .padding(.horizontal, 16)
                     .frame(height: 88)
                     .background(Color.clear) // Transparent, overlay is below
-                    .safeAreaPadding(.bottom)
             }
+            // Extend to safe area bottom but keep buttons in visible area
+            .safeAreaInset(edge: .bottom) { Color.clear }
             .ignoresSafeArea(.container, edges: .bottom)
         }
         .onAppear {
@@ -447,7 +449,7 @@ struct VoiceInputContainer: View {
                 )
             }
         }
-        .frame(height: 120)
+        .frame(height: 88) // Match the input area background height
     }
 }
 
