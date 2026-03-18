@@ -111,7 +111,8 @@ class SpeechRecognizer: ObservableObject {
         self.request = recognitionRequest
 
         // Install tap with the native format - 同时保存音频数据
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
+        // bufferSize 从 1024 减少到 512，降低延迟
+        inputNode.installTap(onBus: 0, bufferSize: 512, format: recordingFormat) { [weak self] buffer, _ in
             self?.request?.append(buffer)
             // 复制缓冲区保存录音数据
             if let copiedBuffer = buffer.copy() as? AVAudioPCMBuffer {
@@ -169,6 +170,36 @@ class SpeechRecognizer: ObservableObject {
         }
 
         return finalTranscript
+    }
+
+    /// 带完成回调的停止录音方法 - 允许延迟获取最终识别结果
+    func stopRecording(completion: @escaping (String) -> Void) {
+        // 先停止音频引擎和录音
+        if audioEngine.isRunning {
+            audioEngine.stop()
+        }
+        audioEngine.inputNode.removeTap(onBus: 0)
+        request?.endAudio()
+
+        // 延迟结束识别任务，让剩余的音频缓冲被处理
+        // 400ms 延迟确保最后的音频被识别
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+            guard let self = self else {
+                completion("")
+                return
+            }
+
+            // 获取最终的识别结果（可能已更新）
+            let finalTranscript = self.transcript
+
+            // 取消识别任务
+            self.task?.cancel()
+            self.task = nil
+            self.request = nil
+            self.isRecording = false
+
+            completion(finalTranscript)
+        }
     }
 
     /// 获取录音数据并转换为可直接播放的格式

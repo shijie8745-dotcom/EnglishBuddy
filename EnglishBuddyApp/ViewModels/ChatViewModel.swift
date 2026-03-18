@@ -248,34 +248,38 @@ class ChatViewModel {
         // 获取录音数据
         pendingVoiceData = speechRecognizer?.getRecordedAudioData()
 
-        let finalText = speechRecognizer?.stopRecording() ?? ""
-        isRecording = false
-        recognizedText = ""
+        // 使用 completion 回调版本的 stopRecording，确保完整的语音识别结果
+        speechRecognizer?.stopRecording { [weak self] finalText in
+            guard let self = self else { return }
 
-        // Clean up
-        cancellables.removeAll()
-        speechRecognizer = nil
+            self.isRecording = false
+            self.recognizedText = ""
 
-        // Validate the recognized text
-        let trimmedText = finalText.trimmingCharacters(in: .whitespacesAndNewlines)
+            // Clean up
+            self.cancellables.removeAll()
+            self.speechRecognizer = nil
 
-        // Check if speech is too short or contains mostly Chinese (likely recognition failure)
-        if trimmedText.count < 2 || isMostlyChinese(trimmedText) {
-            // Add AI message asking user to repeat
-            messages.append(ChatMessage(text: "[未听清]", speaker: .user))
-            Task {
-                await addAIMessage("I didn't hear you clearly. Can you say that again? 🎤")
+            // Validate the recognized text
+            let trimmedText = finalText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // Check if speech is too short or contains mostly Chinese (likely recognition failure)
+            if trimmedText.count < 2 || self.isMostlyChinese(trimmedText) {
+                // Add AI message asking user to repeat
+                self.messages.append(ChatMessage(text: "[未听清]", speaker: .user))
+                Task {
+                    await self.addAIMessage("I didn't hear you clearly. Can you say that again? 🎤")
+                }
+                return
             }
-            return
-        }
 
-        // Send the recognized text to AI（同时保存录音数据）
-        Task {
-            await sendMessage(trimmedText, voiceData: pendingVoiceData)
-        }
+            // Send the recognized text to AI（同时保存录音数据）
+            Task {
+                await self.sendMessage(trimmedText, voiceData: self.pendingVoiceData)
+            }
 
-        // 清空临时存储
-        pendingVoiceData = nil
+            // 清空临时存储
+            self.pendingVoiceData = nil
+        }
     }
 
     func updateRecognizedText() {
