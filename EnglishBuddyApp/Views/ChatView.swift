@@ -24,15 +24,13 @@ struct ChatView: View {
 
             // Layer 2: Recording Overlay (covers from header bottom to screen bottom)
             if viewModel.isRecording {
-                GeometryReader { geometry in
-                    VStack(spacing: 0) {
-                        // Header area - no overlay
-                        Color.clear
+                VStack(spacing: 0) {
+                    // Header area - no overlay
+                    Color.clear
 
-                        // Messages + Input area - with overlay
-                        Color.black
-                            .opacity(0.5)
-                    }
+                    // Messages + Input area - with overlay (fill remaining space)
+                    Color.black
+                        .opacity(0.5)
                 }
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
@@ -391,11 +389,11 @@ struct VoiceInputContainer: View {
                             }
                         )
                 }
-                // Position cancel button area 24px above voice button (which is centered)
-                .frame(width: geometry.size.width, height: 52 + 8 + 20) // Cancel button + spacing + hint
+                // Position cancel button area 36px above voice button (larger gap for better UX)
+                .frame(width: geometry.size.width - 32, height: 52 + 8 + 20) // Same width as voice button (with padding)
                 .position(
                     x: geometry.size.width / 2,
-                    y: geometry.size.height / 2 - 56/2 - 24 - 26 // Above centered voice button (24px gap)
+                    y: geometry.size.height / 2 - 56/2 - 36 - 26 // Above centered voice button (36px gap)
                 )
 
                 // Main voice button - vertically centered in the container
@@ -490,7 +488,7 @@ struct VoiceButton: View {
     }
 }
 
-// MARK: - Cancel Button (Fixed width, rounded rectangle)
+// MARK: - Cancel Button (Same width as voice button, rounded rectangle)
 struct CancelButton: View {
     let isVisible: Bool
     let isHighlighted: Bool
@@ -499,7 +497,8 @@ struct CancelButton: View {
         Text("取消")
             .font(.system(size: 16, weight: .medium))
             .foregroundStyle(isHighlighted ? .white : Color(hex: "374151"))
-            .frame(width: 200, height: 52)
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
             .background(
                 RoundedRectangle(cornerRadius: 26)
                     .fill(isHighlighted ? Color(hex: "6B7280") : Color.white.opacity(0.9))
