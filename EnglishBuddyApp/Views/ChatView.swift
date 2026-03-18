@@ -53,18 +53,15 @@ struct ChatView: View {
             }
 
             // Layer 4: Voice Input Buttons (cancel + voice, always on top like HTML voice-input-wrapper)
-            VStack(spacing: 0) {
+            VStack {
                 Spacer()
 
                 // Voice input buttons overlay (no background, just buttons)
-                // Positioned within the 88pt white background area
                 VoiceInputContainer(viewModel: viewModel)
                     .padding(.horizontal, 16)
                     .frame(height: 88)
                     .background(Color.clear) // Transparent, overlay is below
             }
-            // Extend to safe area bottom but keep buttons in visible area
-            .safeAreaInset(edge: .bottom) { Color.clear }
             .ignoresSafeArea(.container, edges: .bottom)
         }
         .onAppear {
@@ -395,14 +392,14 @@ struct VoiceInputContainer: View {
                             }
                         )
                 }
-                // Position cancel button area 36px above voice button (larger gap for better UX)
-                .frame(width: geometry.size.width - 32, height: 52 + 8 + 20) // Same width as voice button (with padding)
+                // Position cancel button area 36px above voice button
+                .frame(width: geometry.size.width - 32, height: 52 + 8 + 20)
                 .position(
                     x: geometry.size.width / 2,
-                    y: geometry.size.height / 2 - 56/2 - 36 - 26 // Above centered voice button (36px gap)
+                    y: geometry.size.height - 56 - 16 - 36 - 26 - 8 // Above voice button (36px gap + hint)
                 )
 
-                // Main voice button - vertically centered in the container
+                // Main voice button - at bottom of container with vertical centering in white bg
                 VoiceButton(
                     isRecording: viewModel.isRecording,
                     isDimmed: isInCancelZone,
@@ -410,7 +407,7 @@ struct VoiceInputContainer: View {
                 )
                 .position(
                     x: geometry.size.width / 2,
-                    y: geometry.size.height / 2 // Vertically centered
+                    y: geometry.size.height - 56/2 - 16 // 16pt padding from bottom
                 )
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .global)
