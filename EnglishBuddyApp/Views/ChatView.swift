@@ -25,13 +25,14 @@ struct ChatView: View {
             // Layer 2: Recording Overlay (covers from header bottom to screen bottom)
             if viewModel.isRecording {
                 GeometryReader { geometry in
-                    Color.black
-                        .opacity(0.5)
-                        .frame(height: geometry.size.height - 60) // Start after 60pt header
-                        .position(
-                            x: geometry.size.width / 2,
-                            y: (geometry.size.height - 60) / 2 + 60
-                        )
+                    VStack(spacing: 0) {
+                        // Header area - no overlay
+                        Color.clear
+
+                        // Messages + Input area - with overlay
+                        Color.black
+                            .opacity(0.5)
+                    }
                 }
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
@@ -158,8 +159,9 @@ struct ChatView: View {
                 .frame(height: 0.5)
 
             // Bottom padding area (buttons are overlaid on top)
+            // Height: 16 padding + 56 button + 16 padding = 88pt (without safe area)
             Color.white
-                .frame(height: 88) // 12 + 56 + 12 + safe area approx
+                .frame(minHeight: 88)
         }
         .background(Color.white)
         .safeAreaPadding(.bottom)
@@ -167,10 +169,12 @@ struct ChatView: View {
 
     // MARK: - Input Area Buttons (voice button + cancel button)
     private var inputAreaButtons: some View {
-        VoiceInputContainer(viewModel: viewModel)
-            .padding(.horizontal, 16)
-            .padding(.bottom, 12)
-            .safeAreaPadding(.bottom)
+        GeometryReader { geometry in
+            VoiceInputContainer(viewModel: viewModel)
+                .padding(.horizontal, 16)
+        }
+        .frame(height: 88) // Match background height
+        .safeAreaPadding(.bottom)
     }
 }
 
@@ -387,14 +391,14 @@ struct VoiceInputContainer: View {
                             }
                         )
                 }
-                // Position cancel button area 24px + 56px (voice button) + 24px above bottom
-                .frame(width: geometry.size.width, height: 52 + 8 + 14) // Cancel button + spacing + hint
+                // Position cancel button area 24px above voice button (which is centered)
+                .frame(width: geometry.size.width, height: 52 + 8 + 20) // Cancel button + spacing + hint
                 .position(
                     x: geometry.size.width / 2,
-                    y: geometry.size.height - 56 - 24 - 26 - 8 // Above voice button (24px gap + half cancel height + hint)
+                    y: geometry.size.height / 2 - 56/2 - 24 - 26 // Above centered voice button (24px gap)
                 )
 
-                // Main voice button - at bottom with padding
+                // Main voice button - vertically centered in the container
                 VoiceButton(
                     isRecording: viewModel.isRecording,
                     isDimmed: isInCancelZone,
@@ -402,7 +406,7 @@ struct VoiceInputContainer: View {
                 )
                 .position(
                     x: geometry.size.width / 2,
-                    y: geometry.size.height - 28 - 12 // Bottom with 12pt padding
+                    y: geometry.size.height / 2 // Vertically centered
                 )
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .global)
