@@ -30,11 +30,17 @@ final class AliyunASRService: NSObject, ObservableObject {
     var onError: ((Error) -> Void)?
     var onConnectionStatusChanged: ((Bool) -> Void)?
 
+    // 连接完成的 continuation
+    private var connectionContinuation: CheckedContinuation<Void, Error>?
+
     private override init() {
         super.init()
     }
 
     deinit {
+        if let cont = connectionContinuation {
+            cont.resume(throwing: ASRError.notConnected)
+        }
         disconnect()
     }
 
@@ -67,8 +73,17 @@ final class AliyunASRService: NSObject, ObservableObject {
 
         webSocketTask?.resume()
 
-        // 等待连接建立
-        try await waitForConnection()
+        // 等待连接建立（使用 continuation 等待委托回调）
+        try await withCheckedThrowingContinuation { continuation in
+            self.connectionContinuation = continuation
+            // 设置超时
+            DispatchQueue.global().asyncAfter(deadline: .now() + 10) { [weak self] in
+                if let cont = self?.connectionContinuation {
+                    self?.connectionContinuation = nil
+                    cont.resume(throwing: ASRError.connectionTimeout)
+                }
+            }
+        }
 
         isConnecting = false
         isReady = true
@@ -98,6 +113,12 @@ final class AliyunASRService: NSObject, ObservableObject {
 
     /// 断开 WebSocket 连接
     func disconnect() {
+        // 清理 continuation
+        if let cont = connectionContinuation {
+            connectionContinuation = nil
+            cont.resume(throwing: ASRError.notConnected)
+        }
+
         // 停止录音
         if let engine = audioEngine, engine.isRunning {
             engine.stop()
@@ -463,38 +484,40 @@ final class AliyunASRService: NSObject, ObservableObject {
     }
 
     // MARK: - Helper Methods
-
-    /// 等待 WebSocket 连接建立
-    private func waitForConnection() async throws {
-        var attempts = 0
-        while webSocketTask?.state != .running && attempts < 30 {
-            try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒
-            attempts += 1
-        }
-
-        guard webSocketTask?.state == .running else {
-            throw ASRError.connectionTimeout
-        }
-
-        // 开始接收消息
-        startReceiving()
-    }
 }
 
 // MARK: - URLSessionWebSocketDelegate
 extension AliyunASRService: URLSessionWebSocketDelegate {
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
         print("[AliyunASR] WebSocket 连接已打开")
+
+        // 恢复等待连接的 continuation
+        if let cont = connectionContinuation {
+            connectionContinuation = nil
+            cont.resume()
+        }
+
         DispatchQueue.main.async {
             self.onConnectionStatusChanged?(true)
         }
+
+        // 开始接收消息
+        startReceiving()
     }
 
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         print("[AliyunASR] WebSocket 连接已关闭: \(closeCode)")
+
+        // 如果有等待的 continuation，恢复它并抛出错误
+        if let cont = connectionContinuation {
+            connectionContinuation = nil
+            cont.resume(throwing: ASRError.notConnected)
+        }
+
         DispatchQueue.main.async {
             self.isRecording = false
             self.isConnecting = false
+            self.isReady = false
             self.onConnectionStatusChanged?(false)
         }
     }
@@ -502,7 +525,16 @@ extension AliyunASRService: URLSessionWebSocketDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         if let error = error {
             print("[AliyunASR] WebSocket 任务错误: \(error)")
+
+            // 如果有等待的 continuation，恢复它并抛出错误
+            if let cont = connectionContinuation {
+                connectionContinuation = nil
+                cont.resume(throwing: error)
+            }
+
             DispatchQueue.main.async {
+                self.isConnecting = false
+                self.isReady = false
                 self.errorMessage = error.localizedDescription
                 self.onError?(error)
             }
