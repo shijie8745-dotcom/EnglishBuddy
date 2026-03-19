@@ -10,6 +10,7 @@ final class AliyunASRService: NSObject, ObservableObject {
     @Published var transcript = ""
     @Published var isRecording = false
     @Published var isConnecting = false
+    @Published var isReady = false  // WebSocket 已连接并准备好录音
     @Published var errorMessage: String?
 
     private var webSocketTask: URLSessionWebSocketTask?
@@ -17,8 +18,8 @@ final class AliyunASRService: NSObject, ObservableObject {
 
     // MARK: - Configuration
     private let apiKey: String = APIConfig.dashScopeAPIKey
-    private let websocketURL = "wss://dashscope.aliyuncs.com/api/v1/services/realtime/stt/streaming"
-    private let model = "qwen3-asr-flash-realtime-2026-02-10"
+    private let baseURL = "wss://dashscope.aliyuncs.com/api-ws/v1/realtime"
+    private let model = "qwen3-asr-flash-realtime"
 
     // 音频配置
     private let sampleRate: Double = 16000
@@ -49,14 +50,15 @@ final class AliyunASRService: NSObject, ObservableObject {
         isConnecting = true
         errorMessage = nil
 
-        guard let url = URL(string: websocketURL) else {
+        // 构建 URL，包含 model 查询参数
+        let urlString = "\(baseURL)?model=\(model)"
+        guard let url = URL(string: urlString) else {
             throw ASRError.invalidURL
         }
 
         var request = URLRequest(url: url)
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        request.setValue("realtime=v1", forHTTPHeaderField: "OpenAI-Beta")
         request.timeoutInterval = 30
 
         let session = URLSession(configuration: .default)
@@ -69,9 +71,25 @@ final class AliyunASRService: NSObject, ObservableObject {
         try await waitForConnection()
 
         isConnecting = false
+        isReady = true
 
         // 发送 session.update 配置会话
         try await sendSessionUpdate()
+    }
+
+    /// 预连接 WebSocket（在进入页面时调用）
+    func prepare() async {
+        guard !isReady && !isConnecting else { return }
+
+        do {
+            print("[AliyunASR] 预连接 WebSocket...")
+            try await connect()
+            print("[AliyunASR] 预连接成功")
+        } catch {
+            print("[AliyunASR] 预连接失败: \(error.localizedDescription)")
+            isReady = false
+            isConnecting = false
+        }
     }
 
     /// 断开 WebSocket 连接
@@ -90,7 +108,14 @@ final class AliyunASRService: NSObject, ObservableObject {
 
         isRecording = false
         isConnecting = false
+        isReady = false
         onConnectionStatusChanged?(false)
+    }
+
+    /// 重置连接状态（用于录音完成后保持连接）
+    func resetRecordingState() {
+        isRecording = false
+        transcript = ""
     }
 
     // MARK: - Audio Recording
@@ -181,18 +206,17 @@ final class AliyunASRService: NSObject, ObservableObject {
             "event_id": "session_\(UUID().uuidString)",
             "type": "session.update",
             "session": [
-                "input_audio_format": [
-                    "type": audioFormat,
-                    "sample_rate": Int(sampleRate)
+                "modalities": ["text"],
+                "input_audio_format": "pcm",
+                "sample_rate": Int(sampleRate),
+                "input_audio_transcription": [
+                    "language": "en"  // 英语识别
                 ],
-                "language": "en",  // 英语识别
                 "turn_detection": [
                     "type": "server_vad",
-                    "threshold": 0.5,
-                    "prefix_padding_ms": 300,
-                    "silence_duration_ms": 800
-                ],
-                "model": model
+                    "threshold": 0.0,
+                    "silence_duration_ms": 400
+                ]
             ]
         ]
 
@@ -335,23 +359,32 @@ final class AliyunASRService: NSObject, ObservableObject {
             case "input_audio_buffer.committed":
                 print("[AliyunASR] 音频缓冲区已提交")
 
-            case "conversation.item.input_audio_transcription.completed":
+            case "input_audio_transcription.delta":
+                // 增量转录结果（实时部分识别）
+                if let delta = json["delta"] as? [String: Any],
+                   let text = delta["text"] as? String {
+                    DispatchQueue.main.async {
+                        self.transcript = self.transcript + text
+                        self.onTextReceived?(self.transcript, false)
+                    }
+                }
+
+            case "input_audio_transcription.completed":
                 // 转录完成 - 最终完整结果
-                if let item = json["item"] as? [String: Any],
-                   let transcript = item["transcript"] as? String {
+                if let transcript = json["transcript"] as? String {
                     DispatchQueue.main.async {
                         self.transcript = transcript
                         self.onTextReceived?(transcript, true)
                     }
                 }
 
-            case "conversation.item.input_audio_transcription.delta":
-                // 增量转录结果（实时部分识别）
-                if let item = json["item"] as? [String: Any],
-                   let transcript = item["transcript"] as? String {
+            case "session.finished":
+                // 会话结束
+                print("[AliyunASR] 会话结束")
+                if let transcript = json["transcript"] as? String {
                     DispatchQueue.main.async {
                         self.transcript = transcript
-                        self.onTextReceived?(transcript, false)
+                        self.onTextReceived?(transcript, true)
                     }
                 }
 

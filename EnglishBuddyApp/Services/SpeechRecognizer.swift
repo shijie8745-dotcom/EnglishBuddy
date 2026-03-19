@@ -6,13 +6,16 @@ import AVFAudio
 class SpeechRecognizer: ObservableObject {
     @Published var transcript = ""
     @Published var isRecording = false
+    @Published var isReady = false  // WebSocket 已预连接
 
     private let asrService = AliyunASRService.shared
     private var cancellables = Set<AnyCancellable>()
+    private var statusCancellable: AnyCancellable?
 
     init() {
         // 设置 ASR 回调
         setupCallbacks()
+        setupStatusObserver()
     }
 
     private func setupCallbacks() {
@@ -26,6 +29,32 @@ class SpeechRecognizer: ObservableObject {
             DispatchQueue.main.async {
                 print("[SpeechRecognizer] ASR 错误: \(error.localizedDescription)")
             }
+        }
+    }
+
+    private func setupStatusObserver() {
+        // 监听 ASR 服务的状态变化
+        statusCancellable = asrService.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.isReady = self?.asrService.isReady ?? false
+            }
+    }
+
+    /// 预连接 WebSocket（在进入页面时调用）
+    func prepare() async {
+        await asrService.prepare()
+    }
+
+    /// 取消录音（不返回结果）
+    func cancelRecording() {
+        print("[SpeechRecognizer] cancelRecording 被调用")
+        asrService.cancelRecording()
+        asrService.resetRecordingState()
+
+        DispatchQueue.main.async {
+            self.isRecording = false
+            self.transcript = ""
         }
     }
 
@@ -93,9 +122,9 @@ class SpeechRecognizer: ObservableObject {
 
         let finalText = asrService.stopRecording()
 
-        // 延迟断开连接，确保最后的识别结果返回
+        // 重置录音状态，但保持 WebSocket 连接（预连接策略）
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.asrService.disconnect()
+            self?.asrService.resetRecordingState()
         }
 
         DispatchQueue.main.async {
@@ -117,8 +146,8 @@ class SpeechRecognizer: ObservableObject {
             // 获取最终的识别结果
             let finalTranscript = self.asrService.stopRecording()
 
-            // 断开连接
-            self.asrService.disconnect()
+            // 重置录音状态，但保持 WebSocket 连接（预连接策略）
+            self.asrService.resetRecordingState()
 
             DispatchQueue.main.async {
                 self.isRecording = false

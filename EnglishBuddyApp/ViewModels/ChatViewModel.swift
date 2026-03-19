@@ -8,6 +8,7 @@ class ChatViewModel {
     var isLoading = false
     var isRecording = false
     var isInCancelZone = false
+    var isPreparing = false  // WebSocket 预连接中
     var recognizedText = ""
     var inputText = ""
     var errorMessage: String?
@@ -118,9 +119,27 @@ class ChatViewModel {
         messages = []
         currentlyPlayingMessageId = nil
 
+        // 预连接 WebSocket
+        prepareRecording()
+
         // Start with an AI greeting using the model
         Task {
             await generateAIResponse(to: "Hello! I'm ready to learn \(lesson.title).")
+        }
+    }
+
+    /// 预连接 WebSocket（在进入页面时调用）
+    func prepareRecording() {
+        guard !isPreparing else { return }
+
+        isPreparing = true
+        let recognizer = SpeechRecognizer()
+
+        Task {
+            await recognizer.prepare()
+            await MainActor.run {
+                isPreparing = false
+            }
         }
     }
 
@@ -226,7 +245,7 @@ class ChatViewModel {
     }
 
     func cancelRecording() {
-        _ = speechRecognizer?.stopRecording()
+        speechRecognizer?.cancelRecording()
         isRecording = false
         recognizedText = ""
 
