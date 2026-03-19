@@ -221,6 +221,7 @@ final class AliyunASRService: NSObject, ObservableObject {
 
     /// 发送 session.update 配置会话
     private func sendSessionUpdate() async throws {
+        // 参考 Python 示例的简单配置（非 VAD 模式）
         let sessionConfig: [String: Any] = [
             "event_id": "session_\(UUID().uuidString)",
             "type": "session.update",
@@ -231,19 +232,18 @@ final class AliyunASRService: NSObject, ObservableObject {
                 "input_audio_transcription": [
                     "language": "en"  // 英语识别
                 ],
-                "turn_detection": [
-                    "type": "server_vad",
-                    "threshold": 0.0,
-                    "silence_duration_ms": 400
-                ]
+                "turn_detection": NSNull()  // 手动模式，不由服务器 VAD 控制
             ]
         ]
 
         let jsonData = try JSONSerialization.data(withJSONObject: sessionConfig)
-        let message = URLSessionWebSocketTask.Message.data(jsonData)
+        guard let jsonString = jsonData.string else {
+            throw ASRError.encodingFailed
+        }
 
+        let message = URLSessionWebSocketTask.Message.string(jsonString)
         try await webSocketTask?.send(message)
-        print("[AliyunASR] 发送 session.update")
+        print("[AliyunASR] 发送 session.update: \(jsonString)")
     }
 
     /// 发送音频数据
@@ -251,16 +251,15 @@ final class AliyunASRService: NSObject, ObservableObject {
         let event: [String: Any] = [
             "event_id": "audio_\(UUID().uuidString)",
             "type": "input_audio_buffer.append",
-            "audio": base64Data,
-            "timestamp": Int(Date().timeIntervalSince1970 * 1000)
+            "audio": base64Data
         ]
 
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: event) else {
+        guard let jsonString = try? JSONSerialization.data(withJSONObject: event).string else {
             print("[AliyunASR] 错误: 无法序列化音频数据")
             return
         }
 
-        let message = URLSessionWebSocketTask.Message.data(jsonData)
+        let message = URLSessionWebSocketTask.Message.string(jsonString)
         webSocketTask?.send(message) { error in
             if let error = error {
                 print("[AliyunASR] 发送音频数据失败: \(error)")
@@ -275,9 +274,9 @@ final class AliyunASRService: NSObject, ObservableObject {
             "type": "input_audio_buffer.commit"
         ]
 
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: event) else { return }
+        guard let jsonString = try? JSONSerialization.data(withJSONObject: event).string else { return }
 
-        let message = URLSessionWebSocketTask.Message.data(jsonData)
+        let message = URLSessionWebSocketTask.Message.string(jsonString)
         webSocketTask?.send(message) { error in
             if let error = error {
                 print("[AliyunASR] 发送 commit 失败: \(error)")
@@ -294,9 +293,9 @@ final class AliyunASRService: NSObject, ObservableObject {
             "type": "session.finish"
         ]
 
-        guard let jsonData = try? JSONSerialization.data(withJSONObject: event) else { return }
+        guard let jsonString = try? JSONSerialization.data(withJSONObject: event).string else { return }
 
-        let message = URLSessionWebSocketTask.Message.data(jsonData)
+        let message = URLSessionWebSocketTask.Message.string(jsonString)
         webSocketTask?.send(message) { error in
             if error == nil {
                 print("[AliyunASR] 发送 session.finish")
@@ -539,6 +538,13 @@ extension AliyunASRService: URLSessionWebSocketDelegate {
                 self.onError?(error)
             }
         }
+    }
+}
+
+// MARK: - Data Extension
+extension Data {
+    var string: String? {
+        return String(data: self, encoding: .utf8)
     }
 }
 
