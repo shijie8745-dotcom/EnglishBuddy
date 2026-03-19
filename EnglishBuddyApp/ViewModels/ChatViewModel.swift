@@ -8,6 +8,7 @@ class ChatViewModel {
     var isLoading = false
     var isRecording = false
     var isInCancelZone = false
+    var isPreparing = false  // WebSocket 预连接中
     var recognizedText = ""
     var inputText = ""
     var errorMessage: String?
@@ -118,9 +119,30 @@ class ChatViewModel {
         messages = []
         currentlyPlayingMessageId = nil
 
+        // 预连接 WebSocket
+        prepareRecording()
+
         // Start with an AI greeting using the model
         Task {
             await generateAIResponse(to: "Hello! I'm ready to learn \(lesson.title).")
+        }
+    }
+
+    /// 预连接 WebSocket（直接进入页面时调用）
+    func prepareRecording() {
+        print("[ChatViewModel] prepareRecording() 被调用，isPreparing: \(isPreparing)")
+        guard !isPreparing else { return }
+
+        isPreparing = true
+
+        Task {
+            print("[ChatViewModel] 开始预连接...")
+            // 直接使用 ASR 服务预连接
+            await AliyunASRService.shared.prepare()
+            await MainActor.run {
+                isPreparing = false
+                print("[ChatViewModel] 预连接完成")
+            }
         }
     }
 
@@ -209,12 +231,14 @@ class ChatViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] recording in
                 self?.isRecording = recording
+                print("[ChatViewModel] isRecording 变化为: \(recording)")
             }
             .store(in: &cancellables)
 
         recognizedText = ""
-        isRecording = true
         isInCancelZone = false
+        // 注意：isRecording 状态由 SpeechRecognizer 的回调设置，不在这里立即设置
+        // 这样可以确保 UI 只在真正开始录音后才显示录音状态
 
         do {
             try speechRecognizer?.startRecording()
@@ -226,44 +250,58 @@ class ChatViewModel {
     }
 
     func cancelRecording() {
-        // 获取录音数据但不发送
-        pendingVoiceData = speechRecognizer?.getRecordedAudioData()
-        _ = speechRecognizer?.stopRecording()
+        // ===== 第1步：立即更新UI =====
         isRecording = false
         recognizedText = ""
-
-        // Clean up
         cancellables.removeAll()
         speechRecognizer = nil
-        pendingVoiceData = nil
 
-        // 显示已取消的提示（可选）
+        // ===== 第2步：异步清理ASR =====
+        // 直接使用ASR服务取消录音（不发送commit）
+        AliyunASRService.shared.cancelRecording()
+        AliyunASRService.shared.resetRecordingState()
+
         print("[ChatViewModel] 录音已取消")
+
+        // 如果 WebSocket 连接断开，尝试重新预连接
+        if !AliyunASRService.shared.isReady {
+            print("[ChatViewModel] 连接已断开，重新预连接...")
+            prepareRecording()
+        }
     }
 
-    /// 临时存储录音数据
-    private var pendingVoiceData: Data?
-
     func stopRecording() {
-        // 获取录音数据
-        pendingVoiceData = speechRecognizer?.getRecordedAudioData()
+        guard speechRecognizer != nil else {
+            isRecording = false
+            return
+        }
 
-        // 使用 completion 回调版本的 stopRecording，确保完整的语音识别结果
-        speechRecognizer?.stopRecording { [weak self] finalText in
+        // ===== 第1步：立即更新UI，让用户感知到操作响应 =====
+        isRecording = false
+        recognizedText = ""
+        cancellables.removeAll()
+        speechRecognizer = nil
+
+        // 通知ASR停止录音（发送commit，触发最终识别）
+        AliyunASRService.shared.stopRecording()
+
+        // ===== 第2步：延迟处理识别结果（保证准确率）=====
+        // 等待1秒让ASR返回最终结果（最后的音频需要处理时间）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
 
-            self.isRecording = false
-            self.recognizedText = ""
+            // 获取最终识别结果
+            let finalText = AliyunASRService.shared.transcript
 
-            // Clean up
-            self.cancellables.removeAll()
-            self.speechRecognizer = nil
+            // Clean up ASR状态
+            AliyunASRService.shared.resetRecordingState()
 
             // Validate the recognized text
             let trimmedText = finalText.trimmingCharacters(in: .whitespacesAndNewlines)
 
+            print("[ChatViewModel] 最终识别文本: '\(trimmedText)'")
+
             // Check if speech is too short (less than 2 characters)
-            // Note: Removed isMostlyChinese check as we now support Chinese speech recognition
             if trimmedText.count < 2 {
                 // Add AI message asking user to repeat
                 self.messages.append(ChatMessage(text: "[未听清]", speaker: .user))
@@ -273,13 +311,10 @@ class ChatViewModel {
                 return
             }
 
-            // Send the recognized text to AI（同时保存录音数据）
+            // Send the recognized text to AI
             Task {
-                await self.sendMessage(trimmedText, voiceData: self.pendingVoiceData)
+                await self.sendMessage(trimmedText, voiceData: nil)
             }
-
-            // 清空临时存储
-            self.pendingVoiceData = nil
         }
     }
 

@@ -350,6 +350,7 @@ struct VoiceInputContainer: View {
     @State private var isPressed = false
     @State private var isInCancelZone = false
     @State private var cancelButtonFrame: CGRect = .zero
+    @State private var isConnecting = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -357,9 +358,9 @@ struct VoiceInputContainer: View {
                 // Cancel hint text + Cancel button - both positioned absolutely above voice button
                 VStack(spacing: 0) {
                     // "松开取消" hint text (appears when over cancel button)
-                    // Positioned above cancel button with 8px gap
+                    // Positioned above cancel button with 8px gap，文字大小和取消按钮一致
                     Text("松开取消")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(.white)
                         .opacity(viewModel.isRecording && isInCancelZone ? 1 : 0)
                         .offset(y: viewModel.isRecording && isInCancelZone ? 0 : 10)
@@ -393,7 +394,8 @@ struct VoiceInputContainer: View {
                 VoiceButton(
                     isRecording: viewModel.isRecording,
                     isDimmed: isInCancelZone,
-                    text: viewModel.isRecording ? "松开发送" : "按住说话"
+                    isConnecting: isConnecting,
+                    text: buttonText
                 )
                 .position(
                     x: geometry.size.width / 2,
@@ -402,32 +404,45 @@ struct VoiceInputContainer: View {
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .global)
                         .onChanged { value in
-                            if !isPressed {
+                            print("[ChatView] DragGesture onChanged, isPressed: \(isPressed), isConnecting: \(isConnecting)")
+
+                            if !isPressed && !isConnecting {
                                 isPressed = true
+                                isConnecting = true
+                                print("[ChatView] 开始连接并录音...")
+
+                                // 启动录音（内部会处理连接）
                                 withAnimation(.easeInOut(duration: 0.2)) {
                                     viewModel.startRecording()
                                 }
                             }
 
-                            // Check if finger is over cancel button frame
-                            let fingerLocation = value.location
-                            let expandedFrame = cancelButtonFrame.insetBy(dx: -30, dy: -30)
-                            let shouldCancel = expandedFrame.contains(fingerLocation)
+                            // 只有在录音真正开始后才检查取消区域
+                            if viewModel.isRecording {
+                                // Check if finger is over cancel button frame
+                                let fingerLocation = value.location
+                                let expandedFrame = cancelButtonFrame.insetBy(dx: -30, dy: -30)
+                                let shouldCancel = expandedFrame.contains(fingerLocation)
 
-                            if shouldCancel != isInCancelZone {
-                                withAnimation(.easeInOut(duration: 0.15)) {
-                                    isInCancelZone = shouldCancel
-                                    viewModel.isInCancelZone = shouldCancel
+                                if shouldCancel != isInCancelZone {
+                                    withAnimation(.easeInOut(duration: 0.15)) {
+                                        isInCancelZone = shouldCancel
+                                        viewModel.isInCancelZone = shouldCancel
+                                    }
                                 }
                             }
                         }
                         .onEnded { _ in
+                            print("[ChatView] DragGesture onEnded, isInCancelZone: \(isInCancelZone), isRecording: \(viewModel.isRecording), isConnecting: \(isConnecting)")
                             isPressed = false
+                            isConnecting = false
+
                             if isInCancelZone {
                                 viewModel.cancelRecording()
                             } else {
                                 viewModel.stopRecording()
                             }
+
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 isInCancelZone = false
                                 viewModel.isInCancelZone = false
@@ -438,17 +453,33 @@ struct VoiceInputContainer: View {
         }
         .frame(height: 88) // Match the input area background height
     }
+
+    private var buttonText: String {
+        if isConnecting && !viewModel.isRecording {
+            return "连接中..."
+        } else if viewModel.isRecording {
+            return "松开发送"
+        } else {
+            return "按住说话"
+        }
+    }
 }
 
 // MARK: - Voice Button (Long Rounded Rectangle)
 struct VoiceButton: View {
     let isRecording: Bool
     let isDimmed: Bool
+    let isConnecting: Bool
     let text: String
+
+    // 是否显示录音中状态（正在录音或连接中都显示录音样式）
+    private var showRecordingStyle: Bool {
+        isRecording || isConnecting
+    }
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: isRecording ? "waveform" : "mic.fill")
+            Image(systemName: iconName)
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.white)
 
@@ -460,24 +491,34 @@ struct VoiceButton: View {
         .frame(height: 56)
         .background(
             LinearGradient(
-                colors: isRecording
-                    ? [Color(hex: "EF4444"), Color(hex: "DC2626")]
-                    : [Color(hex: "F97316"), Color(hex: "EA580C")],
+                colors: showRecordingStyle ? recordingColors : normalColors,
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         )
         .cornerRadius(28)
         .shadow(
-            color: (isRecording ? Color.red : Color(hex: "F97316")).opacity(isDimmed ? 0.1 : 0.35),
+            color: showRecordingStyle ? Color.red.opacity(isDimmed ? 0.1 : 0.35) : Color(hex: "F97316").opacity(isDimmed ? 0.1 : 0.35),
             radius: isDimmed ? 4 : 8,
             x: 0,
             y: isDimmed ? 2 : 4
         )
         .opacity(isDimmed ? 0.5 : 1.0)
-        .scaleEffect(isRecording ? 0.98 : 1.0)
-        .animation(.easeInOut(duration: 0.2), value: isRecording)
+        .scaleEffect(showRecordingStyle ? 0.98 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: showRecordingStyle)
         .animation(.easeInOut(duration: 0.15), value: isDimmed)
+    }
+
+    private var iconName: String {
+        showRecordingStyle ? "waveform" : "mic.fill"
+    }
+
+    private var recordingColors: [Color] {
+        [Color(hex: "EF4444"), Color(hex: "DC2626")]
+    }
+
+    private var normalColors: [Color] {
+        [Color(hex: "F97316"), Color(hex: "EA580C")]
     }
 }
 
@@ -486,17 +527,19 @@ struct CancelButton: View {
     let isVisible: Bool
     let isHighlighted: Bool
 
+    // 默认状态：浅灰色背景，白色文字
+    // 高亮状态：白色背景，黑色文字
     var body: some View {
         Text("取消")
             .font(.system(size: 16, weight: .medium))
-            .foregroundStyle(isHighlighted ? .white : Color(hex: "374151"))
+            .foregroundStyle(isHighlighted ? Color.black : Color.white)
             .frame(maxWidth: .infinity)
             .frame(height: 52)
             .background(
                 RoundedRectangle(cornerRadius: 26)
-                    .fill(isHighlighted ? Color(hex: "6B7280") : Color.white.opacity(0.9))
+                    .fill(isHighlighted ? Color.white : Color(hex: "9CA3AF"))
                     .shadow(
-                        color: isHighlighted ? Color(hex: "6B7280").opacity(0.4) : Color.black.opacity(0.1),
+                        color: isHighlighted ? Color.black.opacity(0.15) : Color.black.opacity(0.2),
                         radius: isHighlighted ? 6 : 4,
                         x: 0,
                         y: 2
@@ -504,7 +547,7 @@ struct CancelButton: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 26)
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                    .stroke(isHighlighted ? Color.gray.opacity(0.3) : Color.clear, lineWidth: 1)
             )
             .scaleEffect(isHighlighted ? 1.05 : 1.0)
             .opacity(isVisible ? 1 : 0)
