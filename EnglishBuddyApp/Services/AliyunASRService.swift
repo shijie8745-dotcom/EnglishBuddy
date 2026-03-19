@@ -428,6 +428,7 @@ final class AliyunASRService: NSObject, ObservableObject {
 
         // 处理不同类型的服务器事件
         if let type = json["type"] as? String {
+            // 只记录重要的非频繁事件
             switch type {
             case "session.created":
                 print("[AliyunASR] 会话创建成功")
@@ -454,6 +455,26 @@ final class AliyunASRService: NSObject, ObservableObject {
                     DispatchQueue.main.async {
                         self.transcript = transcript
                         self.onTextReceived?(transcript, true)
+                    }
+                }
+
+            case "conversation.item.input_audio_transcription.text":
+                // 阿里云ASR实时增量结果 - 从 stash 字段获取
+                if let stash = json["stash"] as? String, !stash.isEmpty {
+                    DispatchQueue.main.async {
+                        self.transcript = stash
+                        self.onTextReceived?(stash, false)
+                        print("[AliyunASR] 实时转录: \(stash)")
+                    }
+                }
+
+            case "conversation.item.input_audio_transcription.completed":
+                // 阿里云ASR最终识别结果 - 从 transcript 字段获取
+                if let transcript = json["transcript"] as? String, !transcript.isEmpty {
+                    DispatchQueue.main.async {
+                        self.transcript = transcript
+                        self.onTextReceived?(transcript, true)
+                        print("[AliyunASR] 最终转录完成: \(transcript)")
                     }
                 }
 
@@ -518,6 +539,17 @@ extension AliyunASRService: URLSessionWebSocketDelegate {
             self.isConnecting = false
             self.isReady = false
             self.onConnectionStatusChanged?(false)
+        }
+
+        // 非正常关闭时，尝试自动重连
+        if closeCode != .normalClosure {
+            print("[AliyunASR] 连接异常关闭，3秒后尝试重连...")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+                guard let self = self else { return }
+                Task {
+                    try? await self.connect()
+                }
+            }
         }
     }
 

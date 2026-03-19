@@ -231,12 +231,14 @@ class ChatViewModel {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] recording in
                 self?.isRecording = recording
+                print("[ChatViewModel] isRecording 变化为: \(recording)")
             }
             .store(in: &cancellables)
 
         recognizedText = ""
-        isRecording = true
         isInCancelZone = false
+        // 注意：isRecording 状态由 SpeechRecognizer 的回调设置，不在这里立即设置
+        // 这样可以确保 UI 只在真正开始录音后才显示录音状态
 
         do {
             try speechRecognizer?.startRecording()
@@ -248,32 +250,56 @@ class ChatViewModel {
     }
 
     func cancelRecording() {
-        speechRecognizer?.cancelRecording()
+        // ===== 第1步：立即更新UI =====
         isRecording = false
         recognizedText = ""
-
-        // Clean up
         cancellables.removeAll()
         speechRecognizer = nil
 
-        // 显示已取消的提示（可选）
+        // ===== 第2步：异步清理ASR =====
+        // 直接使用ASR服务取消录音（不发送commit）
+        AliyunASRService.shared.cancelRecording()
+        AliyunASRService.shared.resetRecordingState()
+
         print("[ChatViewModel] 录音已取消")
+
+        // 如果 WebSocket 连接断开，尝试重新预连接
+        if !AliyunASRService.shared.isReady {
+            print("[ChatViewModel] 连接已断开，重新预连接...")
+            prepareRecording()
+        }
     }
 
     func stopRecording() {
-        // 使用 completion 回调版本的 stopRecording，确保完整的语音识别结果
-        speechRecognizer?.stopRecording { [weak self] finalText in
+        guard speechRecognizer != nil else {
+            isRecording = false
+            return
+        }
+
+        // ===== 第1步：立即更新UI，让用户感知到操作响应 =====
+        isRecording = false
+        recognizedText = ""
+        cancellables.removeAll()
+        speechRecognizer = nil
+
+        // 通知ASR停止录音（发送commit，触发最终识别）
+        AliyunASRService.shared.stopRecording()
+
+        // ===== 第2步：延迟处理识别结果（保证准确率）=====
+        // 等待1秒让ASR返回最终结果（最后的音频需要处理时间）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
 
-            self.isRecording = false
-            self.recognizedText = ""
+            // 获取最终识别结果
+            let finalText = AliyunASRService.shared.transcript
 
-            // Clean up
-            self.cancellables.removeAll()
-            self.speechRecognizer = nil
+            // Clean up ASR状态
+            AliyunASRService.shared.resetRecordingState()
 
             // Validate the recognized text
             let trimmedText = finalText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            print("[ChatViewModel] 最终识别文本: '\(trimmedText)'")
 
             // Check if speech is too short (less than 2 characters)
             if trimmedText.count < 2 {
