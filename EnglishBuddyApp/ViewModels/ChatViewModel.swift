@@ -226,8 +226,6 @@ class ChatViewModel {
     }
 
     func cancelRecording() {
-        // 获取录音数据但不发送
-        pendingVoiceData = speechRecognizer?.getRecordedAudioData()
         _ = speechRecognizer?.stopRecording()
         isRecording = false
         recognizedText = ""
@@ -235,19 +233,12 @@ class ChatViewModel {
         // Clean up
         cancellables.removeAll()
         speechRecognizer = nil
-        pendingVoiceData = nil
 
         // 显示已取消的提示（可选）
         print("[ChatViewModel] 录音已取消")
     }
 
-    /// 临时存储录音数据
-    private var pendingVoiceData: Data?
-
     func stopRecording() {
-        // 获取录音数据
-        pendingVoiceData = speechRecognizer?.getRecordedAudioData()
-
         // 使用 completion 回调版本的 stopRecording，确保完整的语音识别结果
         speechRecognizer?.stopRecording { [weak self] finalText in
             guard let self = self else { return }
@@ -263,7 +254,6 @@ class ChatViewModel {
             let trimmedText = finalText.trimmingCharacters(in: .whitespacesAndNewlines)
 
             // Check if speech is too short (less than 2 characters)
-            // Note: Removed isMostlyChinese check as we now support Chinese speech recognition
             if trimmedText.count < 2 {
                 // Add AI message asking user to repeat
                 self.messages.append(ChatMessage(text: "[未听清]", speaker: .user))
@@ -273,13 +263,10 @@ class ChatViewModel {
                 return
             }
 
-            // Send the recognized text to AI（同时保存录音数据）
+            // Send the recognized text to AI
             Task {
-                await self.sendMessage(trimmedText, voiceData: self.pendingVoiceData)
+                await self.sendMessage(trimmedText, voiceData: nil)
             }
-
-            // 清空临时存储
-            self.pendingVoiceData = nil
         }
     }
 

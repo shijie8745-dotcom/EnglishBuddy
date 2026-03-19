@@ -1,320 +1,137 @@
 import Foundation
 import Combine
-import Speech
-import AVFoundation
+import AVFAudio
 
+/// 语音识别器 - 使用阿里云 qwen3-asr-flash-realtime 服务
 class SpeechRecognizer: ObservableObject {
     @Published var transcript = ""
     @Published var isRecording = false
 
-    private var audioEngine = AVAudioEngine()
-    /// 支持中英文混合识别的语音识别器
-    /// 优先使用 zh-CN（支持中英文混合识别），如果不支持则使用 en-US
-    private lazy var recognizer: SFSpeechRecognizer? = {
-        let supportedLocales = SFSpeechRecognizer.supportedLocales()
-        print("[SpeechRecognizer] 系统支持的语音识别语言: \(supportedLocales)")
-
-        // 优先尝试 zh-CN，它支持中英文混合识别
-        let chineseLocale = Locale(identifier: "zh-CN")
-        if supportedLocales.contains(chineseLocale) {
-            print("[SpeechRecognizer] 使用 zh-CN 识别器（支持中英文）")
-            return SFSpeechRecognizer(locale: chineseLocale)
-        }
-
-        // 如果 zh-CN 不支持，使用 en-US（英文识别器对中文识别能力有限）
-        print("[SpeechRecognizer] zh-CN 不可用，使用 en-US 识别器")
-        return SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
-    }()
-    private var request: SFSpeechAudioBufferRecognitionRequest?
-    private var task: SFSpeechRecognitionTask?
-
-    /// 录音数据缓存
-    private var audioBuffers: [AVAudioPCMBuffer] = []
-    private var recordingFormat: AVAudioFormat?
+    private let asrService = AliyunASRService.shared
+    private var cancellables = Set<AnyCancellable>()
 
     init() {
-        // Request authorization on init
-        requestAuthorization()
+        // 设置 ASR 回调
+        setupCallbacks()
+    }
+
+    private func setupCallbacks() {
+        asrService.onTextReceived = { [weak self] text, _ in
+            DispatchQueue.main.async {
+                self?.transcript = text
+            }
+        }
+
+        asrService.onError = { [weak self] error in
+            DispatchQueue.main.async {
+                print("[SpeechRecognizer] ASR 错误: \(error.localizedDescription)")
+            }
+        }
     }
 
     func requestAuthorization() {
-        SFSpeechRecognizer.requestAuthorization { status in
-            DispatchQueue.main.async {
-                switch status {
-                case .authorized:
-                    print("Speech recognition authorized")
-                case .denied:
-                    print("Speech recognition denied")
-                case .restricted:
-                    print("Speech recognition restricted")
-                case .notDetermined:
-                    print("Speech recognition not determined")
-                @unknown default:
-                    print("Unknown authorization status")
-                }
-            }
-        }
-
-        // Also request microphone permission (iOS 17.0 compatible)
+        // 请求麦克风权限
         if #available(iOS 17.0, *) {
             AVAudioApplication.requestRecordPermission { granted in
-                print("Microphone permission: \(granted)")
+                print("[SpeechRecognizer] 麦克风权限: \(granted)")
             }
         } else {
             AVAudioSession.sharedInstance().requestRecordPermission { granted in
-                print("Microphone permission: \(granted)")
+                print("[SpeechRecognizer] 麦克风权限: \(granted)")
             }
         }
     }
 
     func requestAuthorization(completion: @escaping (Bool) -> Void) {
-        SFSpeechRecognizer.requestAuthorization { status in
-            let speechAuthorized = (status == .authorized)
-
-            // Also request microphone permission
-            if #available(iOS 17.0, *) {
-                AVAudioApplication.requestRecordPermission { micGranted in
-                    DispatchQueue.main.async {
-                        completion(speechAuthorized && micGranted)
-                    }
+        // 请求麦克风权限
+        if #available(iOS 17.0, *) {
+            AVAudioApplication.requestRecordPermission { granted in
+                DispatchQueue.main.async {
+                    completion(granted)
                 }
-            } else {
-                AVAudioSession.sharedInstance().requestRecordPermission { micGranted in
-                    DispatchQueue.main.async {
-                        completion(speechAuthorized && micGranted)
-                    }
+            }
+        } else {
+            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                DispatchQueue.main.async {
+                    completion(granted)
                 }
             }
         }
     }
 
     func startRecording() throws {
-        // 检查识别器是否可用
-        guard let recognizer = recognizer else {
-            print("[SpeechRecognizer] 错误: SFSpeechRecognizer 初始化失败")
-            throw SpeechRecognizerError.notAvailable
-        }
+        print("[SpeechRecognizer] startRecording 被调用")
 
-        // 检查识别器是否可用（在某些设备上可能需要下载离线语言包）
-        if !recognizer.isAvailable {
-            print("[SpeechRecognizer] 警告: 识别器当前不可用，可能需要下载语言包")
-            // 尝试创建 en-US 作为备用
-            if let fallbackRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US")),
-               fallbackRecognizer.isAvailable {
-                print("[SpeechRecognizer] 切换到 en-US 备用识别器")
-                self.recognizer = fallbackRecognizer
-            } else {
-                throw SpeechRecognizerError.localeNotAvailable
-            }
-        }
-
-        print("[SpeechRecognizer] 开始录音，识别器 locale: \(recognizer.locale.identifier)")
-
-        // Stop any existing recording first
-        if audioEngine.isRunning {
-            audioEngine.stop()
-        }
-
-        // Reset state
-        request?.endAudio()
-        task?.cancel()
-        request = nil
-        task = nil
-        transcript = ""
-        audioBuffers.removeAll()
-
-        // Configure audio session
-        let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers])
-        try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
-
-        // Configure audio engine
-        let inputNode = audioEngine.inputNode
-
-        // Remove any existing tap before installing new one
-        inputNode.removeTap(onBus: 0)
-
-        // Use input node's output format (this is the recommended approach by Apple)
-        let recordingFormat = inputNode.outputFormat(forBus: 0)
-        self.recordingFormat = recordingFormat
-
-        // Create recognition request
-        let recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
-        recognitionRequest.shouldReportPartialResults = true
-        self.request = recognitionRequest
-
-        // Install tap with the native format - 同时保存音频数据
-        // bufferSize 从 1024 减少到 512，降低延迟
-        inputNode.installTap(onBus: 0, bufferSize: 512, format: recordingFormat) { [weak self] buffer, _ in
-            self?.request?.append(buffer)
-            // 复制缓冲区保存录音数据
-            if let copiedBuffer = buffer.copy() as? AVAudioPCMBuffer {
-                self?.audioBuffers.append(copiedBuffer)
-            }
-        }
-
-        audioEngine.prepare()
-        try audioEngine.start()
-
-        // Start recognition task AFTER audio engine is started
-        print("[SpeechRecognizer] 启动识别任务...")
-        task = recognizer.recognitionTask(with: recognitionRequest) { [weak self] result, error in
-            guard let self = self else { return }
-
-            if let result = result {
-                let text = result.bestTranscription.formattedString
-                print("[SpeechRecognizer] 识别结果: \(text)")
-                DispatchQueue.main.async {
-                    self.transcript = text
-                }
-            }
-
-            if let error = error {
-                print("[SpeechRecognizer] 识别错误: \(error.localizedDescription)")
-                print("[SpeechRecognizer] 错误详情: \(error)")
-            }
-        }
-
+        // 立即设置状态
         DispatchQueue.main.async {
             self.isRecording = true
+            self.transcript = ""
+            print("[SpeechRecognizer] isRecording 设置为 true")
+        }
+
+        // 异步执行连接和录音
+        Task {
+            do {
+                print("[SpeechRecognizer] 开始连接 WebSocket...")
+                // 连接 WebSocket
+                try await asrService.connect()
+                print("[SpeechRecognizer] WebSocket 连接成功")
+                // 开始录音
+                try asrService.startRecording()
+                print("[SpeechRecognizer] 录音已开始")
+            } catch {
+                print("[SpeechRecognizer] 开始录音失败: \(error.localizedDescription)")
+                await MainActor.run {
+                    self.isRecording = false
+                }
+            }
         }
     }
 
     func stopRecording() -> String {
-        let finalTranscript = transcript
+        print("[SpeechRecognizer] stopRecording 被调用")
 
-        // Stop audio engine
-        if audioEngine.isRunning {
-            audioEngine.stop()
+        let finalText = asrService.stopRecording()
+
+        // 延迟断开连接，确保最后的识别结果返回
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.asrService.disconnect()
         }
-
-        // Remove tap
-        audioEngine.inputNode.removeTap(onBus: 0)
-
-        // End the recognition request
-        request?.endAudio()
-
-        // Cancel the task
-        task?.cancel()
-
-        // Clear references
-        request = nil
-        task = nil
 
         DispatchQueue.main.async {
             self.isRecording = false
-            // Don't clear transcript immediately, caller needs it
+            print("[SpeechRecognizer] isRecording 设置为 false")
         }
 
-        return finalTranscript
+        return finalText
     }
 
-    /// 带完成回调的停止录音方法 - 允许延迟获取最终识别结果
     func stopRecording(completion: @escaping (String) -> Void) {
-        // 先停止音频引擎和录音
-        if audioEngine.isRunning {
-            audioEngine.stop()
-        }
-        audioEngine.inputNode.removeTap(onBus: 0)
-        request?.endAudio()
-
         // 延迟结束识别任务，让剩余的音频缓冲被处理
-        // 400ms 延迟确保最后的音频被识别
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
             guard let self = self else {
                 completion("")
                 return
             }
 
-            // 获取最终的识别结果（可能已更新）
-            let finalTranscript = self.transcript
+            // 获取最终的识别结果
+            let finalTranscript = self.asrService.stopRecording()
 
-            // 取消识别任务
-            self.task?.cancel()
-            self.task = nil
-            self.request = nil
-            self.isRecording = false
+            // 断开连接
+            self.asrService.disconnect()
+
+            DispatchQueue.main.async {
+                self.isRecording = false
+            }
 
             completion(finalTranscript)
         }
     }
 
-    /// 获取录音数据并转换为可直接播放的格式
+    /// 获取录音数据（阿里云 ASR 不保存本地录音，返回 nil）
     func getRecordedAudioData() -> Data? {
-        guard !audioBuffers.isEmpty, let format = recordingFormat else {
-            return nil
-        }
-
-        // 将所有缓冲区合并为单个缓冲区
-        let totalFrameLength = audioBuffers.reduce(0) { $0 + Int($1.frameLength) }
-        guard totalFrameLength > 0 else { return nil }
-
-        guard let combinedBuffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(totalFrameLength)) else {
-            return nil
-        }
-
-        var offset: AVAudioFrameCount = 0
-        for buffer in audioBuffers {
-            let frames = buffer.frameLength
-            if let srcData = buffer.floatChannelData,
-               let dstData = combinedBuffer.floatChannelData {
-                let src = srcData[0]
-                let dst = dstData[0].advanced(by: Int(offset))
-                dst.update(from: src, count: Int(frames))
-            }
-            offset += frames
-        }
-        combinedBuffer.frameLength = AVAudioFrameCount(totalFrameLength)
-
-        // 转换为 WAV 格式数据
-        return convertBufferToWAV(buffer: combinedBuffer, format: format)
-    }
-
-    /// 将 PCM 缓冲区转换为 WAV 格式数据
-    private func convertBufferToWAV(buffer: AVAudioPCMBuffer, format: AVAudioFormat) -> Data? {
-        let audioData = NSMutableData()
-
-        // WAV 文件头
-        let sampleRate = UInt32(format.sampleRate)
-        let channels = UInt16(format.channelCount)
-        let bitsPerSample: UInt16 = 32  // Float32
-        let bytesPerSample = bitsPerSample / 8
-        let byteRate = sampleRate * UInt32(channels) * UInt32(bytesPerSample)
-        let blockAlign = channels * bytesPerSample
-        let dataSize = UInt32(buffer.frameLength) * UInt32(blockAlign)
-        let fileSize = 36 + dataSize
-
-        // RIFF chunk
-        audioData.append("RIFF".data(using: .ascii)!)
-        audioData.append(fileSize.littleEndianData)
-        audioData.append("WAVE".data(using: .ascii)!)
-
-        // fmt chunk
-        audioData.append("fmt ".data(using: .ascii)!)
-        audioData.append(UInt32(16).littleEndianData)  // Subchunk1Size
-        audioData.append(UInt16(3).littleEndianData)   // AudioFormat (IEEE float)
-        audioData.append(channels.littleEndianData)    // NumChannels
-        audioData.append(sampleRate.littleEndianData)  // SampleRate
-        audioData.append(byteRate.littleEndianData)    // ByteRate
-        audioData.append(blockAlign.littleEndianData)  // BlockAlign
-        audioData.append(bitsPerSample.littleEndianData) // BitsPerSample
-
-        // data chunk
-        audioData.append("data".data(using: .ascii)!)
-        audioData.append(dataSize.littleEndianData)
-
-        // 音频数据
-        if let channelData = buffer.floatChannelData {
-            let frames = Int(buffer.frameLength)
-            for frame in 0..<frames {
-                for channel in 0..<Int(format.channelCount) {
-                    var sample = channelData[channel][frame]
-                    audioData.append(Data(bytes: &sample, count: MemoryLayout<Float>.size))
-                }
-            }
-        }
-
-        return audioData as Data
+        // 阿里云 ASR 不需要本地缓存录音数据
+        return nil
     }
 }
 
@@ -323,19 +140,4 @@ enum SpeechRecognizerError: Error {
     case localeNotAvailable
     case requestCreationFailed
     case audioSessionFailed
-}
-
-// MARK: - Integer to Data Extension
-extension UInt32 {
-    var littleEndianData: Data {
-        var value = self.littleEndian
-        return Data(bytes: &value, count: MemoryLayout<UInt32>.size)
-    }
-}
-
-extension UInt16 {
-    var littleEndianData: Data {
-        var value = self.littleEndian
-        return Data(bytes: &value, count: MemoryLayout<UInt16>.size)
-    }
 }

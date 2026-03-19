@@ -402,8 +402,10 @@ struct VoiceInputContainer: View {
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .global)
                         .onChanged { value in
+                            print("[ChatView] DragGesture onChanged, isPressed: \(isPressed)")
                             if !isPressed {
                                 isPressed = true
+                                print("[ChatView] 调用 startRecording()")
                                 withAnimation(.easeInOut(duration: 0.2)) {
                                     viewModel.startRecording()
                                 }
@@ -422,6 +424,7 @@ struct VoiceInputContainer: View {
                             }
                         }
                         .onEnded { _ in
+                            print("[ChatView] DragGesture onEnded, isInCancelZone: \(isInCancelZone), isRecording: \(viewModel.isRecording)")
                             isPressed = false
                             if isInCancelZone {
                                 viewModel.cancelRecording()
