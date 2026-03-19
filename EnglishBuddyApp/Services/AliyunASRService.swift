@@ -79,7 +79,11 @@ final class AliyunASRService: NSObject, ObservableObject {
 
     /// 预连接 WebSocket（在进入页面时调用）
     func prepare() async {
-        guard !isReady && !isConnecting else { return }
+        print("[AliyunASR] prepare() 被调用，isReady: \(isReady), isConnecting: \(isConnecting)")
+        guard !isReady && !isConnecting else {
+            print("[AliyunASR] 跳过预连接，当前状态 - isReady: \(isReady), isConnecting: \(isConnecting)")
+            return
+        }
 
         do {
             print("[AliyunASR] 预连接 WebSocket...")
@@ -145,18 +149,12 @@ final class AliyunASRService: NSObject, ObservableObject {
         let inputNode = engine.inputNode
         inputNode.removeTap(onBus: 0)
 
-        // 创建转换格式 (16000Hz, 单声道, PCM)
-        guard let recordingFormat = AVAudioFormat(
-            commonFormat: .pcmFormatInt16,
-            sampleRate: sampleRate,
-            channels: 1,
-            interleaved: true
-        ) else {
-            throw ASRError.audioSessionFailed
-        }
+        // 获取输入节点的原生格式
+        let inputFormat = inputNode.outputFormat(forBus: 0)
+        print("[AliyunASR] 输入节点格式: \(inputFormat)")
 
-        // 安装音频 tap
-        inputNode.installTap(onBus: 0, bufferSize: 4096, format: recordingFormat) { [weak self] buffer, _ in
+        // 安装音频 tap - 使用输入节点的原生格式，然后在 processAudioBuffer 中转换
+        inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { [weak self] buffer, _ in
             self?.processAudioBuffer(buffer)
         }
 
@@ -291,19 +289,80 @@ final class AliyunASRService: NSObject, ObservableObject {
     private func processAudioBuffer(_ buffer: AVAudioPCMBuffer) {
         guard buffer.frameLength > 0 else { return }
 
-        // 将音频数据转换为 Base64
-        if let int16Data = buffer.int16ChannelData?[0] {
+        // 重采样到 16000Hz, Int16
+        guard let resampledData = resampleBuffer(buffer, targetSampleRate: sampleRate) else {
+            return
+        }
+
+        sendAudioData(resampledData.base64EncodedString())
+    }
+
+    /// 重采样音频缓冲区到目标格式
+    private func resampleBuffer(_ buffer: AVAudioPCMBuffer, targetSampleRate: Double) -> Data? {
+        let sourceFormat = buffer.format
+        let sourceSampleRate = sourceFormat.sampleRate
+
+        // 如果格式已经是目标格式，直接转换
+        if sourceSampleRate == targetSampleRate && sourceFormat.commonFormat == .pcmFormatInt16 {
+            guard let int16Data = buffer.int16ChannelData?[0] else { return nil }
             let frameLength = Int(buffer.frameLength)
             var data = Data()
             data.reserveCapacity(frameLength * 2)
-
             for i in 0..<frameLength {
                 var sample = int16Data[i]
                 data.append(UnsafeBufferPointer(start: &sample, count: 1))
             }
-
-            sendAudioData(data.base64EncodedString())
+            return data
         }
+
+        // 创建目标格式
+        guard let targetFormat = AVAudioFormat(
+            commonFormat: .pcmFormatInt16,
+            sampleRate: targetSampleRate,
+            channels: 1,
+            interleaved: true
+        ) else {
+            return nil
+        }
+
+        // 创建转换器
+        guard let converter = AVAudioConverter(from: sourceFormat, to: targetFormat) else {
+            return nil
+        }
+
+        // 计算输出帧数
+        let ratio = targetSampleRate / sourceSampleRate
+        let targetFrames = AVAudioFrameCount(Double(buffer.frameLength) * ratio) + 10
+
+        // 创建输出缓冲区
+        guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: targetFrames) else {
+            return nil
+        }
+
+        // 执行转换
+        var error: NSError?
+        let inputBlock: AVAudioConverterInputBlock = { inNumPackets, outStatus in
+            outStatus.pointee = .haveData
+            return buffer
+        }
+
+        converter.convert(to: outputBuffer, error: &error, withInputFrom: inputBlock)
+
+        if let error = error {
+            print("[AliyunASR] 重采样错误: \(error)")
+            return nil
+        }
+
+        // 提取 Int16 数据
+        guard let int16Data = outputBuffer.int16ChannelData?[0] else { return nil }
+        let frameLength = Int(outputBuffer.frameLength)
+        var data = Data()
+        data.reserveCapacity(frameLength * 2)
+        for i in 0..<frameLength {
+            var sample = int16Data[i]
+            data.append(UnsafeBufferPointer(start: &sample, count: 1))
+        }
+        return data
     }
 
     /// 开始接收消息

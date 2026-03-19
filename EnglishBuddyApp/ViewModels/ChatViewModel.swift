@@ -128,17 +128,20 @@ class ChatViewModel {
         }
     }
 
-    /// 预连接 WebSocket（在进入页面时调用）
+    /// 预连接 WebSocket（直接进入页面时调用）
     func prepareRecording() {
+        print("[ChatViewModel] prepareRecording() 被调用，isPreparing: \(isPreparing)")
         guard !isPreparing else { return }
 
         isPreparing = true
-        let recognizer = SpeechRecognizer()
 
         Task {
-            await recognizer.prepare()
+            print("[ChatViewModel] 开始预连接...")
+            // 直接使用 ASR 服务预连接
+            await AliyunASRService.shared.prepare()
             await MainActor.run {
                 isPreparing = false
+                print("[ChatViewModel] 预连接完成")
             }
         }
     }

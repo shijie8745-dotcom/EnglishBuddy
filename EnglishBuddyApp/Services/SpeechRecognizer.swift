@@ -91,20 +91,22 @@ class SpeechRecognizer: ObservableObject {
     func startRecording() throws {
         print("[SpeechRecognizer] startRecording 被调用")
 
-        // 立即设置状态
-        DispatchQueue.main.async {
-            self.isRecording = true
-            self.transcript = ""
-            print("[SpeechRecognizer] isRecording 设置为 true")
-        }
-
         // 异步执行连接和录音
         Task {
             do {
-                print("[SpeechRecognizer] 开始连接 WebSocket...")
-                // 连接 WebSocket
-                try await asrService.connect()
-                print("[SpeechRecognizer] WebSocket 连接成功")
+                // 先检查是否已连接
+                if !asrService.isReady {
+                    print("[SpeechRecognizer] WebSocket 未预连接，开始连接...")
+                    try await asrService.connect()
+                }
+
+                // 开始录音前设置状态
+                await MainActor.run {
+                    self.isRecording = true
+                    self.transcript = ""
+                    print("[SpeechRecognizer] isRecording 设置为 true")
+                }
+
                 // 开始录音
                 try asrService.startRecording()
                 print("[SpeechRecognizer] 录音已开始")
