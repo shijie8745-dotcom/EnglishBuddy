@@ -1,6 +1,18 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Calendar Day Model
+
+struct CalendarDay: Identifiable {
+    let id = UUID()
+    let date: Date
+    let day: Int
+    let isCurrentMonth: Bool
+    let isCheckedIn: Bool
+}
+
+// MARK: - Cloud Shop ViewModel
+
 @Observable
 class CloudShopViewModel {
     private var user: User?
