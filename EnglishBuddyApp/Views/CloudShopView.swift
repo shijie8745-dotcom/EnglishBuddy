@@ -608,6 +608,80 @@ struct PetShopCard: View {
     }
 }
 
+// MARK: - Rule Row
+
+struct RuleRow: View {
+    let icon: String
+    let iconColor: Color
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundStyle(iconColor)
+                .frame(width: 32, height: 32)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(iconColor.opacity(0.1))
+                )
+
+            Text(text)
+                .font(.system(size: 14))
+                .foregroundStyle(Color(hex: "4B5563"))
+
+            Spacer()
+        }
+    }
+}
+
+// MARK: - Calendar Day Cell
+
+struct CalendarDayCell: View {
+    let day: CalendarDay
+    let isToday: Bool
+
+    var body: some View {
+        ZStack {
+            // Background
+            if day.isCheckedIn {
+                // Checked in - green gradient
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(hex: "22c55e"), Color(hex: "16a34a")],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            } else if isToday && !day.isCheckedIn {
+                // Today not checked in - orange border
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.white)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color(hex: "F97316"), lineWidth: 2)
+                    )
+            } else {
+                // Other days - gray background
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color(hex: "F3F4F6"))
+            }
+
+            // Day number
+            Text("\(day.day)")
+                .font(.system(size: 14, weight: isToday ? .bold : .medium))
+                .foregroundStyle(
+                    day.isCheckedIn
+                        ? .white
+                        : (isToday ? Color(hex: "F97316") : Color(hex: "1F2937"))
+                )
+        }
+        .frame(height: 40)
+        .opacity(day.isCurrentMonth ? 1.0 : 0.3)
+    }
+}
+
 #Preview {
     CloudShopView(user: User())
 }
