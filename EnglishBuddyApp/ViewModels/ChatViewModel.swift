@@ -17,6 +17,15 @@ class ChatViewModel {
     /// 当前正在播放的消息ID
     var currentlyPlayingMessageId: UUID?
 
+    /// 会话开始时间（用于计算对话时长）
+    private var sessionStartTime: Date?
+
+    /// 本次会话获得的云朵币
+    var sessionEarnedCoins: Int = 0
+
+    /// 打卡状态提示
+    var checkInMessage: String? = nil
+
     private var speechRecognizer: SpeechRecognizer?
     private var cancellables = Set<AnyCancellable>()
     private var ttsObservation: AnyCancellable?
@@ -118,6 +127,9 @@ class ChatViewModel {
         currentLesson = lesson
         messages = []
         currentlyPlayingMessageId = nil
+        sessionStartTime = Date()
+        sessionEarnedCoins = 0
+        checkInMessage = nil
 
         // 预连接 WebSocket
         prepareRecording()
@@ -126,6 +138,54 @@ class ChatViewModel {
         Task {
             await generateAIResponse(to: "Hello! I'm ready to learn \(lesson.title).")
         }
+    }
+
+    // MARK: - Chat Session Tracking
+
+    /// 记录一次对话，增加对话次数，自动计算云朵币
+    /// 返回本次对话获得的云朵币数量（包括打卡奖励）
+    func recordChatInteraction() -> Int {
+        // Load user
+        var user = DataStore.loadUser()
+
+        // Increment chat count
+        user.cloudCoinSystem.incrementChatCount()
+
+        // Calculate study time (1 minute = 1 coin)
+        var earnedCoins = 0
+        if let startTime = sessionStartTime {
+            let studyMinutes = Int(Date().timeIntervalSince(startTime)) / 60
+            if studyMinutes > 0 {
+                earnedCoins += user.cloudCoinSystem.earnCoinsFromStudy(minutes: studyMinutes)
+                // Reset session start time for next calculation
+                sessionStartTime = Date()
+            }
+        }
+
+        // Try auto check-in
+        let checkInCoins = user.cloudCoinSystem.performCheckIn()
+        if checkInCoins > 0 {
+            earnedCoins += checkInCoins
+            checkInMessage = "今日打卡成功！获得 \(checkInCoins) 云朵币"
+        }
+
+        // Save user
+        DataStore.shared.saveUser(user)
+
+        sessionEarnedCoins += earnedCoins
+        return earnedCoins
+    }
+
+    /// 获取当前对话次数
+    var todayChatCount: Int {
+        let user = DataStore.loadUser()
+        return user.cloudCoinSystem.todayChatCount
+    }
+
+    /// 检查今日是否已打卡
+    var isCheckedInToday: Bool {
+        let user = DataStore.loadUser()
+        return user.cloudCoinSystem.isCheckedInToday
     }
 
     /// 预连接 WebSocket（直接进入页面时调用）
@@ -169,6 +229,11 @@ class ChatViewModel {
 
         // Add user message（同时保存录音数据）
         messages.append(ChatMessage(text: text, speaker: .user, userVoiceData: voiceData))
+
+        // Record chat interaction for cloud coin system (only for user messages)
+        await MainActor.run {
+            _ = self.recordChatInteraction()
+        }
 
         // Use AI to respond
         await generateAIResponse(to: text)

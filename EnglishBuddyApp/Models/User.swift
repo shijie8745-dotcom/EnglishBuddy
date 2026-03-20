@@ -16,14 +16,24 @@ class User: Codable {
     // Practice feature
     var currentPracticeLessonId: Int?
 
-    // Carrot system (for pet feeding)
-    var totalCarrots: Int
-    var currentCarrots: Int
+    // Cloud coin system (replaces carrots)
+    var cloudCoinSystem: CloudCoinSystem
 
-    // Check-in system
-    var checkInRecords: [CheckInRecord]
+    // Pet collection (replaces single pet)
+    var petCollection: PetCollection
 
-    init(name: String = "小朋友", aiVoiceSpeed: Float = 1.0, apiKey: String = "", selectedModel: String = AIModel.qwen2_5_7b.rawValue, avatar: Data? = nil, totalStudyTime: Int = 0, totalSessions: Int = 0, streakDays: Int = 0, lastStudyDate: Date? = nil, currentPracticeLessonId: Int? = nil, totalCarrots: Int = 0, currentCarrots: Int = 5, checkInRecords: [CheckInRecord] = []) {
+    init(name: String = "小朋友",
+         aiVoiceSpeed: Float = 1.0,
+         apiKey: String = "",
+         selectedModel: String = AIModel.qwen2_5_7b.rawValue,
+         avatar: Data? = nil,
+         totalStudyTime: Int = 0,
+         totalSessions: Int = 0,
+         streakDays: Int = 0,
+         lastStudyDate: Date? = nil,
+         currentPracticeLessonId: Int? = nil,
+         cloudCoinSystem: CloudCoinSystem = CloudCoinSystem(),
+         petCollection: PetCollection = PetCollection()) {
         self.name = name
         self.avatar = avatar
         self.aiVoiceSpeed = aiVoiceSpeed
@@ -34,14 +44,13 @@ class User: Codable {
         self.streakDays = streakDays
         self.lastStudyDate = lastStudyDate
         self.currentPracticeLessonId = currentPracticeLessonId
-        self.totalCarrots = totalCarrots
-        self.currentCarrots = currentCarrots
-        self.checkInRecords = checkInRecords
+        self.cloudCoinSystem = cloudCoinSystem
+        self.petCollection = petCollection
     }
 
     enum CodingKeys: String, CodingKey {
         case name, avatar, aiVoiceSpeed, apiKey, selectedModel, totalStudyTime, totalSessions, streakDays, lastStudyDate
-        case currentPracticeLessonId, totalCarrots, currentCarrots, checkInRecords
+        case currentPracticeLessonId, cloudCoinSystem, petCollection
     }
 
     required init(from decoder: Decoder) throws {
@@ -56,9 +65,12 @@ class User: Codable {
         streakDays = try container.decode(Int.self, forKey: .streakDays)
         lastStudyDate = try container.decodeIfPresent(Date.self, forKey: .lastStudyDate)
         currentPracticeLessonId = try container.decodeIfPresent(Int.self, forKey: .currentPracticeLessonId)
-        totalCarrots = try container.decodeIfPresent(Int.self, forKey: .totalCarrots) ?? 0
-        currentCarrots = try container.decodeIfPresent(Int.self, forKey: .currentCarrots) ?? 5
-        checkInRecords = try container.decodeIfPresent([CheckInRecord].self, forKey: .checkInRecords) ?? []
+
+        // Decode new systems with defaults for migration
+        cloudCoinSystem = try container.decodeIfPresent(CloudCoinSystem.self, forKey: .cloudCoinSystem)
+            ?? CloudCoinSystem()
+        petCollection = try container.decodeIfPresent(PetCollection.self, forKey: .petCollection)
+            ?? PetCollection()
     }
 
     func encode(to encoder: Encoder) throws {
@@ -73,9 +85,8 @@ class User: Codable {
         try container.encode(streakDays, forKey: .streakDays)
         try container.encodeIfPresent(lastStudyDate, forKey: .lastStudyDate)
         try container.encodeIfPresent(currentPracticeLessonId, forKey: .currentPracticeLessonId)
-        try container.encode(totalCarrots, forKey: .totalCarrots)
-        try container.encode(currentCarrots, forKey: .currentCarrots)
-        try container.encode(checkInRecords, forKey: .checkInRecords)
+        try container.encode(cloudCoinSystem, forKey: .cloudCoinSystem)
+        try container.encode(petCollection, forKey: .petCollection)
     }
 
     func recordStudySession(minutes: Int) {

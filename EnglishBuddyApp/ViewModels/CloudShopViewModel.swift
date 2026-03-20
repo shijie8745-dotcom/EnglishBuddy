@@ -1,16 +1,8 @@
 import Foundation
 import SwiftUI
 
-struct CalendarDay: Identifiable {
-    let id = UUID()
-    let date: Date
-    let day: Int
-    let isCurrentMonth: Bool
-    let isCheckedIn: Bool
-}
-
 @Observable
-class CheckInViewModel {
+class CloudShopViewModel {
     private var user: User?
     private var calendar = Calendar.current
     private var displayedMonth: Date = Date()
@@ -20,6 +12,15 @@ class CheckInViewModel {
     var isCheckedInToday: Bool = false
     var calendarDays: [CalendarDay] = []
 
+    // Cloud coin stats
+    var cloudCoins: Int = 0
+    var totalEarned: Int = 0
+    var todayChatCount: Int = 0
+
+    // Pet shop
+    var currentPetId: String = "yunbao"
+    var allPets: [PetDefinition] = []
+
     var currentYear: Int {
         calendar.component(.year, from: displayedMonth)
     }
@@ -28,39 +29,100 @@ class CheckInViewModel {
         calendar.component(.month, from: displayedMonth)
     }
 
-    func loadCheckInData(user: User) {
+    // MARK: - Data Loading
+
+    func loadData(user: User) {
         self.user = user
-        totalCheckIns = user.checkInRecords.count
+        loadCloudCoinData(user: user)
+        loadCheckInData(user: user)
+        loadPetData(user: user)
+    }
+
+    private func loadCloudCoinData(user: User) {
+        cloudCoins = user.cloudCoinSystem.coins
+        totalEarned = user.cloudCoinSystem.totalEarned
+        todayChatCount = user.cloudCoinSystem.todayChatCount
+    }
+
+    private func loadCheckInData(user: User) {
+        totalCheckIns = user.cloudCoinSystem.checkInRecords.count
         consecutiveDays = calculateConsecutiveDays(user: user)
-        isCheckedInToday = checkIsCheckedInToday(user: user)
+        isCheckedInToday = user.cloudCoinSystem.isCheckedInToday
         generateCalendarDays(user: user)
     }
 
-    func checkIn(user: User) -> Int {
-        guard !isCheckedInToday else { return 0 }
+    private func loadPetData(user: User) {
+        currentPetId = user.petCollection.currentPetId
+        allPets = user.petCollection.allPetsSorted
+    }
 
-        let consecutive = consecutiveDays
-        var earnedCarrots = CheckInReward.daily
+    // MARK: - Check-in
 
-        // Bonus for consecutive days
-        if consecutive >= 6 { // 7th day (0-indexed)
-            earnedCarrots += CheckInReward.consecutive7Days
-        } else if consecutive >= 2 { // 3rd day
-            earnedCarrots += CheckInReward.consecutive3Days
+    /// 尝试打卡，返回获得的云朵币数量（0表示未满足条件）
+    func tryCheckIn(user: User) -> Int {
+        let earned = user.cloudCoinSystem.performCheckIn()
+        if earned > 0 {
+            DataStore.shared.saveUser(user)
+            loadData(user: user)
+        }
+        return earned
+    }
+
+    /// 检查是否可以打卡（对话次数>=10且今日未打卡）
+    var canCheckIn: Bool {
+        guard let user = user else { return false }
+        return user.cloudCoinSystem.canCheckIn
+    }
+
+    /// 获取打卡进度（对话次数/10）
+    var checkInProgress: Int {
+        min(todayChatCount, 10)
+    }
+
+    // MARK: - Pet Shop
+
+    /// 购买宠物
+    func purchasePet(petId: String, user: User) -> PurchaseResult {
+        // Check if already unlocked
+        guard !user.petCollection.isUnlocked(petId) else {
+            return .alreadyOwned
         }
 
-        let record = CheckInRecord(date: Date(), earnedCarrots: earnedCarrots, isBonus: consecutive >= 2)
-        user.checkInRecords.append(record)
-        user.currentCarrots += earnedCarrots
-        user.totalCarrots += earnedCarrots
+        // Check if enough coins
+        guard user.cloudCoinSystem.coins >= CloudCoinReward.petPrice else {
+            return .insufficientCoins
+        }
 
-        DataStore.shared.saveUser(user)
+        // Deduct coins and unlock pet
+        if user.cloudCoinSystem.spendCoins(CloudCoinReward.petPrice) {
+            if let pet = BuiltInPets.petById(petId) {
+                user.petCollection.unlockPet(id: petId, name: pet.name)
+                DataStore.shared.saveUser(user)
+                loadData(user: user)
+                return .success
+            }
+        }
 
-        // Refresh data
-        loadCheckInData(user: user)
-
-        return earnedCarrots
+        return .failed
     }
+
+    /// 切换当前宠物
+    func switchPet(to petId: String, user: User) -> Bool {
+        let result = user.petCollection.switchToPet(id: petId)
+        if result {
+            DataStore.shared.saveUser(user)
+            loadData(user: user)
+        }
+        return result
+    }
+
+    /// 检查宠物是否已解锁
+    func isPetUnlocked(_ petId: String) -> Bool {
+        guard let user = user else { return false }
+        return user.petCollection.isUnlocked(petId)
+    }
+
+    // MARK: - Calendar Navigation
 
     func previousMonth() {
         if let newDate = calendar.date(byAdding: .month, value: -1, to: displayedMonth) {
@@ -87,7 +149,7 @@ class CheckInViewModel {
     // MARK: - Private Methods
 
     private func calculateConsecutiveDays(user: User) -> Int {
-        let sortedRecords = user.checkInRecords.sorted { $0.date < $1.date }
+        let sortedRecords = user.cloudCoinSystem.checkInRecords.sorted { $0.date < $1.date }
 
         var consecutive = 0
         var checkDate = calendar.startOfDay(for: Date())
@@ -105,11 +167,6 @@ class CheckInViewModel {
         }
 
         return consecutive
-    }
-
-    private func checkIsCheckedInToday(user: User) -> Bool {
-        guard let lastCheckIn = user.checkInRecords.last?.date else { return false }
-        return calendar.isDateInToday(lastCheckIn)
     }
 
     private func generateCalendarDays(user: User) {
@@ -184,8 +241,17 @@ class CheckInViewModel {
 
     private func isDateCheckedIn(_ date: Date, user: User) -> Bool {
         let startOfDate = calendar.startOfDay(for: date)
-        return user.checkInRecords.contains { record in
+        return user.cloudCoinSystem.checkInRecords.contains { record in
             calendar.isDate(record.date, inSameDayAs: startOfDate)
         }
     }
+}
+
+// MARK: - Purchase Result
+
+enum PurchaseResult {
+    case success
+    case insufficientCoins
+    case alreadyOwned
+    case failed
 }

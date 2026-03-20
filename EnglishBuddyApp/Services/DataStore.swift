@@ -19,21 +19,6 @@ class DataStore {
         return companion
     }
 
-    // MARK: - Pet
-    func savePet(_ pet: Pet) {
-        if let data = try? JSONEncoder().encode(pet) {
-            defaults.set(data, forKey: "pet")
-        }
-    }
-
-    static func loadPet() -> Pet {
-        guard let data = DataStore.shared.defaults.data(forKey: "pet"),
-              let pet = try? JSONDecoder().decode(Pet.self, from: data) else {
-            return Pet()
-        }
-        return pet
-    }
-
     func saveUser(_ user: User) {
         if let data = try? JSONEncoder().encode(user) {
             defaults.set(data, forKey: "user")

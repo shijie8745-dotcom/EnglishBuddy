@@ -2,8 +2,7 @@ import SwiftUI
 
 struct CourseListView: View {
     @State private var viewModel = CourseViewModel()
-    @State private var showingCheckIn = false
-    @State private var showingFeedPet = false
+    @State private var showingCloudShop = false
 
     var body: some View {
         NavigationStack {
@@ -14,11 +13,11 @@ struct CourseListView: View {
 
                 ScrollView {
                     VStack(spacing: 0) {
-                        // Orange gradient header
+                        // Orange gradient header with pet
                         headerSection
 
-                        // Practice & Check-in Row
-                        practiceAndCheckInSection
+                        // Practice & Cloud Shop Row
+                        practiceAndCloudShopSection
                             .padding(.horizontal, 20)
                             .padding(.top, 16)
 
@@ -34,47 +33,13 @@ struct CourseListView: View {
                             .padding(.bottom, 32)
                     }
                 }
-
-                // Draggable Pet overlay
-                PetView(onTapPet: {
-                    showingFeedPet = true
-                })
-
-                // Feed Pet Modal Overlay
-                if showingFeedPet {
-                    feedPetOverlay
-                }
             }
             .navigationBarHidden(true)
             .ignoresSafeArea(edges: .top)
-            .navigationDestination(isPresented: $showingCheckIn) {
-                CheckInView(user: viewModel.user)
+            .navigationDestination(isPresented: $showingCloudShop) {
+                CloudShopView(user: viewModel.user)
             }
         }
-    }
-
-    // MARK: - Feed Pet Overlay
-    private var feedPetOverlay: some View {
-        ZStack {
-            // Semi-transparent backdrop
-            Color.black.opacity(0.4)
-                .ignoresSafeArea()
-                .onTapGesture {
-                    showingFeedPet = false
-                }
-
-            // Modal content
-            FeedPetView(
-                pet: viewModel.pet,
-                user: viewModel.user,
-                viewModel: viewModel,
-                onClose: {
-                    showingFeedPet = false
-                }
-            )
-            .padding(.horizontal, 32)
-        }
-        .transition(.opacity)
     }
 
     // MARK: - Header Section
@@ -94,20 +59,25 @@ struct CourseListView: View {
                 VStack(spacing: 0) {
                     // Navigation bar area
                     HStack {
-                        // Title
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("EnglishBuddy")
-                                .font(.system(size: 28, weight: .bold))
-                                .foregroundStyle(.white)
+                        // Title and pet
+                        HStack(spacing: 12) {
+                            // Current pet avatar
+                            currentPetAvatar
 
-                            Text("和 xixi 一起学英语")
-                                .font(.system(size: 14))
-                                .foregroundStyle(.white.opacity(0.9))
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("EnglishBuddy")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundStyle(.white)
+
+                                Text("和 \(viewModel.currentPetName) 一起学英语")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(.white.opacity(0.9))
+                            }
                         }
 
                         Spacer()
 
-                        // AI Test button (AI测试页入口)
+                        // AI Test button
                         NavigationLink(destination: AIChatTestView(lesson: viewModel.practiceLesson ?? viewModel.lessons.first!)) {
                             Circle()
                                 .fill(.white.opacity(0.2))
@@ -151,14 +121,31 @@ struct CourseListView: View {
         }
     }
 
-    // MARK: - Practice & Check-in Section (并排布局)
-    private var practiceAndCheckInSection: some View {
+    // MARK: - Current Pet Avatar
+    private var currentPetAvatar: some View {
+        ZStack {
+            Circle()
+                .fill(.white.opacity(0.2))
+                .frame(width: 52, height: 52)
+
+            Image(systemName: "pawprint.fill")
+                .font(.system(size: 24))
+                .foregroundStyle(.white)
+        }
+        .overlay(
+            Circle()
+                .stroke(.white.opacity(0.3), lineWidth: 2)
+        )
+    }
+
+    // MARK: - Practice & Cloud Shop Section
+    private var practiceAndCloudShopSection: some View {
         HStack(spacing: 12) {
             // Practice Card (练一练) - 占据主要空间
             practiceCard
 
-            // Check-in Button (签到) - 固定宽度
-            checkInButton
+            // Cloud Shop Button - 固定宽度
+            cloudShopButton
         }
     }
 
@@ -224,30 +211,30 @@ struct CourseListView: View {
         .opacity(lesson == nil ? 0.6 : 1.0)
     }
 
-    // MARK: - Check-in Button (签到)
-    private var checkInButton: some View {
-        Button(action: { showingCheckIn = true }) {
+    // MARK: - Cloud Shop Button
+    private var cloudShopButton: some View {
+        Button(action: { showingCloudShop = true }) {
             VStack(spacing: 8) {
-                // Large icon with gradient background
+                // Cloud icon with gradient background
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(
                             LinearGradient(
-                                colors: [Color(hex: "FBBF24"), Color(hex: "F59E0B")],
+                                colors: [Color(hex: "60A5FA"), Color(hex: "3B82F6")],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
                         .frame(width: 48, height: 48)
 
-                    Image(systemName: "calendar.badge.checkmark")
+                    Image(systemName: "dollarsign.circle")
                         .font(.system(size: 24))
                         .foregroundStyle(.white)
                 }
 
-                Text("签到")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Color(hex: "F97316"))
+                Text("云朵商店")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Color(hex: "3B82F6"))
             }
             .frame(width: 80)
             .padding(.vertical, 12)

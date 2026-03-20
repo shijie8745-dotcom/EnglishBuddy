@@ -3,7 +3,6 @@ import PhotosUI
 
 struct SettingsView: View {
     @Bindable var user: User
-    @State private var pet = DataStore.loadPet()
     @State private var lessons: [Lesson] = LessonResourceManager.loadLessonsFromJSON()
     @State private var selectedPracticeLessonId: Int?
     @Environment(\.dismiss) private var dismiss
@@ -231,7 +230,7 @@ struct SettingsView: View {
     private var petSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
-                Image(systemName: "hare.fill")
+                Image(systemName: "pawprint.fill")
                     .font(.system(size: 16))
                     .foregroundStyle(Color(hex: "F97316"))
 
@@ -243,67 +242,50 @@ struct SettingsView: View {
             HStack(spacing: 16) {
                 // Pet avatar
                 ZStack {
-                    // Use rabbit image from file
-                    rabbitImage
-                        .resizable()
-                        .scaledToFill()
+                    Circle()
+                        .fill(Color(hex: "FEF3C7"))
                         .frame(width: 80, height: 80)
-                        .clipShape(Circle())
                         .overlay(
                             Circle()
-                                .stroke(Color(hex: "F97316"), lineWidth: 3)
+                                .stroke(Color(hex: "F59E0B"), lineWidth: 3)
                         )
 
-                    // Level badge
-                    LevelBadge(level: pet.level)
+                    Image(systemName: "pawprint.fill")
+                        .font(.system(size: 36))
+                        .foregroundStyle(Color(hex: "F59E0B"))
+
+                    // Current pet indicator
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(Color(hex: "10B981"))
+                        .background(Circle().fill(.white))
                         .offset(x: 28, y: -28)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(pet.name)
+                    Text(currentPetName)
                         .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(Color(hex: "1F2937"))
 
-                    // Progress bar
-                    VStack(alignment: .leading, spacing: 4) {
-                        GeometryReader { geometry in
-                            ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color(hex: "FED7AA"))
-                                    .frame(height: 8)
-
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [Color(hex: "F97316"), Color(hex: "FB923C")],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                                    .frame(width: geometry.size.width * pet.progressToNextLevel, height: 8)
-                            }
-                        }
-                        .frame(width: 120, height: 8)
-
-                        Text("\(pet.experience)/\(pet.levelUpThreshold) 经验")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color(hex: "9CA3AF"))
-                    }
+                    Text("\(unlockedPetCount)/6 已解锁")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color(hex: "6B7280"))
 
                     HStack(spacing: 16) {
                         HStack(spacing: 4) {
-                            Text("🥕")
+                            Image(systemName: "dollarsign.circle.fill")
                                 .font(.system(size: 14))
-                            Text("\(user.currentCarrots)/\(user.totalCarrots)")
+                                .foregroundStyle(Color(hex: "F59E0B"))
+                            Text("\(user.cloudCoinSystem.coins)")
                                 .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(Color(hex: "F97316"))
+                                .foregroundStyle(Color(hex: "F59E0B"))
                         }
 
                         HStack(spacing: 4) {
-                            Image(systemName: "fork.knife")
+                            Image(systemName: "checkmark.circle.fill")
                                 .font(.system(size: 12))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                            Text("喂食\(pet.totalFed)次")
+                                .foregroundStyle(Color(hex: "10B981"))
+                            Text("累计\(user.cloudCoinSystem.totalEarned)币")
                                 .font(.system(size: 12))
                                 .foregroundStyle(Color(hex: "6B7280"))
                         }
@@ -319,6 +301,14 @@ struct SettingsView: View {
                     .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
             )
         }
+    }
+
+    private var currentPetName: String {
+        user.petCollection.currentPet?.name ?? "云宝"
+    }
+
+    private var unlockedPetCount: Int {
+        user.petCollection.unlockedPets.count
     }
 
     // MARK: - Voice Test Section
@@ -494,7 +484,7 @@ struct SettingsView: View {
                 Divider().background(Color(hex: "E5E7EB"))
                 StatRow(icon: "flame.fill", iconColor: Color(hex: "EF4444"), title: "连续学习", value: "\(user.streakDays) 天")
                 Divider().background(Color(hex: "E5E7EB"))
-                StatRow(icon: "calendar.badge.checkmark", iconColor: Color(hex: "8B5CF6"), title: "累计签到", value: "\(user.checkInRecords.count) 天")
+                StatRow(icon: "calendar.badge.checkmark", iconColor: Color(hex: "8B5CF6"), title: "累计签到", value: "\(user.cloudCoinSystem.checkInRecords.count) 天")
             }
             .padding(16)
             .background(
@@ -582,27 +572,6 @@ struct PracticeLessonCard: View {
                 .stroke(isSelected ? Color(hex: "F97316") : Color(hex: "E5E7EB"), lineWidth: isSelected ? 2 : 1)
         )
     }
-}
-
-// MARK: - Rabbit Image Helper
-private var rabbitImage: Image {
-    // Try multiple paths to find the image
-    let possiblePaths = [
-        "/Users/wjsun/.claude/dice-projects/learning-assistant/rabbit.png",
-        Bundle.main.path(forResource: "rabbit", ofType: "png"),
-        Bundle.main.bundlePath + "/Resources/rabbit.png",
-        Bundle.main.bundlePath + "/rabbit.png"
-    ]
-
-    for path in possiblePaths {
-        if let path = path, FileManager.default.fileExists(atPath: path),
-           let uiImage = UIImage(contentsOfFile: path) {
-            return Image(uiImage: uiImage)
-        }
-    }
-
-    // Fallback to system image
-    return Image(systemName: "hare.fill")
 }
 
 // MARK: - Stat Row

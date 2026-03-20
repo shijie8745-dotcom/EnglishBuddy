@@ -5,13 +5,11 @@ import SwiftUI
 @Observable
 class CourseViewModel {
     var lessons: [Lesson] = []
-    var pet: Pet
     var user: User
     var progress: [LessonProgress]
     private let dataStore = DataStore.shared
 
     init() {
-        self.pet = DataStore.loadPet()
         self.user = DataStore.loadUser()
         self.progress = DataStore.loadProgress()
         self.lessons = LessonResourceManager.loadLessonsFromJSON()
@@ -29,6 +27,11 @@ class CourseViewModel {
         progress.reduce(0) { $0 + $1.studyCount }
     }
 
+    // MARK: - Pet
+    var currentPetName: String {
+        user.petCollection.currentPet?.name ?? "云宝"
+    }
+
     // MARK: - Practice Feature
     var practiceLesson: Lesson? {
         guard let lessonId = user.currentPracticeLessonId else {
@@ -43,9 +46,9 @@ class CourseViewModel {
         dataStore.saveUser(user)
     }
 
-    // MARK: - Check-in Feature
+    // MARK: - Check-in Feature (Cloud Coin System)
     var totalCheckIns: Int {
-        user.checkInRecords.count
+        user.cloudCoinSystem.checkInRecords.count
     }
 
     var consecutiveDays: Int {
@@ -53,35 +56,16 @@ class CourseViewModel {
     }
 
     var isCheckedInToday: Bool {
-        guard let lastCheckIn = user.checkInRecords.last?.date else { return false }
-        return Calendar.current.isDateInToday(lastCheckIn)
+        user.cloudCoinSystem.isCheckedInToday
     }
 
-    func checkIn() -> Int {
-        guard !isCheckedInToday else { return 0 }
-
-        let consecutive = consecutiveDays
-        var earnedCarrots = CheckInReward.daily
-
-        // Bonus for consecutive days
-        if consecutive >= 6 { // 7th day (0-indexed)
-            earnedCarrots += CheckInReward.consecutive7Days
-        } else if consecutive >= 2 { // 3rd day
-            earnedCarrots += CheckInReward.consecutive3Days
-        }
-
-        let record = CheckInRecord(date: Date(), earnedCarrots: earnedCarrots, isBonus: consecutive >= 2)
-        user.checkInRecords.append(record)
-        user.currentCarrots += earnedCarrots
-        user.totalCarrots += earnedCarrots
-
-        dataStore.saveUser(user)
-        return earnedCarrots
+    var cloudCoins: Int {
+        user.cloudCoinSystem.coins
     }
 
     private func calculateConsecutiveDays() -> Int {
         let calendar = Calendar.current
-        let sortedRecords = user.checkInRecords.sorted { $0.date < $1.date }
+        let sortedRecords = user.cloudCoinSystem.checkInRecords.sorted { $0.date < $1.date }
 
         var consecutive = 0
         var checkDate = calendar.startOfDay(for: Date())
@@ -97,24 +81,6 @@ class CourseViewModel {
         }
 
         return consecutive
-    }
-
-    // MARK: - Pet Feature
-    func feedPet() -> Bool {
-        guard user.currentCarrots > 0 else { return false }
-
-        user.currentCarrots -= 1
-        pet.feed()
-
-        dataStore.saveUser(user)
-        dataStore.savePet(pet)
-
-        return true
-    }
-
-    func updatePetPosition(x: CGFloat, y: CGFloat) {
-        pet.updatePosition(x: x, y: y)
-        dataStore.savePet(pet)
     }
 
     // MARK: - Lesson Management
@@ -160,16 +126,10 @@ class CourseViewModel {
         user.totalStudyTime += studyTime
         user.totalSessions += 1
 
-        // Award carrots for studying (1 per minute)
-        let earnedCarrots = studyTime * CheckInReward.studyPerMinute
-        user.currentCarrots += earnedCarrots
-        user.totalCarrots += earnedCarrots
+        // Award cloud coins for studying (1 per minute)
+        _ = user.cloudCoinSystem.earnCoinsFromStudy(minutes: studyTime)
 
         dataStore.saveUser(user)
-
-        // Update pet experience
-        pet.gainExperience(studyTime * 2)
-        dataStore.savePet(pet)
     }
 
     func updateVoiceSpeed(_ speed: Float) {
@@ -183,5 +143,19 @@ class CourseViewModel {
             progress[index].completedDate = nil
             dataStore.saveProgress(progress)
         }
+    }
+
+    // MARK: - Chat Session Tracking
+
+    /// 记录一次对话，增加对话次数并检查是否可以打卡
+    /// 返回获得的云朵币数量（如果触发了自动打卡）
+    func recordChatSession() -> Int {
+        user.cloudCoinSystem.incrementChatCount()
+
+        // Try auto check-in
+        let earned = user.cloudCoinSystem.performCheckIn()
+
+        dataStore.saveUser(user)
+        return earned
     }
 }
