@@ -4,34 +4,94 @@ struct CourseListView: View {
     @State private var viewModel = CourseViewModel()
     @State private var showingCloudShop = false
 
+    // User avatar
+    @State private var avatarImage: UIImage?
+
+    // Floating pet state
+    @State private var baseOffset: CGSize = .zero  // 保存的偏移量
+    @State private var dragOffset: CGSize = .zero  // 当前拖动的偏移量
+    @State private var isDragging = false
+
     var body: some View {
         NavigationStack {
-            ZStack {
-                // Background
-                Color(hex: "FEF7ED")
-                    .ignoresSafeArea()
+            GeometryReader { geometry in
+                let screenW = geometry.size.width
+                let screenH = geometry.size.height
+                let petSize: CGFloat = 250
+                let padding: CGFloat = 10
 
-                ScrollView {
-                    VStack(spacing: 0) {
-                        // Orange gradient header with pet
-                        headerSection
+                // Limit bounds (pet edges can't go beyond screen)
+                let minX = petSize/2 + padding
+                let maxX = screenW - petSize/2 - padding
+                let minY = petSize/2 + padding
+                let maxY = screenH - petSize/2 - padding
 
-                        // Practice & Cloud Shop Row
-                        practiceAndCloudShopSection
-                            .padding(.horizontal, 20)
-                            .padding(.top, 16)
+                // Default position: bottom right (at limit)
+                let defaultX = maxX
+                let defaultY = maxY
 
-                        // Statistics section
-                        statsSection
-                            .padding(.horizontal, 20)
-                            .padding(.top, 16)
+                // Total offset = base + current drag
+                let totalOffsetX = baseOffset.width + dragOffset.width
+                let totalOffsetY = baseOffset.height + dragOffset.height
 
-                        // Lesson list section
-                        lessonListSection
-                            .padding(.horizontal, 20)
-                            .padding(.top, 24)
-                            .padding(.bottom, 32)
+                // Current position with offset
+                let currentX = defaultX + totalOffsetX
+                let currentY = defaultY + totalOffsetY
+
+                let clampedX = min(max(currentX, minX), maxX)
+                let clampedY = min(max(currentY, minY), maxY)
+
+                ZStack {
+                    // Background
+                    Color(hex: "FEF7ED")
+                        .ignoresSafeArea()
+
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            // Orange gradient header with pet
+                            headerSection
+
+                            // Practice & Cloud Shop Row
+                            practiceAndCloudShopSection
+                                .padding(.horizontal, 20)
+                                .padding(.top, 16)
+
+                            // Statistics section
+                            statsSection
+                                .padding(.horizontal, 20)
+                                .padding(.top, 16)
+
+                            // Lesson list section
+                            lessonListSection
+                                .padding(.horizontal, 20)
+                                .padding(.top, 24)
+                                .padding(.bottom, 140)
+                        }
                     }
+
+                    // Floating draggable pet image - bottom right
+                    floatingPetImage
+                        .position(x: clampedX, y: clampedY)
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    isDragging = true
+                                    dragOffset = value.translation
+                                }
+                                .onEnded { _ in
+                                    isDragging = false
+                                    // Clamp offset: can only move left/up from default position
+                                    // defaultX = maxX, so max left offset is maxX-minX, max right is 0
+                                    let maxOffsetLeft = minX - maxX  // negative value
+                                    let maxOffsetUp = minY - maxY    // negative value
+
+                                    let newBaseX = min(max(baseOffset.width + dragOffset.width, maxOffsetLeft), 0)
+                                    let newBaseY = min(max(baseOffset.height + dragOffset.height, maxOffsetUp), 0)
+
+                                    baseOffset = CGSize(width: newBaseX, height: newBaseY)
+                                    dragOffset = .zero
+                                }
+                        )
                 }
             }
             .navigationBarHidden(true)
@@ -39,6 +99,16 @@ struct CourseListView: View {
             .navigationDestination(isPresented: $showingCloudShop) {
                 CloudShopView(user: viewModel.user)
             }
+            .onAppear {
+                loadAvatar()
+            }
+        }
+    }
+
+    private func loadAvatar() {
+        if let data = DataStore.loadUserAvatar(),
+           let image = UIImage(data: data) {
+            avatarImage = image
         }
     }
 
@@ -59,47 +129,23 @@ struct CourseListView: View {
                 VStack(spacing: 0) {
                     // Navigation bar area
                     HStack {
-                        // Title and pet
+                        // Title and user avatar
                         HStack(spacing: 12) {
-                            // Current pet avatar
-                            currentPetAvatar
+                            // User avatar (replaces pet avatar)
+                            userAvatar
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("EnglishBuddy")
                                     .font(.system(size: 28, weight: .bold))
                                     .foregroundStyle(.white)
 
-                                Text("和 \(viewModel.currentPetName) 一起学英语")
+                                Text("和 Amy 一起学英语")
                                     .font(.system(size: 14))
                                     .foregroundStyle(.white.opacity(0.9))
                             }
                         }
 
                         Spacer()
-
-                        // AI Test button
-                        NavigationLink(destination: AIChatTestView(lesson: viewModel.practiceLesson ?? viewModel.lessons.first!)) {
-                            Circle()
-                                .fill(.white.opacity(0.2))
-                                .frame(width: 44, height: 44)
-                                .overlay(
-                                    Image(systemName: "brain.head.profile")
-                                        .font(.system(size: 20))
-                                        .foregroundStyle(.white)
-                                )
-                        }
-
-                        // Test Chat button
-                        NavigationLink(destination: ChatTestView()) {
-                            Circle()
-                                .fill(.white.opacity(0.2))
-                                .frame(width: 44, height: 44)
-                                .overlay(
-                                    Image(systemName: "bubble.left.and.bubble.right")
-                                        .font(.system(size: 18))
-                                        .foregroundStyle(.white)
-                                )
-                        }
 
                         // Settings button
                         NavigationLink(destination: SettingsView(user: viewModel.user)) {
@@ -121,21 +167,46 @@ struct CourseListView: View {
         }
     }
 
-    // MARK: - Current Pet Avatar
-    private var currentPetAvatar: some View {
-        ZStack {
-            Circle()
-                .fill(.white.opacity(0.2))
-                .frame(width: 52, height: 52)
+    // MARK: - User Avatar (replaces pet avatar in header)
+    private var userAvatar: some View {
+        Group {
+            if let avatarImage {
+                Image(uiImage: avatarImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 52, height: 52)
+                    .clipShape(Circle())
+                    .overlay(
+                        Circle()
+                            .stroke(.white.opacity(0.3), lineWidth: 2)
+                    )
+            } else {
+                ZStack {
+                    Circle()
+                        .fill(.white.opacity(0.2))
+                        .frame(width: 52, height: 52)
 
-            Image(systemName: "pawprint.fill")
-                .font(.system(size: 24))
-                .foregroundStyle(.white)
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 24))
+                        .foregroundStyle(.white)
+                }
+                .overlay(
+                    Circle()
+                        .stroke(.white.opacity(0.3), lineWidth: 2)
+                )
+            }
         }
-        .overlay(
-            Circle()
-                .stroke(.white.opacity(0.3), lineWidth: 2)
-        )
+    }
+
+    // MARK: - Floating Pet Image
+    private var floatingPetImage: some View {
+        Image(viewModel.currentPetImageName)
+            .resizable()
+            .scaledToFit()
+            .frame(width: 250, height: 250)
+            .shadow(color: .gray.opacity(0.3), radius: 20, x: 0, y: 0)
+            .shadow(color: .gray.opacity(0.2), radius: 40, x: 0, y: 0)
+            .shadow(color: .gray.opacity(0.1), radius: 60, x: 0, y: 0)
     }
 
     // MARK: - Practice & Cloud Shop Section
@@ -232,20 +303,7 @@ struct CourseListView: View {
     }
 
     private var coinImage: Image {
-        let possiblePaths = [
-            "/Users/wjsun/.claude/dice-projects/learning-assistant/EnglishBuddyApp/picture/coin.png",
-            Bundle.main.path(forResource: "coin", ofType: "png"),
-            Bundle.main.bundlePath + "/picture/coin.png"
-        ]
-
-        for path in possiblePaths {
-            if let path = path, FileManager.default.fileExists(atPath: path),
-               let uiImage = UIImage(contentsOfFile: path) {
-                return Image(uiImage: uiImage)
-            }
-        }
-
-        return Image(systemName: "dollarsign.circle.fill")
+        Image("coin")
     }
 
     // MARK: - Stats Section

@@ -32,6 +32,10 @@ class CourseViewModel {
         user.petCollection.currentPet?.name ?? "云宝"
     }
 
+    var currentPetImageName: String {
+        user.petCollection.currentPetId
+    }
+
     // MARK: - Practice Feature
     var practiceLesson: Lesson? {
         guard let lessonId = user.currentPracticeLessonId else {

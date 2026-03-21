@@ -22,8 +22,13 @@ class PetCollection: Codable {
 
     required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        currentPetId = try container.decode(String.self, forKey: .currentPetId)
-        unlockedPets = try container.decode([String: UnlockedPetInfo].self, forKey: .unlockedPets)
+        currentPetId = try container.decodeIfPresent(String.self, forKey: .currentPetId) ?? "yunbao"
+        var decodedPets = try container.decodeIfPresent([String: UnlockedPetInfo].self, forKey: .unlockedPets) ?? [:]
+        // Ensure at least yunbao is unlocked
+        if decodedPets.isEmpty {
+            decodedPets["yunbao"] = UnlockedPetInfo(id: "yunbao", name: "云宝", unlockDate: Date())
+        }
+        unlockedPets = decodedPets
     }
 
     func encode(to encoder: Encoder) throws {

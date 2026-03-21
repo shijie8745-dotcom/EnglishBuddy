@@ -573,37 +573,11 @@ struct CloudShopView: View {
 
     // MARK: - Image Helpers
     private var coinIcon: Image {
-        let possiblePaths = [
-            "/Users/wjsun/.claude/dice-projects/learning-assistant/EnglishBuddyApp/picture/coin.png",
-            Bundle.main.path(forResource: "coin", ofType: "png"),
-            Bundle.main.bundlePath + "/picture/coin.png"
-        ]
-
-        for path in possiblePaths {
-            if let path = path, FileManager.default.fileExists(atPath: path),
-               let uiImage = UIImage(contentsOfFile: path) {
-                return Image(uiImage: uiImage)
-            }
-        }
-
-        return Image(systemName: "dollarsign.circle.fill")
+        Image("coin")
     }
 
     private func petImage(named: String) -> Image {
-        let possiblePaths = [
-            "/Users/wjsun/.claude/dice-projects/learning-assistant/EnglishBuddyApp/picture/\(named).png",
-            Bundle.main.path(forResource: named, ofType: "png"),
-            Bundle.main.bundlePath + "/picture/\(named).png"
-        ]
-
-        for path in possiblePaths {
-            if let path = path, FileManager.default.fileExists(atPath: path),
-               let uiImage = UIImage(contentsOfFile: path) {
-                return Image(uiImage: uiImage)
-            }
-        }
-
-        return Image(systemName: "pawprint.fill")
+        Image(named)
     }
 }
 
@@ -698,7 +672,7 @@ struct PetShopCard: View {
 
     private func petImage(named: String) -> Image {
         let possiblePaths = [
-            "/Users/wjsun/.claude/dice-projects/learning-assistant/EnglishBuddyApp/picture/\(named).png",
+            "/Users/wjsun/.claude/dice-projects/learning-assistant/EnglishBuddyApp/EnglishBuddyApp/picture/\(named).png",
             Bundle.main.path(forResource: named, ofType: "png"),
             Bundle.main.bundlePath + "/picture/\(named).png"
         ]

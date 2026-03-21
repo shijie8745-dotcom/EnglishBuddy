@@ -10,6 +10,8 @@ struct SettingsView: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var avatarImage: UIImage?
     @State private var ttsTestText: String = "Hello! I'm Amy. Let's practice English together!"
+    @State private var showingEditNameSheet = false
+    @State private var editNameText = ""
 
     var body: some View {
         ZStack {
@@ -29,9 +31,6 @@ struct SettingsView: View {
 
                         // Practice settings section
                         practiceSection
-
-                        // Pet stats section
-                        petSection
 
                         // Voice settings section
                         voiceSettingsSection
@@ -67,6 +66,64 @@ struct SettingsView: View {
                 }
             }
         }
+        .sheet(isPresented: $showingEditNameSheet) {
+            editNameSheet
+        }
+    }
+
+    // MARK: - Edit Name Sheet
+    private var editNameSheet: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                // Title
+                Text("修改名字")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(Color(hex: "1F2937"))
+                    .padding(.top, 16)
+                    .padding(.bottom, 20)
+
+                // Input field
+                TextField("输入新名字", text: $editNameText)
+                    .font(.system(size: 16))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(hex: "F9FAFB"))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color(hex: "E5E7EB"), lineWidth: 1)
+                    )
+                    .padding(.horizontal, 20)
+
+                Spacer(minLength: 20)
+            }
+            .frame(height: 180)
+            .background(Color(hex: "FEF7ED").ignoresSafeArea())
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("取消") {
+                        showingEditNameSheet = false
+                    }
+                    .foregroundStyle(Color(hex: "6B7280"))
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("保存") {
+                        let trimmed = editNameText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !trimmed.isEmpty {
+                            user.name = trimmed
+                            DataStore.shared.saveUser(user)
+                        }
+                        showingEditNameSheet = false
+                    }
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color(hex: "F97316"))
+                }
+            }
+        }
+        .presentationDetents([.height(220)])
     }
 
     // MARK: - Settings Header
@@ -130,27 +187,27 @@ struct SettingsView: View {
             }
 
             HStack(spacing: 16) {
-                // Avatar
-                ZStack {
-                    if let avatarImage {
-                        Image(uiImage: avatarImage)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 80, height: 80)
-                            .clipShape(Circle())
-                    } else {
-                        Circle()
-                            .fill(Color(hex: "FED7AA"))
-                            .frame(width: 80, height: 80)
-                            .overlay(
-                                Image(systemName: "person.fill")
-                                    .font(.system(size: 36))
-                                    .foregroundStyle(Color(hex: "F97316"))
-                            )
-                    }
+                // Avatar - entire avatar is tappable
+                PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                    ZStack {
+                        if let avatarImage {
+                            Image(uiImage: avatarImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 80, height: 80)
+                                .clipShape(Circle())
+                        } else {
+                            Circle()
+                                .fill(Color(hex: "FED7AA"))
+                                .frame(width: 80, height: 80)
+                                .overlay(
+                                    Image(systemName: "person.fill")
+                                        .font(.system(size: 36))
+                                        .foregroundStyle(Color(hex: "F97316"))
+                                )
+                        }
 
-                    // Edit button
-                    PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                        // Edit button indicator (small icon at bottom right)
                         ZStack {
                             Circle()
                                 .fill(Color(hex: "F97316"))
@@ -160,14 +217,27 @@ struct SettingsView: View {
                                 .font(.system(size: 12))
                                 .foregroundStyle(.white)
                         }
+                        .offset(x: 28, y: 28)
                     }
-                    .offset(x: 28, y: 28)
                 }
+                .buttonStyle(.plain)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(user.name)
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(Color(hex: "1F2937"))
+                    // Name with edit button
+                    HStack(spacing: 8) {
+                        Text(user.name)
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(Color(hex: "1F2937"))
+
+                        Button(action: {
+                            editNameText = user.name
+                            showingEditNameSheet = true
+                        }) {
+                            Image(systemName: "pencil.circle.fill")
+                                .font(.system(size: 18))
+                                .foregroundStyle(Color(hex: "F97316"))
+                        }
+                    }
 
                     Text("点击头像更换照片")
                         .font(.system(size: 14))
@@ -508,12 +578,64 @@ struct SettingsView: View {
                     .foregroundStyle(Color(hex: "1F2937"))
             }
 
-            VStack(spacing: 12) {
+            VStack(spacing: 0) {
                 AboutRow(title: "应用名称", value: "EnglishBuddy")
+                Divider().padding(.leading, 16)
                 AboutRow(title: "版本", value: "1.0.0")
+                Divider().padding(.leading, 16)
                 AboutRow(title: "教材", value: "Power Up Level 1")
+                Divider().padding(.leading, 16)
+
+                // AI Test
+                NavigationLink(destination: AITestView()) {
+                    HStack {
+                        Text("AI Test")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color(hex: "6B7280"))
+
+                        Spacer()
+
+                        HStack(spacing: 4) {
+                            Text("测试")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Color(hex: "1F2937"))
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color(hex: "9CA3AF"))
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .frame(height: 48)
+                }
+                .buttonStyle(.plain)
+
+                Divider().padding(.leading, 16)
+
+                // Chat Test
+                NavigationLink(destination: ChatTestView()) {
+                    HStack {
+                        Text("Chat Test")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color(hex: "6B7280"))
+
+                        Spacer()
+
+                        HStack(spacing: 4) {
+                            Text("测试")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Color(hex: "1F2937"))
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color(hex: "9CA3AF"))
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .frame(height: 48)
+                }
+                .buttonStyle(.plain)
             }
-            .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(.white)
@@ -622,6 +744,8 @@ struct AboutRow: View {
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(Color(hex: "1F2937"))
         }
+        .padding(.horizontal, 16)
+        .frame(height: 48)
     }
 }
 
