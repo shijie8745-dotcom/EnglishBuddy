@@ -157,9 +157,6 @@ struct CloudShopView: View {
                 )
             }
 
-            Spacer()
-            }
-
             // Pet grid with larger images
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                 ForEach(viewModel.allPets) { pet in
