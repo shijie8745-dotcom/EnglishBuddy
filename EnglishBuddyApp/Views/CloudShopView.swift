@@ -113,23 +113,9 @@ struct CloudShopView: View {
 
                     Spacer()
 
-                    // Cloud coin balance
-                    HStack(spacing: 4) {
-                        coinIcon
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 24, height: 24)
-
-                        Text("\(viewModel.cloudCoins)")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.white)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(.white.opacity(0.2))
-                    )
+                    // Empty spacer for balance
+                    Color.clear
+                        .frame(width: 44, height: 44)
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 16)
@@ -151,6 +137,27 @@ struct CloudShopView: View {
                     .foregroundStyle(Color(hex: "1F2937"))
 
                 Spacer()
+
+                // Cloud coin balance
+                HStack(spacing: 4) {
+                    coinIcon
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+
+                    Text("\(viewModel.cloudCoins)")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(Color(hex: "F59E0B"))
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule()
+                        .fill(Color(hex: "FEF3C7"))
+                )
+            }
+
+            Spacer()
             }
 
             // Pet grid with larger images
@@ -182,23 +189,23 @@ struct CloudShopView: View {
                     selectedPetForPreview = nil
                 }
 
-            VStack(spacing: 20) {
-                // Pet image
+            VStack(spacing: 24) {
+                // Pet image (larger)
                 petImage(named: pet.imageName)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 200, height: 200)
+                    .frame(width: 280, height: 280)
 
                 // Pet name
                 Text(pet.name)
-                    .font(.system(size: 24, weight: .bold))
+                    .font(.system(size: 28, weight: .bold))
                     .foregroundStyle(Color(hex: "1F2937"))
 
                 // Status
                 if viewModel.isPetUnlocked(pet.id) {
                     if viewModel.currentPetId == pet.id {
                         Text("正在使用")
-                            .font(.system(size: 16))
+                            .font(.system(size: 18))
                             .foregroundStyle(Color(hex: "10B981"))
                     } else {
                         Button(action: {
@@ -207,10 +214,10 @@ struct CloudShopView: View {
                             }
                         }) {
                             Text("切换")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.system(size: 18, weight: .bold))
                                 .foregroundStyle(.white)
-                                .frame(width: 120)
-                                .padding(.vertical, 12)
+                                .frame(width: 140)
+                                .padding(.vertical, 14)
                                 .background(
                                     LinearGradient(
                                         colors: [Color(hex: "F97316"), Color(hex: "FB923C")],
@@ -223,15 +230,15 @@ struct CloudShopView: View {
                     }
                 } else {
                     // Purchase button
-                    VStack(spacing: 8) {
+                    VStack(spacing: 12) {
                         HStack(spacing: 4) {
                             coinIcon
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 20, height: 20)
+                                .frame(width: 24, height: 24)
 
                             Text("200")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.system(size: 18, weight: .bold))
                                 .foregroundStyle(Color(hex: "F59E0B"))
                         }
 
@@ -239,10 +246,10 @@ struct CloudShopView: View {
                             handlePetPurchase(pet: pet)
                         }) {
                             Text("购买")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.system(size: 18, weight: .bold))
                                 .foregroundStyle(.white)
-                                .frame(width: 120)
-                                .padding(.vertical, 12)
+                                .frame(width: 140)
+                                .padding(.vertical, 14)
                                 .background(
                                     viewModel.cloudCoins >= 200
                                         ? LinearGradient(
@@ -261,21 +268,13 @@ struct CloudShopView: View {
                         .disabled(viewModel.cloudCoins < 200)
                     }
                 }
-
-                // Close button
-                Button(action: { selectedPetForPreview = nil }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 32))
-                        .foregroundStyle(Color(hex: "9CA3AF"))
-                }
-                .padding(.top, 8)
             }
-            .padding(32)
+            .padding(40)
             .background(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .fill(.white)
             )
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 32)
         }
     }
 
