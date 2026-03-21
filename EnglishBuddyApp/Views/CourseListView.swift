@@ -214,30 +214,14 @@ struct CourseListView: View {
     // MARK: - Cloud Shop Button
     private var cloudShopButton: some View {
         Button(action: { showingCloudShop = true }) {
-            VStack(spacing: 8) {
-                // Cloud icon with gradient background
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "60A5FA"), Color(hex: "3B82F6")],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 48, height: 48)
-
-                    Image(systemName: "dollarsign.circle")
-                        .font(.system(size: 24))
-                        .foregroundStyle(.white)
-                }
-
-                Text("云朵商店")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Color(hex: "3B82F6"))
+            ZStack {
+                // Coin image
+                coinImage
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 56, height: 56)
             }
-            .frame(width: 80)
-            .padding(.vertical, 12)
+            .frame(width: 80, height: 80)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(.white)
@@ -245,6 +229,23 @@ struct CourseListView: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    private var coinImage: Image {
+        let possiblePaths = [
+            "/Users/wjsun/.claude/dice-projects/learning-assistant/EnglishBuddyApp/picture/coin.png",
+            Bundle.main.path(forResource: "coin", ofType: "png"),
+            Bundle.main.bundlePath + "/picture/coin.png"
+        ]
+
+        for path in possiblePaths {
+            if let path = path, FileManager.default.fileExists(atPath: path),
+               let uiImage = UIImage(contentsOfFile: path) {
+                return Image(uiImage: uiImage)
+            }
+        }
+
+        return Image(systemName: "dollarsign.circle.fill")
     }
 
     // MARK: - Stats Section

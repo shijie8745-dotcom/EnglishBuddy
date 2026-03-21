@@ -200,13 +200,13 @@ class CloudShopViewModel {
 
         let daysInMonth = range.count
 
-        // Get weekday of first day (0 = Sunday, 1 = Monday, etc.)
-        let firstWeekday = calendar.component(.weekday, from: firstDayOfMonth) - 1
+        // Get weekday of first day (1 = Sunday, 2 = Monday, 7 = Saturday in Gregorian calendar)
+        // Convert to: 0 = Monday, 1 = Tuesday, ... 6 = Sunday (for display starting Monday)
+        let weekdayComponent = calendar.component(.weekday, from: firstDayOfMonth)
+        let firstWeekday = (weekdayComponent + 5) % 7  // Convert to Monday=0 format
 
         // Previous month days
-        if let previousMonth = calendar.date(byAdding: .month, value: -1, to: firstDayOfMonth),
-           let prevRange = calendar.range(of: .day, in: .month, for: previousMonth) {
-            let prevDaysCount = prevRange.count
+        if firstWeekday > 0 {
             for i in 0..<firstWeekday {
                 if let date = calendar.date(byAdding: .day, value: -(firstWeekday - i), to: firstDayOfMonth) {
                     calendarDays.append(CalendarDay(
@@ -236,11 +236,10 @@ class CloudShopViewModel {
             }
         }
 
-        // Next month days to fill grid
-        let remainingCells = 42 - calendarDays.count // 6 rows * 7 columns
+        // Next month days to fill grid (6 rows * 7 columns = 42 cells)
+        let remainingCells = 42 - calendarDays.count
         for i in 1...remainingCells {
-            if let lastDayOfMonth = calendar.date(from: components),
-               let date = calendar.date(byAdding: .day, value: daysInMonth + i - 1, to: lastDayOfMonth) {
+            if let date = calendar.date(byAdding: .day, value: daysInMonth - 1 + i, to: firstDayOfMonth) {
                 calendarDays.append(CalendarDay(
                     date: date,
                     day: calendar.component(.day, from: date),

@@ -10,6 +10,7 @@ struct CloudShopView: View {
     @State private var alertMessage = ""
     @State private var showPetUnlockAnimation = false
     @State private var unlockedPetName = ""
+    @State private var selectedPetForPreview: PetDefinition? = nil
 
     var body: some View {
         ZStack {
@@ -19,11 +20,11 @@ struct CloudShopView: View {
 
             ScrollView {
                 VStack(spacing: 0) {
-                    // Header
+                    // Header with coin balance
                     cloudShopHeader
 
-                    // Cloud coins section
-                    cloudCoinsSection
+                    // Pet Shop Section (now called 云朵商店)
+                    petShopSection
                         .padding(.horizontal, 20)
                         .padding(.top, 16)
 
@@ -32,23 +33,18 @@ struct CloudShopView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
 
+                    // Check-in progress (above calendar)
+                    checkInProgressSection
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+
                     // Calendar section
                     calendarSection
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
 
-                    // Check-in progress
-                    checkInProgressSection
-                        .padding(.horizontal, 20)
-                        .padding(.top, 20)
-
                     // Rules section
                     rulesSection
-                        .padding(.horizontal, 20)
-                        .padding(.top, 20)
-
-                    // Pet shop section
-                    petShopSection
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
                         .padding(.bottom, 32)
@@ -62,6 +58,11 @@ struct CloudShopView: View {
 
             if showPetUnlockAnimation {
                 petUnlockAnimation
+            }
+
+            // Pet Preview Modal
+            if let pet = selectedPetForPreview {
+                petPreviewOverlay(pet: pet)
             }
         }
         .navigationBarHidden(true)
@@ -112,9 +113,23 @@ struct CloudShopView: View {
 
                     Spacer()
 
-                    // Spacer for alignment
-                    Color.clear
-                        .frame(width: 44, height: 44)
+                    // Cloud coin balance
+                    HStack(spacing: 4) {
+                        coinIcon
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
+
+                        Text("\(viewModel.cloudCoins)")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(.white.opacity(0.2))
+                    )
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 16)
@@ -123,58 +138,165 @@ struct CloudShopView: View {
         }
     }
 
-    // MARK: - Cloud Coins Section
-    private var cloudCoinsSection: some View {
-        HStack(spacing: 12) {
-            // Current coins
-            HStack(spacing: 8) {
-                Image(systemName: "dollarsign.circle.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(Color(hex: "F59E0B"))
+    // MARK: - Pet Shop Section (云朵商店)
+    private var petShopSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 6) {
+                Image(systemName: "pawprint.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(Color(hex: "F97316"))
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(viewModel.cloudCoins)")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(Color(hex: "1F2937"))
+                Text("云朵商店")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(Color(hex: "1F2937"))
 
-                    Text("云朵币")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color(hex: "6B7280"))
+                Spacer()
+            }
+
+            // Pet grid with larger images
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                ForEach(viewModel.allPets) { pet in
+                    PetShopCard(
+                        pet: pet,
+                        isUnlocked: viewModel.isPetUnlocked(pet.id),
+                        isCurrent: viewModel.currentPetId == pet.id,
+                        onTap: { selectedPetForPreview = pet }
+                    )
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(.white)
-                    .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
-            )
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.white)
+                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+        )
+    }
 
-            // Total earned
-            HStack(spacing: 8) {
-                Image(systemName: "dollarsign.arrow.circlepath")
-                    .font(.system(size: 32))
-                    .foregroundStyle(Color(hex: "10B981"))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(viewModel.totalEarned)")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                    Text("累计获得")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color(hex: "6B7280"))
+    // MARK: - Pet Preview Overlay
+    private func petPreviewOverlay(pet: PetDefinition) -> some View {
+        ZStack {
+            Color.black.opacity(0.5)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    selectedPetForPreview = nil
                 }
+
+            VStack(spacing: 20) {
+                // Pet image
+                petImage(named: pet.imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 200, height: 200)
+
+                // Pet name
+                Text(pet.name)
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(Color(hex: "1F2937"))
+
+                // Status
+                if viewModel.isPetUnlocked(pet.id) {
+                    if viewModel.currentPetId == pet.id {
+                        Text("正在使用")
+                            .font(.system(size: 16))
+                            .foregroundStyle(Color(hex: "10B981"))
+                    } else {
+                        Button(action: {
+                            if viewModel.switchPet(to: pet.id, user: user) {
+                                selectedPetForPreview = nil
+                            }
+                        }) {
+                            Text("切换")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 120)
+                                .padding(.vertical, 12)
+                                .background(
+                                    LinearGradient(
+                                        colors: [Color(hex: "F97316"), Color(hex: "FB923C")],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+                    }
+                } else {
+                    // Purchase button
+                    VStack(spacing: 8) {
+                        HStack(spacing: 4) {
+                            coinIcon
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 20, height: 20)
+
+                            Text("200")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(Color(hex: "F59E0B"))
+                        }
+
+                        Button(action: {
+                            handlePetPurchase(pet: pet)
+                        }) {
+                            Text("购买")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 120)
+                                .padding(.vertical, 12)
+                                .background(
+                                    viewModel.cloudCoins >= 200
+                                        ? LinearGradient(
+                                            colors: [Color(hex: "F97316"), Color(hex: "FB923C")],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                        : LinearGradient(
+                                            colors: [Color(hex: "9CA3AF"), Color(hex: "6B7280")],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+                        .disabled(viewModel.cloudCoins < 200)
+                    }
+                }
+
+                // Close button
+                Button(action: { selectedPetForPreview = nil }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(Color(hex: "9CA3AF"))
+                }
+                .padding(.top, 8)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
+            .padding(32)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .fill(.white)
-                    .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
             )
+            .padding(.horizontal, 40)
+        }
+    }
+
+    private func handlePetPurchase(pet: PetDefinition) {
+        let result = viewModel.purchasePet(petId: pet.id, user: user)
+        switch result {
+        case .success:
+            unlockedPetName = pet.name
+            selectedPetForPreview = nil
+            withAnimation {
+                showPetUnlockAnimation = true
+            }
+        case .insufficientCoins:
+            alertMessage = "云朵币不足，加油获取哦！"
+            showAlert = true
+        case .alreadyOwned:
+            alertMessage = "已经有这只宠物了"
+            showAlert = true
+        case .failed:
+            alertMessage = "购买失败，请重试"
+            showAlert = true
         }
     }
 
@@ -202,57 +324,6 @@ struct CloudShopView: View {
                 label: "今日对话"
             )
         }
-    }
-
-    // MARK: - Calendar Section
-    private var calendarSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("\(viewModel.currentYear)年\(viewModel.currentMonth)月")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(Color(hex: "1F2937"))
-
-                Spacer()
-
-                // Month navigation
-                HStack(spacing: 16) {
-                    Button(action: { viewModel.previousMonth() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(Color(hex: "9CA3AF"))
-                    }
-
-                    Button(action: { viewModel.nextMonth() }) {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(Color(hex: "9CA3AF"))
-                    }
-                }
-            }
-
-            // Weekday headers
-            HStack {
-                ForEach(["日", "一", "二", "三", "四", "五", "六"], id: \.self) { day in
-                    Text(day)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color(hex: "9CA3AF"))
-                        .frame(maxWidth: .infinity)
-                }
-            }
-
-            // Calendar grid
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 8) {
-                ForEach(viewModel.calendarDays) { day in
-                    CalendarDayCell(day: day, isToday: viewModel.isToday(day.date))
-                }
-            }
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.white)
-                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
-        )
     }
 
     // MARK: - Check-in Progress Section
@@ -312,6 +383,67 @@ struct CloudShopView: View {
         )
     }
 
+    // MARK: - Calendar Section
+    private var calendarSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                // Year without comma
+                Text(yearText)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Color(hex: "1F2937"))
+
+                Spacer()
+
+                // Month navigation
+                HStack(spacing: 16) {
+                    Button(action: { viewModel.previousMonth() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Color(hex: "9CA3AF"))
+                    }
+
+                    Button(action: { viewModel.nextMonth() }) {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Color(hex: "9CA3AF"))
+                    }
+                }
+            }
+
+            // Weekday headers - Sunday on the right (Western calendar style)
+            HStack {
+                ForEach(["一", "二", "三", "四", "五", "六", "日"], id: \.self) { day in
+                    Text(day)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Color(hex: "9CA3AF"))
+                        .frame(maxWidth: .infinity)
+                }
+            }
+
+            // Calendar grid
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 8) {
+                ForEach(viewModel.calendarDays) { day in
+                    CalendarDayCell(day: day, isToday: viewModel.isToday(day.date))
+                }
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.white)
+                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+        )
+    }
+
+    private var yearText: String {
+        // Format year without comma
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .none
+        formatter.groupingSeparator = ""
+        let yearString = String(viewModel.currentYear)
+        return "\(yearString)年\(viewModel.currentMonth)月"
+    }
+
     // MARK: - Rules Section
     private var rulesSection: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -340,50 +472,6 @@ struct CloudShopView: View {
         )
     }
 
-    // MARK: - Pet Shop Section
-    private var petShopSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Image(systemName: "pawprint.fill")
-                    .font(.system(size: 16))
-                    .foregroundStyle(Color(hex: "F97316"))
-
-                Text("宠物商店")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Color(hex: "1F2937"))
-
-                Spacer()
-
-                Text("200云朵币/个")
-                    .font(.system(size: 14))
-                    .foregroundStyle(Color(hex: "F59E0B"))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(hex: "FEF3C7"))
-                    )
-            }
-
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))], spacing: 12) {
-                ForEach(viewModel.allPets) { pet in
-                    PetShopCard(
-                        pet: pet,
-                        isUnlocked: viewModel.isPetUnlocked(pet.id),
-                        isCurrent: viewModel.currentPetId == pet.id,
-                        onTap: { handlePetTap(pet: pet) }
-                    )
-                }
-            }
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.white)
-                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
-        )
-    }
-
     // MARK: - Check-in Animation
     private var checkInAnimation: some View {
         ZStack {
@@ -397,9 +485,10 @@ struct CloudShopView: View {
                         .fill(Color(hex: "FEF3C7"))
                         .frame(width: 120, height: 120)
 
-                    Image(systemName: "dollarsign.circle.fill")
-                        .font(.system(size: 60))
-                        .foregroundStyle(Color(hex: "F59E0B"))
+                    coinIcon
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 60, height: 60)
                         .scaleEffect(showCheckInAnimation ? 1.2 : 0.5)
                         .animation(.spring(response: 0.4, dampingFraction: 0.6), value: showCheckInAnimation)
                 }
@@ -486,33 +575,39 @@ struct CloudShopView: View {
         }
     }
 
-    // MARK: - Actions
-    private func handlePetTap(pet: PetDefinition) {
-        if viewModel.isPetUnlocked(pet.id) {
-            // Switch to this pet
-            if viewModel.switchPet(to: pet.id, user: user) {
-                // Successfully switched
-            }
-        } else {
-            // Try to purchase
-            let result = viewModel.purchasePet(petId: pet.id, user: user)
-            switch result {
-            case .success:
-                unlockedPetName = pet.name
-                withAnimation {
-                    showPetUnlockAnimation = true
-                }
-            case .insufficientCoins:
-                alertMessage = "云朵币不足，加油获取哦！"
-                showAlert = true
-            case .alreadyOwned:
-                alertMessage = "已经有这只宠物了"
-                showAlert = true
-            case .failed:
-                alertMessage = "购买失败，请重试"
-                showAlert = true
+    // MARK: - Image Helpers
+    private var coinIcon: Image {
+        let possiblePaths = [
+            "/Users/wjsun/.claude/dice-projects/learning-assistant/EnglishBuddyApp/picture/coin.png",
+            Bundle.main.path(forResource: "coin", ofType: "png"),
+            Bundle.main.bundlePath + "/picture/coin.png"
+        ]
+
+        for path in possiblePaths {
+            if let path = path, FileManager.default.fileExists(atPath: path),
+               let uiImage = UIImage(contentsOfFile: path) {
+                return Image(uiImage: uiImage)
             }
         }
+
+        return Image(systemName: "dollarsign.circle.fill")
+    }
+
+    private func petImage(named: String) -> Image {
+        let possiblePaths = [
+            "/Users/wjsun/.claude/dice-projects/learning-assistant/EnglishBuddyApp/picture/\(named).png",
+            Bundle.main.path(forResource: named, ofType: "png"),
+            Bundle.main.bundlePath + "/picture/\(named).png"
+        ]
+
+        for path in possiblePaths {
+            if let path = path, FileManager.default.fileExists(atPath: path),
+               let uiImage = UIImage(contentsOfFile: path) {
+                return Image(uiImage: uiImage)
+            }
+        }
+
+        return Image(systemName: "pawprint.fill")
     }
 }
 
@@ -563,18 +658,19 @@ struct PetShopCard: View {
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: 8) {
-                // Pet image placeholder
+                // Pet image
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: 16)
                         .fill(isUnlocked ? Color(hex: "FEF3C7") : Color(hex: "F3F4F6"))
-                        .frame(width: 72, height: 72)
+                        .frame(height: 100)
 
-                    if isUnlocked {
-                        // Use system image for now, replace with actual pet image
-                        Image(systemName: "pawprint.fill")
-                            .font(.system(size: 32))
-                            .foregroundStyle(Color(hex: "F59E0B"))
-                    } else {
+                    petImage(named: pet.imageName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 80, height: 80)
+                        .opacity(isUnlocked ? 1.0 : 0.5)
+
+                    if !isUnlocked {
                         Image(systemName: "lock.fill")
                             .font(.system(size: 24))
                             .foregroundStyle(Color(hex: "9CA3AF"))
@@ -584,32 +680,45 @@ struct PetShopCard: View {
                     if isCurrent {
                         VStack {
                             Spacer()
-                            Text("使用中")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(Color(hex: "F97316"))
-                                )
+                            HStack {
+                                Spacer()
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundStyle(Color(hex: "10B981"))
+                                    .background(Circle().fill(.white))
+                                    .offset(x: -4, y: 4)
+                            }
                         }
-                        .offset(y: 4)
                     }
                 }
 
                 Text(pet.name)
-                    .font(.system(size: 13, weight: isUnlocked ? .semibold : .regular))
+                    .font(.system(size: 14, weight: isUnlocked ? .semibold : .regular))
                     .foregroundStyle(isUnlocked ? Color(hex: "1F2937") : Color(hex: "9CA3AF"))
             }
         }
         .buttonStyle(.plain)
-        .opacity(isUnlocked ? 1.0 : 0.6)
+    }
+
+    private func petImage(named: String) -> Image {
+        let possiblePaths = [
+            "/Users/wjsun/.claude/dice-projects/learning-assistant/EnglishBuddyApp/picture/\(named).png",
+            Bundle.main.path(forResource: named, ofType: "png"),
+            Bundle.main.bundlePath + "/picture/\(named).png"
+        ]
+
+        for path in possiblePaths {
+            if let path = path, FileManager.default.fileExists(atPath: path),
+               let uiImage = UIImage(contentsOfFile: path) {
+                return Image(uiImage: uiImage)
+            }
+        }
+
+        return Image(systemName: "pawprint.fill")
     }
 }
 
 // MARK: - Rule Row
-
 struct RuleRow: View {
     let icon: String
     let iconColor: Color
@@ -636,7 +745,6 @@ struct RuleRow: View {
 }
 
 // MARK: - Calendar Day Cell
-
 struct CalendarDayCell: View {
     let day: CalendarDay
     let isToday: Bool
