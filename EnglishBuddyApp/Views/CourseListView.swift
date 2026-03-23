@@ -18,13 +18,14 @@ struct CourseListView: View {
                 let screenW = geometry.size.width
                 let screenH = geometry.size.height
                 let petSize: CGFloat = 250
-                let padding: CGFloat = 10
+                let hPadding: CGFloat = -20  // 水平方向更小边距，让宠物能更贴边
+                let vPadding: CGFloat = 10   // 垂直方向边距
 
                 // Limit bounds (pet edges can't go beyond screen)
-                let minX = petSize/2 + padding
-                let maxX = screenW - petSize/2 - padding
-                let minY = petSize/2 + padding
-                let maxY = screenH - petSize/2 - padding
+                let minX = petSize/2 + hPadding
+                let maxX = screenW - petSize/2 - hPadding
+                let minY = petSize/2 + vPadding
+                let maxY = screenH - petSize/2 - vPadding
 
                 // Default position: bottom right (at limit)
                 let defaultX = maxX
