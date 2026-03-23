@@ -143,7 +143,7 @@ struct AITestView: View {
 
             // Input field and send button
             HStack(spacing: 12) {
-                // Text input field
+                // Text input field (支持中文输入)
                 TextField("输入消息...", text: $inputText)
                     .font(.system(size: 16))
                     .padding(.horizontal, 16)
@@ -152,6 +152,9 @@ struct AITestView: View {
                         RoundedRectangle(cornerRadius: 20)
                             .fill(Color(hex: "F3F4F6"))
                     )
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
+                    .keyboardType(.default)
 
                 // Send button
                 Button(action: {
