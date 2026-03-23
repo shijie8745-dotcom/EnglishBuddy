@@ -381,15 +381,15 @@ struct SettingsView: View {
         user.petCollection.unlockedPets.count
     }
 
-    // MARK: - Voice Test Section
+    // MARK: - Dialogue Test Section (对话测试)
     private var voiceSettingsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
-                Image(systemName: "speaker.wave.2.fill")
+                Image(systemName: "bubble.left.and.bubble.right.fill")
                     .font(.system(size: 16))
                     .foregroundStyle(Color(hex: "F97316"))
 
-                Text("语音测试")
+                Text("对话测试")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(Color(hex: "1F2937"))
             }
@@ -472,6 +472,74 @@ struct SettingsView: View {
 
                     Spacer()
                 }
+
+                Divider().padding(.vertical, 8)
+
+                // AI Test
+                NavigationLink(destination: AITestView()) {
+                    HStack {
+                        Image(systemName: "cpu")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color(hex: "F97316"))
+                            .frame(width: 24)
+
+                        Text("AI Test")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color(hex: "1F2937"))
+
+                        Spacer()
+
+                        HStack(spacing: 4) {
+                            Text("进入")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Color(hex: "6B7280"))
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color(hex: "9CA3AF"))
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(hex: "FFF7ED"))
+                    )
+                }
+                .buttonStyle(.plain)
+
+                // Chat Test
+                NavigationLink(destination: ChatTestView()) {
+                    HStack {
+                        Image(systemName: "bubble.left.and.bubble.right")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color(hex: "F97316"))
+                            .frame(width: 24)
+
+                        Text("Chat Test")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color(hex: "1F2937"))
+
+                        Spacer()
+
+                        HStack(spacing: 4) {
+                            Text("进入")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Color(hex: "6B7280"))
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color(hex: "9CA3AF"))
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(hex: "FFF7ED"))
+                    )
+                }
+                .buttonStyle(.plain)
             }
             .padding(16)
             .background(
@@ -584,57 +652,6 @@ struct SettingsView: View {
                 AboutRow(title: "版本", value: "1.0.0")
                 Divider().padding(.leading, 16)
                 AboutRow(title: "教材", value: "Power Up Level 1")
-                Divider().padding(.leading, 16)
-
-                // AI Test
-                NavigationLink(destination: AITestView()) {
-                    HStack {
-                        Text("AI Test")
-                            .font(.system(size: 14))
-                            .foregroundStyle(Color(hex: "6B7280"))
-
-                        Spacer()
-
-                        HStack(spacing: 4) {
-                            Text("测试")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(Color(hex: "1F2937"))
-
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12))
-                                .foregroundStyle(Color(hex: "9CA3AF"))
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .frame(height: 48)
-                }
-                .buttonStyle(.plain)
-
-                Divider().padding(.leading, 16)
-
-                // Chat Test
-                NavigationLink(destination: ChatTestView()) {
-                    HStack {
-                        Text("Chat Test")
-                            .font(.system(size: 14))
-                            .foregroundStyle(Color(hex: "6B7280"))
-
-                        Spacer()
-
-                        HStack(spacing: 4) {
-                            Text("测试")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(Color(hex: "1F2937"))
-
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12))
-                                .foregroundStyle(Color(hex: "9CA3AF"))
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .frame(height: 48)
-                }
-                .buttonStyle(.plain)
             }
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)

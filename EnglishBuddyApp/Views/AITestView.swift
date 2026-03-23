@@ -308,12 +308,9 @@ struct AITestView: View {
                             .stroke(Color(hex: "E5E7EB"), lineWidth: 1)
                     )
                     .focused($isInputFocused)
-                    .submitLabel(.send)
-                    .onSubmit {
-                        Task {
-                            await viewModel.sendMessage(viewModel.inputText)
-                        }
-                    }
+                    // 禁用自动大写和自动纠正，确保中文输入正常
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
 
                 // Send button
                 Button(action: {
