@@ -196,7 +196,7 @@ struct Unit1CourseDetailView: View {
             }
 
             VStack(spacing: 12) {
-                // 句型组1：Where's...? It's...
+                // 句型组1：Where's...? It's...（不在此教授单复数，It's不加粗）
                 sentenceGroup(title: "询问物品位置") {
                     VStack(spacing: 10) {
                         // 问句
@@ -214,14 +214,13 @@ struct Unit1CourseDetailView: View {
                                 .font(.system(size: 16))
                                 .foregroundStyle(Color(hex: "F97316"))
 
+                            speakerButton(text: "Where's the pencil?")
+
                             Spacer()
 
                             Text("铅笔在哪里？")
                                 .font(.system(size: 14))
                                 .foregroundStyle(Color(hex: "6B7280"))
-
-                            // 小喇叭按钮（增大点击区域）
-                            speakerButton(text: "Where's the pencil?")
                         }
 
                         // 答句
@@ -232,24 +231,22 @@ struct Unit1CourseDetailView: View {
                                 .frame(width: 22, height: 22)
                                 .background(Circle().fill(Color(hex: "FFF7ED")).overlay(Circle().stroke(Color(hex: "F97316"))))
 
-                            Group {
-                                Text("It's ")
-                                    .font(.system(size: 16, weight: .bold)) +
-                                Text("on")
-                                    .font(.system(size: 16, weight: .bold)) +
-                                Text(" the desk.")
-                                    .font(.system(size: 16))
-                            }
-                            .foregroundStyle(Color(hex: "1F2937"))
+                            Text("It's ")
+                                .font(.system(size: 16)) +
+                            Text("on")
+                                .font(.system(size: 16, weight: .bold)) +
+                            Text(" the desk.")
+                                .font(.system(size: 16))
+
+                            speakerButton(text: "It's on the desk.")
 
                             Spacer()
 
                             Text("在书桌上")
                                 .font(.system(size: 14))
                                 .foregroundStyle(Color(hex: "6B7280"))
-
-                            speakerButton(text: "It's on the desk.")
                         }
+                        .foregroundStyle(Color(hex: "1F2937"))
 
                         Divider().padding(.vertical, 4)
 
@@ -260,69 +257,63 @@ struct Unit1CourseDetailView: View {
                                 .foregroundStyle(Color(hex: "9CA3AF"))
 
                             HStack(spacing: 4) {
-                                Group {
-                                    Text("It's ")
-                                        .font(.system(size: 14, weight: .bold)) +
-                                    Text("in")
-                                        .font(.system(size: 14, weight: .bold)) +
-                                    Text(" the bag.")
-                                        .font(.system(size: 14))
-                                }
-                                .foregroundStyle(Color(hex: "4B5563"))
+                                Text("It's ")
+                                    .font(.system(size: 14)) +
+                                Text("in")
+                                    .font(.system(size: 14, weight: .bold)) +
+                                Text(" the bag.")
+                                    .font(.system(size: 14))
+
+                                speakerButton(text: "It's in the bag.", size: 14)
 
                                 Spacer()
 
                                 Text("在书包里")
                                     .font(.system(size: 13))
                                     .foregroundStyle(Color(hex: "6B7280"))
-
-                                speakerButton(text: "It's in the bag.", size: 14)
                             }
+                            .foregroundStyle(Color(hex: "4B5563"))
 
                             HStack(spacing: 4) {
-                                Group {
-                                    Text("It's ")
-                                        .font(.system(size: 14, weight: .bold)) +
-                                    Text("under")
-                                        .font(.system(size: 14, weight: .bold)) +
-                                    Text(" the book.")
-                                        .font(.system(size: 14))
-                                }
-                                .foregroundStyle(Color(hex: "4B5563"))
+                                Text("It's ")
+                                    .font(.system(size: 14)) +
+                                Text("under")
+                                    .font(.system(size: 14, weight: .bold)) +
+                                Text(" the book.")
+                                    .font(.system(size: 14))
+
+                                speakerButton(text: "It's under the book.", size: 14)
 
                                 Spacer()
 
                                 Text("在书下面")
                                     .font(.system(size: 13))
                                     .foregroundStyle(Color(hex: "6B7280"))
-
-                                speakerButton(text: "It's under the book.", size: 14)
                             }
+                            .foregroundStyle(Color(hex: "4B5563"))
 
                             HStack(spacing: 4) {
-                                Group {
-                                    Text("It's ")
-                                        .font(.system(size: 14, weight: .bold)) +
-                                    Text("next to")
-                                        .font(.system(size: 14, weight: .bold)) +
-                                    Text(" the chair.")
-                                        .font(.system(size: 14))
-                                }
-                                .foregroundStyle(Color(hex: "4B5563"))
+                                Text("It's ")
+                                    .font(.system(size: 14)) +
+                                Text("next to")
+                                    .font(.system(size: 14, weight: .bold)) +
+                                Text(" the chair.")
+                                    .font(.system(size: 14))
+
+                                speakerButton(text: "It's next to the chair.", size: 14)
 
                                 Spacer()
 
                                 Text("在椅子旁边")
                                     .font(.system(size: 13))
                                     .foregroundStyle(Color(hex: "6B7280"))
-
-                                speakerButton(text: "It's next to the chair.", size: 14)
                             }
+                            .foregroundStyle(Color(hex: "4B5563"))
                         }
                     }
                 }
 
-                // 句型组2：What's this?
+                // 句型组2：What's this?（不在此教授单复数，It's不加粗）
                 sentenceGroup(title: "询问这是什么（单数）") {
                     HStack(spacing: 8) {
                         Text("Q")
@@ -335,13 +326,13 @@ struct Unit1CourseDetailView: View {
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(Color(hex: "F97316"))
 
+                        speakerButton(text: "What's this?")
+
                         Spacer()
 
                         Text("这是什么？")
                             .font(.system(size: 14))
                             .foregroundStyle(Color(hex: "6B7280"))
-
-                        speakerButton(text: "What's this?")
                     }
 
                     HStack(spacing: 8) {
@@ -351,25 +342,21 @@ struct Unit1CourseDetailView: View {
                             .frame(width: 22, height: 22)
                             .background(Circle().fill(Color(hex: "FFF7ED")).overlay(Circle().stroke(Color(hex: "F97316"))))
 
-                        Group {
-                            Text("It's ")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text("a pencil case.")
-                                .font(.system(size: 16))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
+                        Text("It's a pencil case.")
+                            .font(.system(size: 16))
+
+                        speakerButton(text: "It's a pencil case.")
 
                         Spacer()
 
                         Text("这是一个铅笔盒。")
                             .font(.system(size: 14))
                             .foregroundStyle(Color(hex: "6B7280"))
-
-                        speakerButton(text: "It's a pencil case.")
                     }
+                    .foregroundStyle(Color(hex: "1F2937"))
                 }
 
-                // 句型组3：What are these?
+                // 句型组3：What are these?（在此教授复数，They're要加粗）
                 sentenceGroup(title: "询问这些是什么（复数）") {
                     HStack(spacing: 8) {
                         Text("Q")
@@ -382,13 +369,13 @@ struct Unit1CourseDetailView: View {
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(Color(hex: "F97316"))
 
+                        speakerButton(text: "What are these?")
+
                         Spacer()
 
                         Text("这些是什么？")
                             .font(.system(size: 14))
                             .foregroundStyle(Color(hex: "6B7280"))
-
-                        speakerButton(text: "What are these?")
                     }
 
                     HStack(spacing: 8) {
@@ -398,22 +385,20 @@ struct Unit1CourseDetailView: View {
                             .frame(width: 22, height: 22)
                             .background(Circle().fill(Color(hex: "FFF7ED")).overlay(Circle().stroke(Color(hex: "F97316"))))
 
-                        Group {
-                            Text("They're ")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text("books.")
-                                .font(.system(size: 16))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
+                        Text("They're ")
+                            .font(.system(size: 16, weight: .bold)) +
+                        Text("books.")
+                            .font(.system(size: 16))
+
+                        speakerButton(text: "They're books.")
 
                         Spacer()
 
                         Text("这些是书。")
                             .font(.system(size: 14))
                             .foregroundStyle(Color(hex: "6B7280"))
-
-                        speakerButton(text: "They're books.")
                     }
+                    .foregroundStyle(Color(hex: "1F2937"))
                 }
             }
         }
