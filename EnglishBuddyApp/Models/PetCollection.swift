@@ -8,9 +8,9 @@ class PetCollection: Codable {
 
     init(currentPetId: String = "yinzhan", unlockedPets: [String: UnlockedPetInfo] = [:]) {
         self.currentPetId = currentPetId
-        // 默认解锁音战 (image_2)
+        // Always ensure yinzhan is unlocked by default
         var initialPets = unlockedPets
-        if initialPets.isEmpty {
+        if initialPets["yinzhan"] == nil {
             initialPets["yinzhan"] = UnlockedPetInfo(id: "yinzhan", name: "音战", unlockDate: Date())
         }
         self.unlockedPets = initialPets
@@ -24,8 +24,8 @@ class PetCollection: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         currentPetId = try container.decodeIfPresent(String.self, forKey: .currentPetId) ?? "yinzhan"
         var decodedPets = try container.decodeIfPresent([String: UnlockedPetInfo].self, forKey: .unlockedPets) ?? [:]
-        // Ensure at least yinzhan is unlocked
-        if decodedPets.isEmpty {
+        // Always ensure yinzhan is unlocked by default
+        if decodedPets["yinzhan"] == nil {
             decodedPets["yinzhan"] = UnlockedPetInfo(id: "yinzhan", name: "音战", unlockDate: Date())
         }
         unlockedPets = decodedPets
