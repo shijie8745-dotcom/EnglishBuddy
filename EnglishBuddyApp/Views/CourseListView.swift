@@ -367,7 +367,7 @@ struct CourseListView: View {
 
             LazyVStack(spacing: 12) {
                 ForEach(viewModel.lessons) { lesson in
-                    NavigationLink(destination: CourseDetailView(lesson: lesson, viewModel: viewModel)) {
+                    NavigationLink(destination: destinationView(for: lesson)) {
                         LessonRow(
                             lesson: lesson,
                             status: viewModel.status(for: lesson)
@@ -376,6 +376,16 @@ struct CourseListView: View {
                     .buttonStyle(.plain)
                 }
             }
+        }
+    }
+
+    // MARK: - Destination View
+    @ViewBuilder
+    private func destinationView(for lesson: Lesson) -> some View {
+        if lesson.id == 1 {
+            Unit1CourseDetailView(viewModel: viewModel)
+        } else {
+            CourseDetailView(lesson: lesson, viewModel: viewModel)
         }
     }
 }
