@@ -1,9 +1,10 @@
 import SwiftUI
 
 struct AITestView: View {
-    @State private var viewModel = ChatViewModel()
     @State private var inputText = ""
-    @State private var currentLesson: Lesson?
+    @State private var responseText = ""
+    @State private var isLoading = false
+    @State private var errorMessage: String?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -12,47 +13,31 @@ struct AITestView: View {
             Color(hex: "F8FAFC")
                 .ignoresSafeArea()
 
-            // Main content - same structure as ChatView
+            // Main content
             VStack(spacing: 0) {
                 // Header
-                chatHeader
+                testHeader
 
-                // Messages list
-                messagesList
+                // Content
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Input section
+                        inputSection
 
-                // Text input area (replacing voice input)
-                textInputArea
+                        // Response section
+                        responseSection
+                    }
+                    .padding(16)
+                }
             }
-        }
-        .onAppear {
-            loadPracticeLesson()
-        }
-        .onDisappear {
-            viewModel.clearAudioCache()
         }
         .navigationBarHidden(true)
         .toolbar(.hidden, for: .navigationBar)
     }
 
-    // MARK: - Load Practice Lesson
-    private func loadPracticeLesson() {
-        let user = DataStore.loadUser()
-        let lessons = LessonResourceManager.loadLessonsFromJSON()
-
-        // Get current practice lesson from user settings
-        let lessonId = user.currentPracticeLessonId ?? 1
-        currentLesson = lessons.first { $0.id == lessonId }
-
-        // Load initial messages for this lesson
-        if let lesson = currentLesson {
-            viewModel.loadInitialMessages(for: lesson)
-        }
-    }
-
-    // MARK: - Chat Header (same as ChatView)
-    private var chatHeader: some View {
+    // MARK: - Test Header
+    private var testHeader: some View {
         HStack(spacing: 0) {
-            // Back button
             Button(action: { dismiss() }) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 20, weight: .semibold))
@@ -63,17 +48,16 @@ struct AITestView: View {
 
             Spacer()
 
-            // Title: AI Test + current unit info
-            VStack(spacing: 4) {
-                Text("AI Test")
+            HStack(spacing: 10) {
+                Image(systemName: "cpu.fill")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 40, height: 40)
+                    .foregroundStyle(Color(hex: "F97316"))
+
+                Text("AI 测试")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(Color(hex: "1F2937"))
-
-                if let lesson = currentLesson {
-                    Text("Unit \(lesson.id) - \(lesson.title)")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color(hex: "6B7280"))
-                }
             }
 
             Spacer()
@@ -86,111 +70,164 @@ struct AITestView: View {
         .overlay(Rectangle().fill(Color(hex: "E5E7EB")).frame(height: 0.5), alignment: .bottom)
     }
 
-    // MARK: - Messages List (same as ChatView)
-    private var messagesList: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 24) {
-                    ForEach(viewModel.messages) { message in
-                        ChatBubble(
-                            message: message,
-                            isPlaying: viewModel.currentlyPlayingMessageId == message.id,
-                            onTap: {
-                                viewModel.togglePlay(for: message)
-                            }
-                        )
-                        .id(message.id)
-                    }
+    // MARK: - Input Section
+    private var inputSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("输入提示词")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(Color(hex: "1F2937"))
 
-                    if viewModel.isLoading {
-                        TypingIndicator()
-                            .id("typing")
-                    }
+            TextEditor(text: $inputText)
+                .font(.system(size: 14))
+                .frame(minHeight: 120)
+                .padding(8)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(hex: "F9FAFB"))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color(hex: "E5E7EB"), lineWidth: 1)
+                )
+
+            Button(action: {
+                Task {
+                    await sendRequest()
                 }
-                .padding(.horizontal, 12)
-                .padding(.top, 16)
-                .padding(.bottom, 16)
-            }
-            .onChange(of: viewModel.messages.count) { _, _ in
-                scrollToBottom(proxy: proxy)
-            }
-            .onChange(of: viewModel.isLoading) { _, _ in
-                scrollToBottom(proxy: proxy)
-            }
-        }
-    }
+            }) {
+                HStack {
+                    if isLoading {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                            .padding(.trailing, 8)
+                    }
 
-    private func scrollToBottom(proxy: ScrollViewProxy) {
-        if let lastId = viewModel.messages.last?.id {
-            withAnimation {
-                proxy.scrollTo(lastId, anchor: .top)
-            }
-        }
-        if viewModel.isLoading {
-            withAnimation {
-                proxy.scrollTo("typing", anchor: .top)
-            }
-        }
-    }
-
-    // MARK: - Text Input Area (replaces voice input)
-    private var textInputArea: some View {
-        VStack(spacing: 0) {
-            // Top divider line
-            Rectangle()
-                .fill(Color(hex: "E5E7EB"))
-                .frame(height: 0.5)
-
-            // Input field and send button
-            HStack(spacing: 12) {
-                // Text input field (支持中文输入)
-                TextField("输入消息...", text: $inputText)
-                    .font(.system(size: 16))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(Color(hex: "F3F4F6"))
+                    Text(isLoading ? "请求中..." : "发送请求")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(
+                    LinearGradient(
+                        colors: [Color(hex: "F97316"), Color(hex: "FB923C")],
+                        startPoint: .leading,
+                        endPoint: .trailing
                     )
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled(true)
-                    .keyboardType(.default)
-
-                // Send button
-                Button(action: {
-                    sendMessage()
-                }) {
-                    Image(systemName: "paperplane.fill")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 44, height: 44)
-                        .background(
-                            LinearGradient(
-                                colors: inputText.isEmpty ? [Color(hex: "D1D5DB"), Color(hex: "9CA3AF")] : [Color(hex: "F97316"), Color(hex: "EA580C")],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .clipShape(Circle())
-                }
-                .disabled(inputText.isEmpty)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color.white)
+            .disabled(isLoading || inputText.isEmpty)
+            .opacity(isLoading || inputText.isEmpty ? 0.6 : 1.0)
         }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.white)
+                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+        )
     }
 
-    private func sendMessage() {
-        let trimmedText = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedText.isEmpty else { return }
+    // MARK: - Response Section
+    private var responseSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("AI 响应")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(Color(hex: "1F2937"))
 
-        let textToSend = trimmedText
-        inputText = ""
+                Spacer()
 
-        Task {
-            await viewModel.sendMessage(textToSend)
+                if !responseText.isEmpty {
+                    Button(action: {
+                        UIPasteboard.general.string = responseText
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "doc.on.doc")
+                                .font(.system(size: 12))
+                            Text("复制")
+                                .font(.system(size: 12))
+                        }
+                        .foregroundStyle(Color(hex: "F97316"))
+                    }
+                }
+            }
+
+            if responseText.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "bubble.left.fill")
+                        .font(.system(size: 40))
+                        .foregroundStyle(Color(hex: "E5E7EB"))
+
+                    Text("发送请求后将显示 AI 响应")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color(hex: "9CA3AF"))
+                }
+                .frame(maxWidth: .infinity, minHeight: 150)
+            } else {
+                ScrollView {
+                    Text(responseText)
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color(hex: "1F2937"))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(hex: "F0FDF4"))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color(hex: "86EFAC"), lineWidth: 1)
+                        )
+                }
+                .frame(minHeight: 150)
+            }
+
+            if let error = errorMessage {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color(hex: "EF4444"))
+
+                    Text(error)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color(hex: "EF4444"))
+                        .lineLimit(2)
+
+                    Spacer()
+                }
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(hex: "FEF2F2"))
+                )
+            }
         }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.white)
+                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+        )
+    }
+
+    private func sendRequest() async {
+        isLoading = true
+        errorMessage = nil
+        responseText = ""
+
+        do {
+            let response = try await AIChatService.shared.sendMessage(
+                inputText,
+                lessonId: 1,
+                historyMessages: []
+            )
+            responseText = response
+        } catch {
+            errorMessage = "请求失败: \(error.localizedDescription)"
+        }
+
+        isLoading = false
     }
 }
 
