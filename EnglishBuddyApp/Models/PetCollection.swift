@@ -22,7 +22,7 @@ class PetCollection: Codable {
 
     required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        currentPetId = try container.decodeIfPresent(String.self, forKey: .currentPetId) ?? "yinzhan"
+        var decodedPetId = try container.decodeIfPresent(String.self, forKey: .currentPetId) ?? "yinzhan"
         var decodedPets = try container.decodeIfPresent([String: UnlockedPetInfo].self, forKey: .unlockedPets) ?? [:]
 
         // Filter out old pets that are not in the new pet list
@@ -35,11 +35,12 @@ class PetCollection: Codable {
         }
 
         // Ensure currentPetId is valid
-        if !validPetIds.contains(currentPetId) {
-            currentPetId = "yinzhan"
+        if !validPetIds.contains(decodedPetId) {
+            decodedPetId = "yinzhan"
         }
 
-        unlockedPets = decodedPets
+        self.currentPetId = decodedPetId
+        self.unlockedPets = decodedPets
     }
 
     func encode(to encoder: Encoder) throws {
