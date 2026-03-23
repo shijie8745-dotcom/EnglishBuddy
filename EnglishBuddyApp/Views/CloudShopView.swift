@@ -157,8 +157,8 @@ struct CloudShopView: View {
                 )
             }
 
-            // Pet grid with larger images
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+            // Pet grid - 4 columns for 10 pets (3 rows: 4+4+2)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 12) {
                 ForEach(viewModel.allPets) { pet in
                     PetShopCard(
                         pet: pet,
@@ -577,7 +577,20 @@ struct CloudShopView: View {
     }
 
     private func petImage(named: String) -> Image {
-        Image(named)
+        let possiblePaths = [
+            "/Users/wjsun/.claude/dice-projects/learning-assistant/EnglishBuddyApp/EnglishBuddyApp/picture/pets/\(named).png",
+            Bundle.main.path(forResource: named, ofType: "png", inDirectory: "pets"),
+            Bundle.main.bundlePath + "/picture/pets/\(named).png"
+        ]
+
+        for path in possiblePaths {
+            if let path = path, FileManager.default.fileExists(atPath: path),
+               let uiImage = UIImage(contentsOfFile: path) {
+                return Image(uiImage: uiImage)
+            }
+        }
+
+        return Image(systemName: "pawprint.fill")
     }
 }
 
@@ -627,22 +640,22 @@ struct PetShopCard: View {
 
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 // Pet image
                 ZStack {
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: 14)
                         .fill(isUnlocked ? Color(hex: "FEF3C7") : Color(hex: "F3F4F6"))
-                        .frame(height: 100)
+                        .frame(height: 85)
 
                     petImage(named: pet.imageName)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 80, height: 80)
+                        .frame(width: 72, height: 72)
                         .opacity(isUnlocked ? 1.0 : 0.5)
 
                     if !isUnlocked {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 24))
+                            .font(.system(size: 18))
                             .foregroundStyle(Color(hex: "9CA3AF"))
                     }
 
@@ -653,7 +666,7 @@ struct PetShopCard: View {
                             HStack {
                                 Spacer()
                                 Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 20))
+                                    .font(.system(size: 18))
                                     .foregroundStyle(Color(hex: "10B981"))
                                     .background(Circle().fill(.white))
                                     .offset(x: -4, y: 4)
@@ -663,7 +676,7 @@ struct PetShopCard: View {
                 }
 
                 Text(pet.name)
-                    .font(.system(size: 14, weight: isUnlocked ? .semibold : .regular))
+                    .font(.system(size: 13, weight: isUnlocked ? .semibold : .regular))
                     .foregroundStyle(isUnlocked ? Color(hex: "1F2937") : Color(hex: "9CA3AF"))
             }
         }
@@ -672,9 +685,9 @@ struct PetShopCard: View {
 
     private func petImage(named: String) -> Image {
         let possiblePaths = [
-            "/Users/wjsun/.claude/dice-projects/learning-assistant/EnglishBuddyApp/EnglishBuddyApp/picture/\(named).png",
-            Bundle.main.path(forResource: named, ofType: "png"),
-            Bundle.main.bundlePath + "/picture/\(named).png"
+            "/Users/wjsun/.claude/dice-projects/learning-assistant/EnglishBuddyApp/EnglishBuddyApp/picture/pets/\(named).png",
+            Bundle.main.path(forResource: named, ofType: "png", inDirectory: "pets"),
+            Bundle.main.bundlePath + "/picture/pets/\(named).png"
         ]
 
         for path in possiblePaths {

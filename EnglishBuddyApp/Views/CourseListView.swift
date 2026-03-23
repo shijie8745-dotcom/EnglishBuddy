@@ -200,13 +200,30 @@ struct CourseListView: View {
 
     // MARK: - Floating Pet Image
     private var floatingPetImage: some View {
-        Image(viewModel.currentPetImageName)
+        petImageFromFile(named: viewModel.currentPetImageName)
             .resizable()
             .scaledToFit()
             .frame(width: 250, height: 250)
             .shadow(color: .gray.opacity(0.3), radius: 20, x: 0, y: 0)
             .shadow(color: .gray.opacity(0.2), radius: 40, x: 0, y: 0)
             .shadow(color: .gray.opacity(0.1), radius: 60, x: 0, y: 0)
+    }
+
+    private func petImageFromFile(named: String) -> Image {
+        let possiblePaths = [
+            "/Users/wjsun/.claude/dice-projects/learning-assistant/EnglishBuddyApp/EnglishBuddyApp/picture/pets/\(named).png",
+            Bundle.main.path(forResource: named, ofType: "png", inDirectory: "pets"),
+            Bundle.main.bundlePath + "/picture/pets/\(named).png"
+        ]
+
+        for path in possiblePaths {
+            if let path = path, FileManager.default.fileExists(atPath: path),
+               let uiImage = UIImage(contentsOfFile: path) {
+                return Image(uiImage: uiImage)
+            }
+        }
+
+        return Image(systemName: "pawprint.fill")
     }
 
     // MARK: - Practice & Cloud Shop Section

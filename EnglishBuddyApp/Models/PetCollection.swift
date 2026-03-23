@@ -6,12 +6,12 @@ class PetCollection: Codable {
     var currentPetId: String          // 当前使用宠物ID
     var unlockedPets: [String: UnlockedPetInfo]  // 已解锁宠物
 
-    init(currentPetId: String = "yunbao", unlockedPets: [String: UnlockedPetInfo] = [:]) {
+    init(currentPetId: String = "yinzhan", unlockedPets: [String: UnlockedPetInfo] = [:]) {
         self.currentPetId = currentPetId
-        // 默认解锁云宝
+        // 默认解锁音战 (image_2)
         var initialPets = unlockedPets
         if initialPets.isEmpty {
-            initialPets["yunbao"] = UnlockedPetInfo(id: "yunbao", name: "云宝", unlockDate: Date())
+            initialPets["yinzhan"] = UnlockedPetInfo(id: "yinzhan", name: "音战", unlockDate: Date())
         }
         self.unlockedPets = initialPets
     }
@@ -22,11 +22,11 @@ class PetCollection: Codable {
 
     required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        currentPetId = try container.decodeIfPresent(String.self, forKey: .currentPetId) ?? "yunbao"
+        currentPetId = try container.decodeIfPresent(String.self, forKey: .currentPetId) ?? "yinzhan"
         var decodedPets = try container.decodeIfPresent([String: UnlockedPetInfo].self, forKey: .unlockedPets) ?? [:]
-        // Ensure at least yunbao is unlocked
+        // Ensure at least yinzhan is unlocked
         if decodedPets.isEmpty {
-            decodedPets["yunbao"] = UnlockedPetInfo(id: "yunbao", name: "云宝", unlockDate: Date())
+            decodedPets["yinzhan"] = UnlockedPetInfo(id: "yinzhan", name: "音战", unlockDate: Date())
         }
         unlockedPets = decodedPets
     }
@@ -99,19 +99,23 @@ struct PetDefinition: Codable, Identifiable {
 
 enum BuiltInPets {
     static let allPets: [PetDefinition] = [
-        PetDefinition(id: "yunbao", name: "云宝", imageName: "yunbao"),
-        PetDefinition(id: "biqi", name: "碧琪", imageName: "biqi"),
-        PetDefinition(id: "pingguo", name: "苹果嘉儿", imageName: "pingguo"),
-        PetDefinition(id: "rourou", name: "柔柔", imageName: "rourou"),
-        PetDefinition(id: "zhengqi", name: "珍奇", imageName: "zhengqi"),
-        PetDefinition(id: "ziyue", name: "紫悦", imageName: "ziyue"),
+        PetDefinition(id: "yinzhan", name: "音战", imageName: "yinzhan"),
+        PetDefinition(id: "kubao", name: "酷宝", imageName: "kubao"),
+        PetDefinition(id: "dianmiao", name: "电喵", imageName: "dianmiao"),
+        PetDefinition(id: "saibo", name: "赛博", imageName: "saibo"),
+        PetDefinition(id: "fenmiao", name: "粉喵", imageName: "fenmiao"),
+        PetDefinition(id: "kushao", name: "酷少", imageName: "kushao"),
+        PetDefinition(id: "yinren", name: "银刃", imageName: "yinren"),
+        PetDefinition(id: "luluo", name: "绿萝", imageName: "luluo"),
+        PetDefinition(id: "feihong", name: "绯红", imageName: "feihong"),
+        PetDefinition(id: "jiniang", name: "机娘", imageName: "jiniang"),
     ]
 
     static func petById(_ id: String) -> PetDefinition? {
         allPets.first { $0.id == id }
     }
 
-    static func petById(_ id: String) -> String {
+    static func petNameById(_ id: String) -> String {
         allPets.first { $0.id == id }?.name ?? "未知"
     }
 }
