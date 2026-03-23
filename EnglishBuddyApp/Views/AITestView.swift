@@ -219,7 +219,7 @@ struct AITestView: View {
         do {
             let response = try await AIChatService.shared.sendMessage(
                 inputText,
-                lessonId: 0,
+                lessonId: 1,
                 historyMessages: []
             )
             responseText = response

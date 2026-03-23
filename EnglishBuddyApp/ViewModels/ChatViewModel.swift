@@ -245,7 +245,7 @@ class ChatViewModel {
         do {
             // Get current messages as history (excluding the last user message we just added)
             let historyMessages = messages.dropLast()
-            let response = try await AIChatService.shared.sendMessage(text, lessonId: currentLesson?.id ?? 0, historyMessages: Array(historyMessages))
+            let response = try await AIChatService.shared.sendMessage(text, lessonId: currentLesson?.id ?? 1, historyMessages: Array(historyMessages))
             print("=== AI原始响应 ===")
             print(response)
             print("==================")

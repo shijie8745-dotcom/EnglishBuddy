@@ -41,8 +41,8 @@ enum LessonStatus { case locked, inProgress, completed }
 
 extension Lesson {
     static let mockLessons: [Lesson] = [
-        Lesson(id: 0, title: "Hello!", subtitle: "打招呼和自我介绍", description: "学习如何用英语打招呼和介绍自己",
-               vocabulary: [VocabularyItem(word: "hello", meaning: "你好", phonetic: "/həˈləʊ/", category: "问候", image: nil)],
-               sentencePatterns: [SentencePattern(pattern: "Hello!", meaning: "你好！", example: "Hello! I'm Sam.", usage: "打招呼")])
+        Lesson(id: 1, title: "Our New School", subtitle: "我们的新学校", description: "学习学校用品、教室物品和方位表达",
+               vocabulary: [VocabularyItem(word: "pencil", meaning: "铅笔", phonetic: "/ˈpensl/", category: "学习用品", image: nil)],
+               sentencePatterns: [SentencePattern(pattern: "What's this?", meaning: "这是什么？", example: "What's this? It's a book.", usage: "询问物品")])
     ]
 }

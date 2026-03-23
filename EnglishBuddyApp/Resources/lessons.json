@@ -1,42 +1,6 @@
 {
   "lessons": [
     {
-      "id": 0,
-      "title": "Hello!",
-      "subtitle": "问候与认识新朋友",
-      "description": "学习基本问候语、自我介绍、颜色和数字",
-      "vocabulary": [
-        {"word": "red", "meaning": "红色", "phonetic": "/red/", "category": "颜色"},
-        {"word": "yellow", "meaning": "黄色", "phonetic": "/ˈjeləʊ/", "category": "颜色"},
-        {"word": "orange", "meaning": "橙色", "phonetic": "/ˈɒrɪndʒ/", "category": "颜色"},
-        {"word": "pink", "meaning": "粉色", "phonetic": "/pɪŋk/", "category": "颜色"},
-        {"word": "black", "meaning": "黑色", "phonetic": "/blæk/", "category": "颜色"},
-        {"word": "brown", "meaning": "棕色", "phonetic": "/braʊn/", "category": "颜色"},
-        {"word": "blue", "meaning": "蓝色", "phonetic": "/bluː/", "category": "颜色"},
-        {"word": "green", "meaning": "绿色", "phonetic": "/ɡriːn/", "category": "颜色"},
-        {"word": "purple", "meaning": "紫色", "phonetic": "/ˈpɜːpl/", "category": "颜色"},
-        {"word": "grey", "meaning": "灰色", "phonetic": "/ɡreɪ/", "category": "颜色"},
-        {"word": "white", "meaning": "白色", "phonetic": "/waɪt/", "category": "颜色"},
-        {"word": "one", "meaning": "一", "phonetic": "/wʌn/", "category": "数字"},
-        {"word": "two", "meaning": "二", "phonetic": "/tuː/", "category": "数字"},
-        {"word": "three", "meaning": "三", "phonetic": "/θriː/", "category": "数字"},
-        {"word": "four", "meaning": "四", "phonetic": "/fɔː(r)/", "category": "数字"},
-        {"word": "five", "meaning": "五", "phonetic": "/faɪv/", "category": "数字"},
-        {"word": "six", "meaning": "六", "phonetic": "/sɪks/", "category": "数字"},
-        {"word": "seven", "meaning": "七", "phonetic": "/ˈsevn/", "category": "数字"},
-        {"word": "eight", "meaning": "八", "phonetic": "/eɪt/", "category": "数字"},
-        {"word": "nine", "meaning": "九", "phonetic": "/naɪn/", "category": "数字"},
-        {"word": "ten", "meaning": "十", "phonetic": "/ten/", "category": "数字"}
-      ],
-      "sentencePatterns": [
-        {"pattern": "Hello!", "meaning": "你好！", "example": "Hello! I'm Sam.", "usage": "打招呼"},
-        {"pattern": "What's your name?", "meaning": "你叫什么名字？", "example": "What's your name? I'm Jenny.", "usage": "询问姓名"},
-        {"pattern": "I'm...", "meaning": "我是...", "example": "I'm Mike.", "usage": "自我介绍"},
-        {"pattern": "How old are you?", "meaning": "你多大了？", "example": "How old are you? I'm six.", "usage": "询问年龄"},
-        {"pattern": "I like...", "meaning": "我喜欢...", "example": "I like red.", "usage": "表达喜好"}
-      ]
-    },
-    {
       "id": 1,
       "title": "Our New School",
       "subtitle": "我们的新学校",

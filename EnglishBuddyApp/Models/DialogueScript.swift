@@ -35,31 +35,6 @@ class DialogueScriptLoader {
     }
 
     private func loadAllScripts() {
-        // Unit 0 - Hello
-        scripts[0] = DialogueScript(
-            unit: 0,
-            title: "Hello",
-            opening: [
-                DialogueRound(round: 0, speaker: "sam", text: "Hello hello! 🎵 How are you today?", expectedResponse: "I'm happy/good/great", keyVocabulary: nil, keyPattern: nil, hint: nil),
-                DialogueRound(round: 1, speaker: "sam", text: "Wonderful! Are you ready to learn and have fun?", expectedResponse: "Yes, I'm ready", keyVocabulary: nil, keyPattern: nil, hint: nil)
-            ],
-            rounds: [
-                DialogueRound(round: 2, speaker: "sam", text: "Perfect! Let me tell you about my friends at the Friendly Farm. Can you count with me? One, two...", expectedResponse: "Three, four, five", keyVocabulary: ["one", "two", "three", "four", "five"], keyPattern: nil, hint: "跟着 Sam 一起数数"),
-                DialogueRound(round: 3, speaker: "sam", text: "Excellent counting! Now, let me ask you - how old are you?", expectedResponse: "I'm six/seven/eight", keyVocabulary: nil, keyPattern: "I'm [number]", hint: "用 I'm + 你的年龄 来回答"),
-                DialogueRound(round: 4, speaker: "sam", text: "Wow, that's great! Do you know what color you like best? I like blue!", expectedResponse: "I like red/blue/green", keyVocabulary: ["red", "blue", "green", "yellow"], keyPattern: "I like [color]", hint: "说出一个你喜欢的颜色"),
-                DialogueRound(round: 5, speaker: "sam", text: "Great! What's your name?", expectedResponse: "I'm [name]", keyVocabulary: nil, keyPattern: "I'm [name]", hint: "用 I'm + 你的名字"),
-                DialogueRound(round: 6, speaker: "sam", text: "Beautiful! Now let's play a color game. Can you find something red around you?", expectedResponse: "Yes! A red apple/book", keyVocabulary: ["red"], keyPattern: nil, hint: "说出你看到的红色物品"),
-                DialogueRound(round: 7, speaker: "sam", text: "Fantastic! Let's count to ten together. One, two, three...", expectedResponse: "Four, five, six, seven, eight, nine, ten", keyVocabulary: ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"], keyPattern: nil, hint: "一起数到十"),
-                DialogueRound(round: 8, speaker: "sam", text: "Perfect counting! Can you tell me your name again?", expectedResponse: "I'm [name]", keyVocabulary: nil, keyPattern: "I'm [name]", hint: "再说一遍你的名字"),
-                DialogueRound(round: 9, speaker: "sam", text: "Great! What's your favorite color?", expectedResponse: "I like [color]", keyVocabulary: nil, keyPattern: "I like [color]", hint: "说你喜欢的颜色"),
-                DialogueRound(round: 10, speaker: "sam", text: "Wonderful! Let's count your fingers! How many fingers do you have?", expectedResponse: "Ten! / I have ten fingers", keyVocabulary: ["ten"], keyPattern: nil, hint: "数一数手指"),
-                DialogueRound(round: 11, speaker: "sam", text: "Yes! Now, can you touch something blue?", expectedResponse: "Yes! [blue item]", keyVocabulary: ["blue"], keyPattern: nil, hint: "摸摸蓝色的物品"),
-                DialogueRound(round: 12, speaker: "sam", text: "Great job! Can you say the numbers one to five again?", expectedResponse: "One, two, three, four, five", keyVocabulary: ["one", "two", "three", "four", "five"], keyPattern: nil, hint: "再说一遍数字1-5"),
-                DialogueRound(round: 13, speaker: "sam", text: "Excellent! Thank you for learning with me today. What's your name one more time?", expectedResponse: "I'm [name]", keyVocabulary: nil, keyPattern: "I'm [name]", hint: "再说一遍名字"),
-                DialogueRound(round: 14, speaker: "sam", text: "Bye bye! See you next time!", expectedResponse: "Bye-bye/Goodbye/See you", keyVocabulary: nil, keyPattern: nil, hint: "说再见")
-            ]
-        )
-
         // Unit 1 - Our New School
         scripts[1] = DialogueScript(
             unit: 1,
