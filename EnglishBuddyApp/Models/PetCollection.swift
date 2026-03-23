@@ -24,10 +24,21 @@ class PetCollection: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         currentPetId = try container.decodeIfPresent(String.self, forKey: .currentPetId) ?? "yinzhan"
         var decodedPets = try container.decodeIfPresent([String: UnlockedPetInfo].self, forKey: .unlockedPets) ?? [:]
+
+        // Filter out old pets that are not in the new pet list
+        let validPetIds = Set(BuiltInPets.allPets.map { $0.id })
+        decodedPets = decodedPets.filter { validPetIds.contains($0.key) }
+
         // Always ensure yinzhan is unlocked by default
         if decodedPets["yinzhan"] == nil {
             decodedPets["yinzhan"] = UnlockedPetInfo(id: "yinzhan", name: "音战", unlockDate: Date())
         }
+
+        // Ensure currentPetId is valid
+        if !validPetIds.contains(currentPetId) {
+            currentPetId = "yinzhan"
+        }
+
         unlockedPets = decodedPets
     }
 
