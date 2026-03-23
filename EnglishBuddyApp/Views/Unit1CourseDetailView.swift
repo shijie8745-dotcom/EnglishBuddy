@@ -3,6 +3,7 @@ import SwiftUI
 struct Unit1CourseDetailView: View {
     @Bindable var viewModel: CourseViewModel
     @State private var showingChat = false
+    @State private var isVocabExpanded = true
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -89,6 +90,7 @@ struct Unit1CourseDetailView: View {
     // MARK: - Vocabulary Section
     private var vocabularySection: some View {
         VStack(alignment: .leading, spacing: 16) {
+            // 标题栏带收起按钮
             HStack(spacing: 6) {
                 Image(systemName: "textformat")
                     .font(.system(size: 16))
@@ -96,36 +98,62 @@ struct Unit1CourseDetailView: View {
                 Text("核心词汇")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(Color(hex: "1F2937"))
+
+                Spacer()
+
+                // 收起/展开按钮
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        isVocabExpanded.toggle()
+                    }
+                }) {
+                    HStack(spacing: 4) {
+                        Text(isVocabExpanded ? "收起" : "展开")
+                            .font(.system(size: 13))
+                        Image(systemName: isVocabExpanded ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 12, weight: .semibold))
+                    }
+                    .foregroundStyle(Color(hex: "F97316"))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Capsule().fill(Color(hex: "FFF7ED")))
+                }
+                .buttonStyle(.plain)
             }
 
-            // 文具类
-            vocabCategoryCard(title: "文具类", words: [
-                ("pencil", "铅笔"), ("rubber", "橡皮"), ("crayon", "蜡笔"),
-                ("pen", "钢笔"), ("pencil case", "铅笔盒"), ("ruler", "尺子"),
-                ("book", "书"), ("paper", "纸")
-            ])
+            // 词汇内容（可收起）
+            if isVocabExpanded {
+                VStack(spacing: 12) {
+                    // 文具类
+                    vocabCategoryCard(title: "文具类", words: [
+                        ("pencil", "铅笔"), ("rubber", "橡皮"), ("crayon", "蜡笔"),
+                        ("pen", "钢笔"), ("pencil case", "铅笔盒"), ("ruler", "尺子"),
+                        ("book", "书"), ("paper", "纸")
+                    ])
 
-            // 教室设施
-            vocabCategoryCard(title: "教室设施", words: [
-                ("desk", "书桌"), ("chair", "椅子"), ("bookcase", "书柜"),
-                ("cupboard", "橱柜"), ("door", "门"), ("window", "窗户"),
-                ("wall", "墙"), ("board", "黑板")
-            ])
+                    // 教室设施
+                    vocabCategoryCard(title: "教室设施", words: [
+                        ("desk", "书桌"), ("chair", "椅子"), ("bookcase", "书柜"),
+                        ("cupboard", "橱柜"), ("door", "门"), ("window", "窗户"),
+                        ("wall", "墙"), ("board", "黑板")
+                    ])
 
-            // 人物与场所
-            vocabCategoryCard(title: "人物与场所", words: [
-                ("teacher", "老师"), ("classroom", "教室"), ("playground", "操场")
-            ])
+                    // 人物与场所
+                    vocabCategoryCard(title: "人物与场所", words: [
+                        ("teacher", "老师"), ("classroom", "教室"), ("playground", "操场")
+                    ])
 
-            // 其他物品
-            vocabCategoryCard(title: "其他物品", words: [
-                ("bag", "书包"), ("picture", "图片"), ("television", "电视")
-            ])
+                    // 其他物品
+                    vocabCategoryCard(title: "其他物品", words: [
+                        ("bag", "书包"), ("picture", "图片"), ("television", "电视")
+                    ])
 
-            // 拓展词汇
-            vocabCategoryCard(title: "拓展词汇", words: [
-                ("help", "帮助"), ("listen", "倾听"), ("share", "分享"), ("work together", "合作")
-            ], isExpanded: true)
+                    // 拓展词汇
+                    vocabCategoryCard(title: "拓展词汇", words: [
+                        ("help", "帮助"), ("listen", "倾听"), ("share", "分享"), ("work together", "合作")
+                    ], isExpanded: true)
+                }
+            }
         }
     }
 
@@ -170,7 +198,7 @@ struct Unit1CourseDetailView: View {
             VStack(spacing: 12) {
                 // 句型组1：Where's...? It's...
                 sentenceGroup(title: "询问物品位置") {
-                    VStack(spacing: 8) {
+                    VStack(spacing: 10) {
                         // 问句
                         HStack(spacing: 8) {
                             Text("Q")
@@ -187,6 +215,13 @@ struct Unit1CourseDetailView: View {
                                 .foregroundStyle(Color(hex: "F97316"))
 
                             Spacer()
+
+                            Text("铅笔在哪里？")
+                                .font(.system(size: 14))
+                                .foregroundStyle(Color(hex: "6B7280"))
+
+                            // 小喇叭按钮（增大点击区域）
+                            speakerButton(text: "Where's the pencil?")
                         }
 
                         // 答句
@@ -197,72 +232,92 @@ struct Unit1CourseDetailView: View {
                                 .frame(width: 22, height: 22)
                                 .background(Circle().fill(Color(hex: "FFF7ED")).overlay(Circle().stroke(Color(hex: "F97316"))))
 
-                            Text("It's ")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "1F2937")) +
-                            Text("on")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "1F2937")) +
-                            Text(" the desk.")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "1F2937"))
+                            Group {
+                                Text("It's ")
+                                    .font(.system(size: 16, weight: .bold)) +
+                                Text("on")
+                                    .font(.system(size: 16, weight: .bold)) +
+                                Text(" the desk.")
+                                    .font(.system(size: 16))
+                            }
+                            .foregroundStyle(Color(hex: "1F2937"))
 
                             Spacer()
 
                             Text("在书桌上")
-                                .font(.system(size: 13))
+                                .font(.system(size: 14))
                                 .foregroundStyle(Color(hex: "6B7280"))
+
+                            speakerButton(text: "It's on the desk.")
                         }
 
                         Divider().padding(.vertical, 4)
 
                         // 其他介词变体
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: 8) {
                             Text("其他位置表达：")
                                 .font(.system(size: 13))
                                 .foregroundStyle(Color(hex: "9CA3AF"))
 
                             HStack(spacing: 4) {
-                                Text("It's ")
-                                    .font(.system(size: 14)) +
-                                Text("in")
-                                    .font(.system(size: 14, weight: .bold)) +
-                                Text(" the bag.")
-                                    .font(.system(size: 14))
+                                Group {
+                                    Text("It's ")
+                                        .font(.system(size: 14, weight: .bold)) +
+                                    Text("in")
+                                        .font(.system(size: 14, weight: .bold)) +
+                                    Text(" the bag.")
+                                        .font(.system(size: 14))
+                                }
+                                .foregroundStyle(Color(hex: "4B5563"))
+
                                 Spacer()
+
                                 Text("在书包里")
                                     .font(.system(size: 13))
                                     .foregroundStyle(Color(hex: "6B7280"))
+
+                                speakerButton(text: "It's in the bag.", size: 14)
                             }
-                            .foregroundStyle(Color(hex: "4B5563"))
 
                             HStack(spacing: 4) {
-                                Text("It's ")
-                                    .font(.system(size: 14)) +
-                                Text("under")
-                                    .font(.system(size: 14, weight: .bold)) +
-                                Text(" the book.")
-                                    .font(.system(size: 14))
+                                Group {
+                                    Text("It's ")
+                                        .font(.system(size: 14, weight: .bold)) +
+                                    Text("under")
+                                        .font(.system(size: 14, weight: .bold)) +
+                                    Text(" the book.")
+                                        .font(.system(size: 14))
+                                }
+                                .foregroundStyle(Color(hex: "4B5563"))
+
                                 Spacer()
+
                                 Text("在书下面")
                                     .font(.system(size: 13))
                                     .foregroundStyle(Color(hex: "6B7280"))
+
+                                speakerButton(text: "It's under the book.", size: 14)
                             }
-                            .foregroundStyle(Color(hex: "4B5563"))
 
                             HStack(spacing: 4) {
-                                Text("It's ")
-                                    .font(.system(size: 14)) +
-                                Text("next to")
-                                    .font(.system(size: 14, weight: .bold)) +
-                                Text(" the chair.")
-                                    .font(.system(size: 14))
+                                Group {
+                                    Text("It's ")
+                                        .font(.system(size: 14, weight: .bold)) +
+                                    Text("next to")
+                                        .font(.system(size: 14, weight: .bold)) +
+                                    Text(" the chair.")
+                                        .font(.system(size: 14))
+                                }
+                                .foregroundStyle(Color(hex: "4B5563"))
+
                                 Spacer()
+
                                 Text("在椅子旁边")
                                     .font(.system(size: 13))
                                     .foregroundStyle(Color(hex: "6B7280"))
+
+                                speakerButton(text: "It's next to the chair.", size: 14)
                             }
-                            .foregroundStyle(Color(hex: "4B5563"))
                         }
                     }
                 }
@@ -285,6 +340,8 @@ struct Unit1CourseDetailView: View {
                         Text("这是什么？")
                             .font(.system(size: 14))
                             .foregroundStyle(Color(hex: "6B7280"))
+
+                        speakerButton(text: "What's this?")
                     }
 
                     HStack(spacing: 8) {
@@ -294,15 +351,21 @@ struct Unit1CourseDetailView: View {
                             .frame(width: 22, height: 22)
                             .background(Circle().fill(Color(hex: "FFF7ED")).overlay(Circle().stroke(Color(hex: "F97316"))))
 
-                        Text("It's a pencil case.")
-                            .font(.system(size: 16))
-                            .foregroundStyle(Color(hex: "1F2937"))
+                        Group {
+                            Text("It's ")
+                                .font(.system(size: 16, weight: .bold)) +
+                            Text("a pencil case.")
+                                .font(.system(size: 16))
+                        }
+                        .foregroundStyle(Color(hex: "1F2937"))
 
                         Spacer()
 
                         Text("这是一个铅笔盒。")
                             .font(.system(size: 14))
                             .foregroundStyle(Color(hex: "6B7280"))
+
+                        speakerButton(text: "It's a pencil case.")
                     }
                 }
 
@@ -324,6 +387,8 @@ struct Unit1CourseDetailView: View {
                         Text("这些是什么？")
                             .font(.system(size: 14))
                             .foregroundStyle(Color(hex: "6B7280"))
+
+                        speakerButton(text: "What are these?")
                     }
 
                     HStack(spacing: 8) {
@@ -333,19 +398,39 @@ struct Unit1CourseDetailView: View {
                             .frame(width: 22, height: 22)
                             .background(Circle().fill(Color(hex: "FFF7ED")).overlay(Circle().stroke(Color(hex: "F97316"))))
 
-                        Text("They're books.")
-                            .font(.system(size: 16))
-                            .foregroundStyle(Color(hex: "1F2937"))
+                        Group {
+                            Text("They're ")
+                                .font(.system(size: 16, weight: .bold)) +
+                            Text("books.")
+                                .font(.system(size: 16))
+                        }
+                        .foregroundStyle(Color(hex: "1F2937"))
 
                         Spacer()
 
                         Text("这些是书。")
                             .font(.system(size: 14))
                             .foregroundStyle(Color(hex: "6B7280"))
+
+                        speakerButton(text: "They're books.")
                     }
                 }
             }
         }
+    }
+
+    // MARK: - Speaker Button
+    private func speakerButton(text: String, size: CGFloat = 16) -> some View {
+        Button(action: {
+            TTSService.shared.speak(text)
+        }) {
+            Image(systemName: "speaker.wave.2.fill")
+                .font(.system(size: size - 4))
+                .foregroundStyle(Color(hex: "F97316"))
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(Color(hex: "FFF7ED")))
+        }
+        .buttonStyle(.plain)
     }
 
     private func sentenceGroup<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
