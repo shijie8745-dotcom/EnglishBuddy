@@ -34,7 +34,7 @@
     {
       "id": 2,
       "title": "All About Us",
-      "subtitle": "关于我们的一切",
+      "subtitle": "关于我们",
       "description": "学习身体部位、感觉和动作表达",
       "vocabulary": [
         {"word": "head", "meaning": "头", "phonetic": "/hed/", "category": "身体部位"},
@@ -95,7 +95,7 @@
     {
       "id": 4,
       "title": "Food With Friends",
-      "subtitle": "与朋友分享美食",
+      "subtitle": "与朋友分享食物",
       "description": "学习食物词汇和用餐表达",
       "vocabulary": [
         {"word": "food", "meaning": "食物", "phonetic": "/fuːd/", "category": "食物"},
@@ -184,7 +184,7 @@
     {
       "id": 7,
       "title": "Let's Play!",
-      "subtitle": "一起玩！",
+      "subtitle": "让我们一起玩！",
       "description": "学习运动、游戏和玩具词汇",
       "vocabulary": [
         {"word": "play", "meaning": "玩", "phonetic": "/pleɪ/", "category": "动作"},
@@ -214,7 +214,7 @@
     {
       "id": 8,
       "title": "At Home",
-      "subtitle": "在家里",
+      "subtitle": "在家",
       "description": "学习家居用品和日常活动",
       "vocabulary": [
         {"word": "home", "meaning": "家", "phonetic": "/həʊm/", "category": "场所"},
@@ -244,7 +244,7 @@
     {
       "id": 9,
       "title": "Happy Holidays!",
-      "subtitle": "节日快乐！",
+      "subtitle": "假期快乐！",
       "description": "学习节日相关词汇和庆祝活动",
       "vocabulary": [
         {"word": "holiday", "meaning": "节日", "phonetic": "/ˈhɒlədeɪ/", "category": "节日"},

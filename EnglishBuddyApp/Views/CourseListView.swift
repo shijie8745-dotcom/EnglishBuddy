@@ -382,9 +382,26 @@ struct CourseListView: View {
     // MARK: - Destination View
     @ViewBuilder
     private func destinationView(for lesson: Lesson) -> some View {
-        if lesson.id == 1 {
+        switch lesson.id {
+        case 1:
             Unit1CourseDetailView(viewModel: viewModel)
-        } else {
+        case 2:
+            Unit2CourseDetailView(viewModel: viewModel)
+        case 3:
+            Unit3CourseDetailView(viewModel: viewModel)
+        case 4:
+            Unit4CourseDetailView(viewModel: viewModel)
+        case 5:
+            Unit5CourseDetailView(viewModel: viewModel)
+        case 6:
+            Unit6CourseDetailView(viewModel: viewModel)
+        case 7:
+            Unit7CourseDetailView(viewModel: viewModel)
+        case 8:
+            Unit8CourseDetailView(viewModel: viewModel)
+        case 9:
+            Unit9CourseDetailView(viewModel: viewModel)
+        default:
             CourseDetailView(lesson: lesson, viewModel: viewModel)
         }
     }

@@ -342,7 +342,9 @@ struct Unit1CourseDetailView: View {
                             .frame(width: 22, height: 22)
                             .background(Circle().fill(Color(hex: "FFF7ED")).overlay(Circle().stroke(Color(hex: "F97316"))))
 
-                        Text("It's a pencil case.")
+                        Text("It's ")
+                            .font(.system(size: 16, weight: .bold)) +
+                        Text("a pencil case.")
                             .font(.system(size: 16))
 
                         speakerButton(text: "It's a pencil case.")
