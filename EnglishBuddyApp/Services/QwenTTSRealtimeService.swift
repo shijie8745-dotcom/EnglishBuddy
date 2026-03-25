@@ -58,13 +58,7 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
     /// 连接到 WebSocket 服务
     func connect() async throws {
-        // 如果连接已存在且正在运行，直接返回（消息接收循环已在运行）
-        if webSocketTask?.state == .running {
-            print("[QwenTTS] WebSocket 已连接")
-            return
-        }
-
-        // 清理旧连接
+        // 清理旧连接（即使状态是 running，也强制重新连接）
         let oldTask = webSocketTask
         webSocketTask = nil
         oldTask?.cancel(with: .normalClosure, reason: nil)

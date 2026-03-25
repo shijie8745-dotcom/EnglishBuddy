@@ -51,10 +51,13 @@ final class AliyunASRService: NSObject, ObservableObject {
 
     /// 连接到 WebSocket 服务
     func connect() async throws {
-        guard webSocketTask == nil || webSocketTask?.state != .running else {
-            print("[AliyunASR] WebSocket 已连接")
-            return
-        }
+        // 清理旧连接（即使状态是 running，也强制重新连接）
+        let oldTask = webSocketTask
+        webSocketTask = nil
+        oldTask?.cancel(with: .normalClosure, reason: nil)
+
+        // 等待旧连接关闭
+        try await Task.sleep(nanoseconds: 100_000_000)  // 0.1秒
 
         isConnecting = true
         errorMessage = nil
@@ -131,8 +134,11 @@ final class AliyunASRService: NSObject, ObservableObject {
         // 发送 session.finish
         sendSessionFinish()
 
-        webSocketTask?.cancel(with: .normalClosure, reason: nil)
+        // 先清理引用，再关闭连接
+        let taskToClose = webSocketTask
         webSocketTask = nil
+
+        taskToClose?.cancel(with: .normalClosure, reason: nil)
 
         isRecording = false
         isConnecting = false
@@ -579,6 +585,11 @@ final class AliyunASRService: NSObject, ObservableObject {
 // MARK: - URLSessionWebSocketDelegate
 extension AliyunASRService: URLSessionWebSocketDelegate {
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
+        // 只处理当前任务的回调
+        guard webSocketTask === self.webSocketTask else {
+            print("[AliyunASR] 忽略旧任务的连接打开回调")
+            return
+        }
         print("[AliyunASR] WebSocket 连接已打开")
 
         // 恢复等待连接的 continuation
@@ -596,6 +607,11 @@ extension AliyunASRService: URLSessionWebSocketDelegate {
     }
 
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+        // 只处理当前任务的回调
+        guard webSocketTask === self.webSocketTask else {
+            print("[AliyunASR] 忽略旧任务的连接关闭回调")
+            return
+        }
         print("[AliyunASR] WebSocket 连接已关闭: \(closeCode)")
 
         // 如果有等待的 continuation，恢复它并抛出错误
@@ -624,6 +640,11 @@ extension AliyunASRService: URLSessionWebSocketDelegate {
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        // 只处理当前任务的回调
+        guard task === self.webSocketTask else {
+            print("[AliyunASR] 忽略旧任务的任务完成回调")
+            return
+        }
         if let error = error {
             print("[AliyunASR] WebSocket 任务错误: \(error)")
 
