@@ -58,10 +58,15 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
     /// 连接到 WebSocket 服务
     func connect() async throws {
-        guard webSocketTask == nil || webSocketTask?.state != .running else {
+        // 如果连接已存在且正在运行，直接返回（消息接收循环已在运行）
+        if webSocketTask?.state == .running {
             print("[QwenTTS] WebSocket 已连接")
             return
         }
+
+        // 清理旧连接
+        webSocketTask?.cancel()
+        webSocketTask = nil
 
         isConnecting = true
         errorMessage = nil
@@ -122,14 +127,12 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
             throw TTSSError.notConnected
         }
 
-        // 参考官方 Python SDK 的配置格式
+        // 简化配置，只保留必要的参数
         let sessionUpdate: [String: Any] = [
             "type": "session.update",
             "session": [
                 "mode": "server_commit",
-                "voice": voice,
-                "input_text_format": "plain_text",  // 输入文本格式
-                "response_format": "pcm_24000hz_mono_16bit"  // 完整的音频格式描述
+                "voice": voice
             ]
         ]
 
@@ -192,7 +195,7 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
     /// 重置状态（用于新的合成任务）
     func reset() {
-        // 先关闭之前的连接
+        // 关闭之前的连接，确保下次 connect() 会建立新连接并启动消息接收
         webSocketTask?.cancel(with: .normalClosure, reason: nil)
         webSocketTask = nil
 
@@ -216,6 +219,16 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
             guard let self = self else { return }
             print("[QwenTTS] 播放完成，设置 isPlaying = false")
             self.isPlaying = false
+
+            // 重置音频会话为 ASR 兼容模式
+            do {
+                let audioSession = AVAudioSession.sharedInstance()
+                try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers])
+                try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
+                print("[QwenTTS] 音频会话已重置为 ASR 兼容模式")
+            } catch {
+                print("[QwenTTS] 重置音频会话失败: \(error)")
+            }
         }
     }
 

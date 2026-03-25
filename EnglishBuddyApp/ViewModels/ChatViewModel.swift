@@ -311,6 +311,9 @@ class ChatViewModel {
             // 发送文本
             try await QwenTTSRealtimeService.shared.appendText(text)
 
+            // 等待服务器处理后再结束会话（参考官方示例）
+            try await Task.sleep(nanoseconds: 500_000_000)  // 0.5秒
+
             // 结束会话（发送结束信号，让服务器知道文本发送完毕）
             QwenTTSRealtimeService.shared.finish()
 

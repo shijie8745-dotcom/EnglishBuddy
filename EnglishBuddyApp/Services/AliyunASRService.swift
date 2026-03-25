@@ -167,10 +167,14 @@ final class AliyunASRService: NSObject, ObservableObject {
             throw ASRError.notConnected
         }
 
-        // 配置音频会话
+        // 配置音频会话 - 停止其他音频会话（如 TTS）后再配置
         let audioSession = AVAudioSession.sharedInstance()
+        // 先停用当前的会话，确保干净的切换
+        try? audioSession.setActive(false)
+        // 配置为录音模式
         try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers])
         try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+        print("[AliyunASR] 音频会话已配置为 playAndRecord")
 
         // 创建新的音频引擎
         let engine = AVAudioEngine()
