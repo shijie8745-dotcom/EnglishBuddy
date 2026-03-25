@@ -152,6 +152,9 @@ final class AliyunASRService: NSObject, ObservableObject {
             return
         }
 
+        // 清除之前的识别结果
+        transcript = ""
+
         // 确保 WebSocket 已连接
         guard webSocketTask?.state == .running else {
             throw ASRError.notConnected
