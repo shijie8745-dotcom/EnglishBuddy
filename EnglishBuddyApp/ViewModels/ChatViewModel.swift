@@ -40,8 +40,22 @@ class ChatViewModel {
     }
 
     private func updatePlayingState() {
-        let tts = TTSService.shared
-        let newPlayingId = tts.isSpeaking ? tts.currentPlayingMessageId : nil
+        // 检查流式 TTS 播放状态
+        let streamingPlaying = QwenTTSRealtimeService.shared.isPlaying
+
+        // 检查非流式 TTS 播放状态
+        let ttsPlaying = TTSService.shared.isSpeaking
+        let ttsPlayingId = ttsPlaying ? TTSService.shared.currentPlayingMessageId : nil
+
+        // 确定当前的播放状态
+        var newPlayingId: UUID? = nil
+        if streamingPlaying, let streamingId = streamingPlayingMessageId {
+            // 流式播放中
+            newPlayingId = streamingId
+        } else if ttsPlaying, let id = ttsPlayingId {
+            // 非流式播放中
+            newPlayingId = id
+        }
 
         // 如果播放状态变化，更新消息状态
         if currentlyPlayingMessageId != newPlayingId {
@@ -49,6 +63,11 @@ class ChatViewModel {
             if let oldId = currentlyPlayingMessageId,
                let index = messages.firstIndex(where: { $0.id == oldId }) {
                 messages[index].isPlaying = false
+            }
+
+            // 清除流式播放标记
+            if !streamingPlaying {
+                streamingPlayingMessageId = nil
             }
 
             // 设置新的播放状态
@@ -226,6 +245,12 @@ class ChatViewModel {
         }
     }
 
+    // 是否使用流式 TTS（默认开启）
+    var useStreamingTTS: Bool = true
+
+    /// 流式播放中的消息 ID（用于保持动画状态）
+    private var streamingPlayingMessageId: UUID?
+
     private func addAIMessage(_ text: String) async {
         // Strip emojis for TTS but keep them in the displayed message
         let ttsText = text.removingEmoji
@@ -235,9 +260,74 @@ class ChatViewModel {
         let message = ChatMessage(text: text, speaker: .ai)
         messages.append(message)
 
-        // 生成 TTS 并保存音频数据
-        if let audioData = await TTSService.shared.speak(ttsText, for: message.id) {
-            if let index = messages.firstIndex(where: { $0.id == message.id }) {
+        // 尝试使用流式 TTS
+        if useStreamingTTS {
+            await addAIMessageWithStreamingTTS(ttsText, messageId: message.id)
+        } else {
+            // 使用非流式 TTS
+            await addAIMessageWithNonStreamingTTS(ttsText, messageId: message.id)
+        }
+    }
+
+    /// 使用流式 TTS
+    private func addAIMessageWithStreamingTTS(_ text: String, messageId: UUID) async {
+        do {
+            // 重置累积的音频数据
+            QwenTTSRealtimeService.shared.reset()
+
+            // 标记正在流式播放
+            streamingPlayingMessageId = messageId
+
+            // 先设置回调（在连接之前）
+            QwenTTSRealtimeService.shared.onAudioChunk = { [weak self] _ in
+                Task { @MainActor in
+                    // 只在第一次设置播放状态
+                    if self?.currentlyPlayingMessageId == nil {
+                        self?.currentlyPlayingMessageId = messageId
+                        if let index = self?.messages.firstIndex(where: { $0.id == messageId }) {
+                            self?.messages[index].isPlaying = true
+                        }
+                    }
+                }
+            }
+
+            QwenTTSRealtimeService.shared.onComplete = { [weak self] audioData in
+                Task { @MainActor in
+                    print("[ChatViewModel] onComplete 回调，音频长度: \(audioData.count)")
+                    // 只保存音频数据，动画由 updatePlayingState 控制
+                    if let index = self?.messages.firstIndex(where: { $0.id == messageId }) {
+                        self?.messages[index].audioData = audioData
+                        print("[ChatViewModel] 音频已缓存到消息，长度: \(audioData.count)")
+                    }
+                }
+            }
+
+            // 连接 WebSocket
+            try await QwenTTSRealtimeService.shared.connect()
+
+            // 配置 session
+            try await QwenTTSRealtimeService.shared.updateSession()
+
+            // 发送文本
+            try await QwenTTSRealtimeService.shared.appendText(text)
+
+            // 结束会话（发送结束信号，让服务器知道文本发送完毕）
+            QwenTTSRealtimeService.shared.finish()
+
+            print("[ChatViewModel] 流式 TTS 文本已发送，等待音频...")
+
+        } catch {
+            print("[ChatViewModel] 流式 TTS 失败，回退到非流式: \(error)")
+            streamingPlayingMessageId = nil
+            // 回退到非流式 TTS
+            await addAIMessageWithNonStreamingTTS(text, messageId: messageId)
+        }
+    }
+
+    /// 使用非流式 TTS（原有逻辑）
+    private func addAIMessageWithNonStreamingTTS(_ text: String, messageId: UUID) async {
+        if let audioData = await TTSService.shared.speak(text, for: messageId) {
+            if let index = messages.firstIndex(where: { $0.id == messageId }) {
                 messages[index].audioData = audioData
             }
         }
