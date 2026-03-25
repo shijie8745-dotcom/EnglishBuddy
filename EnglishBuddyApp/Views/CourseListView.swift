@@ -143,11 +143,11 @@ struct CourseListView: View {
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("EnglishBuddy")
-                                    .font(.system(size: 28, weight: .bold))
+                                    .font(.system(size: AdaptiveLayout.Fonts.titleSize(isCompact: isCompact), weight: .bold))
                                     .foregroundStyle(.white)
 
                                 Text("和 Amy 一起学英语")
-                                    .font(.system(size: 14))
+                                    .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                                     .foregroundStyle(.white.opacity(0.9))
                             }
                         }
@@ -158,17 +158,17 @@ struct CourseListView: View {
                         NavigationLink(destination: SettingsView(user: viewModel.user)) {
                             Circle()
                                 .fill(.white.opacity(0.2))
-                                .frame(width: 44, height: 44)
+                                .frame(width: AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact), height: AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact))
                                 .overlay(
                                     Image(systemName: "gear")
-                                        .font(.system(size: 20))
+                                        .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact)))
                                         .foregroundStyle(.white)
                                 )
                         }
                     }
                     .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
-                    .padding(.top, 16)
-                    .padding(.bottom, 20)
+                    .padding(.top, isCompact ? 12 : 16)
+                    .padding(.bottom, isCompact ? 14 : 20)
                 }
             }
         }
@@ -248,16 +248,16 @@ struct CourseListView: View {
                 // Left side - text
                 VStack(alignment: .leading, spacing: 4) {
                     Text("练一练")
-                        .font(.system(size: 28, weight: .bold))
+                        .font(.system(size: AdaptiveLayout.Fonts.cardTitleSize(isCompact: isCompact), weight: .bold))
                         .foregroundStyle(.white)
 
                     HStack(spacing: 4) {
                         Text("正在学：")
-                            .font(.system(size: 12))
+                            .font(.system(size: AdaptiveLayout.Fonts.tinySize(isCompact: isCompact)))
                             .foregroundStyle(.white.opacity(0.9))
 
                         Text(displayText)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(size: AdaptiveLayout.Fonts.tinySize(isCompact: isCompact), weight: .medium))
                             .foregroundStyle(.white)
                             .lineLimit(1)
                     }

@@ -7,6 +7,10 @@ struct SettingsView: View {
     @State private var selectedPracticeLessonId: Int?
     @Environment(\.dismiss) private var dismiss
 
+    // Adaptive layout
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    private var isCompact: Bool { horizontalSizeClass == .compact }
+
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var avatarImage: UIImage?
     @State private var ttsTestText: String = "Hello! I'm Amy. Let's practice English together!"
@@ -44,8 +48,8 @@ struct SettingsView: View {
                         // About section
                         aboutSection
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 24)
+                    .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
+                    .padding(.top, AdaptiveLayout.Dimensions.sectionSpacing(isCompact: isCompact) * 2)
                     .padding(.bottom, 32)
                 }
             }
@@ -128,7 +132,8 @@ struct SettingsView: View {
 
     // MARK: - Settings Header
     private var settingsHeader: some View {
-        ZStack {
+        let headerButtonSize = AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact)
+        return ZStack {
             // Orange gradient background
             LinearGradient(
                 colors: [
@@ -144,9 +149,9 @@ struct SettingsView: View {
                     // Back button
                     Button(action: { dismiss() }) {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .semibold))
                             .foregroundStyle(.white)
-                            .frame(width: 44, height: 44)
+                            .frame(width: headerButtonSize, height: headerButtonSize)
                             .background(
                                 Circle()
                                     .fill(.white.opacity(0.2))
@@ -157,36 +162,38 @@ struct SettingsView: View {
 
                     // Title
                     Text("设置")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .bold))
                         .foregroundStyle(.white)
 
                     Spacer()
 
                     // Spacer for alignment
                     Color.clear
-                        .frame(width: 44, height: 44)
+                        .frame(width: headerButtonSize, height: headerButtonSize)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 20)
+                .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
+                .padding(.top, AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
+                .padding(.bottom, AdaptiveLayout.Dimensions.sectionSpacing(isCompact: isCompact) + 4)
             }
         }
     }
 
     // MARK: - Profile Section
     private var profileSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let avatarSize: CGFloat = isCompact ? 70 : 80
+        let cameraButtonSize: CGFloat = isCompact ? 24 : 28
+        return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "person.fill")
-                    .font(.system(size: 16))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact)))
                     .foregroundStyle(Color(hex: "F97316"))
 
                 Text("个人资料")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact), weight: .bold))
                     .foregroundStyle(Color(hex: "1F2937"))
             }
 
-            HStack(spacing: 16) {
+            HStack(spacing: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact)) {
                 // Avatar - entire avatar is tappable
                 PhotosPicker(selection: $selectedPhoto, matching: .images) {
                     ZStack {
@@ -194,15 +201,15 @@ struct SettingsView: View {
                             Image(uiImage: avatarImage)
                                 .resizable()
                                 .scaledToFill()
-                                .frame(width: 80, height: 80)
+                                .frame(width: avatarSize, height: avatarSize)
                                 .clipShape(Circle())
                         } else {
                             Circle()
                                 .fill(Color(hex: "FED7AA"))
-                                .frame(width: 80, height: 80)
+                                .frame(width: avatarSize, height: avatarSize)
                                 .overlay(
                                     Image(systemName: "person.fill")
-                                        .font(.system(size: 36))
+                                        .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact) + 2))
                                         .foregroundStyle(Color(hex: "F97316"))
                                 )
                         }
@@ -211,13 +218,13 @@ struct SettingsView: View {
                         ZStack {
                             Circle()
                                 .fill(Color(hex: "F97316"))
-                                .frame(width: 28, height: 28)
+                                .frame(width: cameraButtonSize, height: cameraButtonSize)
 
                             Image(systemName: "camera.fill")
-                                .font(.system(size: 12))
+                                .font(.system(size: AdaptiveLayout.Fonts.tinySize(isCompact: isCompact)))
                                 .foregroundStyle(.white)
                         }
-                        .offset(x: 28, y: 28)
+                        .offset(x: cameraButtonSize / 2, y: cameraButtonSize / 2)
                     }
                 }
                 .buttonStyle(.plain)
@@ -226,7 +233,7 @@ struct SettingsView: View {
                     // Name with edit button
                     HStack(spacing: 8) {
                         Text(user.name)
-                            .font(.system(size: 20, weight: .bold))
+                            .font(.system(size: AdaptiveLayout.Fonts.largeTitleSize(isCompact: isCompact), weight: .bold))
                             .foregroundStyle(Color(hex: "1F2937"))
 
                         Button(action: {
@@ -234,21 +241,21 @@ struct SettingsView: View {
                             showingEditNameSheet = true
                         }) {
                             Image(systemName: "pencil.circle.fill")
-                                .font(.system(size: 18))
+                                .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact)))
                                 .foregroundStyle(Color(hex: "F97316"))
                         }
                     }
 
                     Text("点击头像更换照片")
-                        .font(.system(size: 14))
+                        .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                         .foregroundStyle(Color(hex: "6B7280"))
                 }
 
                 Spacer()
             }
-            .padding(16)
+            .padding(AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact), style: .continuous)
                     .fill(.white)
                     .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
             )
@@ -260,25 +267,26 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "play.circle.fill")
-                    .font(.system(size: 16))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact)))
                     .foregroundStyle(Color(hex: "F97316"))
 
                 Text("练一练设置")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact), weight: .bold))
                     .foregroundStyle(Color(hex: "1F2937"))
             }
 
             // Description text
             Text("选择你想学的课程，点击首页「练一练」可快速进入")
-                .font(.system(size: 14))
+                .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                 .foregroundStyle(Color(hex: "9CA3AF"))
                 .padding(.leading, 22)
 
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            LazyVGrid(columns: AdaptiveLayout.gridColumns(count: AdaptiveLayout.Dimensions.vocabularyGridColumns(isCompact: isCompact), spacing: AdaptiveLayout.Dimensions.gridSpacing(isCompact: isCompact)), spacing: AdaptiveLayout.Dimensions.gridSpacing(isCompact: isCompact) + 4) {
                 ForEach(lessons) { lesson in
                     PracticeLessonCard(
                         lesson: lesson,
-                        isSelected: selectedPracticeLessonId == lesson.id
+                        isSelected: selectedPracticeLessonId == lesson.id,
+                        isCompact: isCompact
                     )
                     .onTapGesture {
                         selectedPracticeLessonId = lesson.id
@@ -287,9 +295,9 @@ struct SettingsView: View {
                     }
                 }
             }
-            .padding(16)
+            .padding(AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact), style: .continuous)
                     .fill(.white)
                     .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
             )
@@ -298,65 +306,66 @@ struct SettingsView: View {
 
     // MARK: - Pet Section (学习宠物)
     private var petSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let petAvatarSize: CGFloat = isCompact ? 70 : 80
+        return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "pawprint.fill")
-                    .font(.system(size: 16))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact)))
                     .foregroundStyle(Color(hex: "F97316"))
 
                 Text("学习宠物")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact), weight: .bold))
                     .foregroundStyle(Color(hex: "1F2937"))
             }
 
-            HStack(spacing: 16) {
+            HStack(spacing: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact)) {
                 // Pet avatar
                 ZStack {
                     Circle()
                         .fill(Color(hex: "FEF3C7"))
-                        .frame(width: 80, height: 80)
+                        .frame(width: petAvatarSize, height: petAvatarSize)
                         .overlay(
                             Circle()
                                 .stroke(Color(hex: "F59E0B"), lineWidth: 3)
                         )
 
                     Image(systemName: "pawprint.fill")
-                        .font(.system(size: 36))
+                        .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact) + 2))
                         .foregroundStyle(Color(hex: "F59E0B"))
 
                     // Current pet indicator
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20))
+                        .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact)))
                         .foregroundStyle(Color(hex: "10B981"))
                         .background(Circle().fill(.white))
-                        .offset(x: 28, y: -28)
+                        .offset(x: petAvatarSize / 2 - 4, y: -petAvatarSize / 2 + 4)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(currentPetName)
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.system(size: AdaptiveLayout.Fonts.largeTitleSize(isCompact: isCompact), weight: .bold))
                         .foregroundStyle(Color(hex: "1F2937"))
 
                     Text("\(unlockedPetCount)/6 已解锁")
-                        .font(.system(size: 14))
+                        .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                         .foregroundStyle(Color(hex: "6B7280"))
 
                     HStack(spacing: 16) {
                         HStack(spacing: 4) {
                             Image(systemName: "dollarsign.circle.fill")
-                                .font(.system(size: 14))
+                                .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                                 .foregroundStyle(Color(hex: "F59E0B"))
                             Text("\(user.cloudCoinSystem.coins)")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact), weight: .medium))
                                 .foregroundStyle(Color(hex: "F59E0B"))
                         }
 
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 12))
+                                .font(.system(size: AdaptiveLayout.Fonts.tinySize(isCompact: isCompact)))
                                 .foregroundStyle(Color(hex: "10B981"))
                             Text("累计\(user.cloudCoinSystem.totalEarned)币")
-                                .font(.system(size: 12))
+                                .font(.system(size: AdaptiveLayout.Fonts.tinySize(isCompact: isCompact)))
                                 .foregroundStyle(Color(hex: "6B7280"))
                         }
                     }
@@ -364,9 +373,9 @@ struct SettingsView: View {
 
                 Spacer()
             }
-            .padding(16)
+            .padding(AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact), style: .continuous)
                     .fill(.white)
                     .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
             )
@@ -386,25 +395,25 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "bubble.left.and.bubble.right.fill")
-                    .font(.system(size: 16))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact)))
                     .foregroundStyle(Color(hex: "F97316"))
 
                 Text("对话测试")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact), weight: .bold))
                     .foregroundStyle(Color(hex: "1F2937"))
             }
 
             VStack(alignment: .leading, spacing: 12) {
                 Text("输入文字测试语音效果")
-                    .font(.system(size: 14))
+                    .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                     .foregroundStyle(Color(hex: "9CA3AF"))
 
                 // 输入框和试听按钮同一行
-                HStack(spacing: 12) {
+                HStack(spacing: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact)) {
                     // 输入框
                     TextField("输入要试听的文字...", text: $ttsTestText)
-                        .font(.system(size: 14))
-                        .padding(.horizontal, 12)
+                        .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
+                        .padding(.horizontal, AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
                         .padding(.vertical, 10)
                         .background(
                             RoundedRectangle(cornerRadius: 10)
@@ -421,13 +430,13 @@ struct SettingsView: View {
                     }) {
                         HStack(spacing: 6) {
                             Image(systemName: "play.fill")
-                                .font(.system(size: 14))
+                                .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
 
                             Text("试听")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact), weight: .medium))
                         }
                         .foregroundStyle(.white)
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
                         .padding(.vertical, 10)
                         .background(
                             LinearGradient(
@@ -443,13 +452,13 @@ struct SettingsView: View {
                 // 快捷输入提示
                 HStack(spacing: 8) {
                     Text("快捷输入:")
-                        .font(.system(size: 12))
+                        .font(.system(size: AdaptiveLayout.Fonts.tinySize(isCompact: isCompact)))
                         .foregroundStyle(Color(hex: "9CA3AF"))
 
                     Button("Hello") {
                         ttsTestText = "Hello! How are you today?"
                     }
-                    .font(.system(size: 12))
+                    .font(.system(size: AdaptiveLayout.Fonts.tinySize(isCompact: isCompact)))
                     .foregroundStyle(Color(hex: "F97316"))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -461,7 +470,7 @@ struct SettingsView: View {
                     Button("Good morning") {
                         ttsTestText = "Good morning! Let's learn English!"
                     }
-                    .font(.system(size: 12))
+                    .font(.system(size: AdaptiveLayout.Fonts.tinySize(isCompact: isCompact)))
                     .foregroundStyle(Color(hex: "F97316"))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -479,27 +488,27 @@ struct SettingsView: View {
                 NavigationLink(destination: AITestView()) {
                     HStack {
                         Image(systemName: "cpu")
-                            .font(.system(size: 14))
+                            .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                             .foregroundStyle(Color(hex: "F97316"))
                             .frame(width: 24)
 
                         Text("AI Test")
-                            .font(.system(size: 14))
+                            .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                             .foregroundStyle(Color(hex: "1F2937"))
 
                         Spacer()
 
                         HStack(spacing: 4) {
                             Text("进入")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact), weight: .medium))
                                 .foregroundStyle(Color(hex: "6B7280"))
 
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 12))
+                                .font(.system(size: AdaptiveLayout.Fonts.tinySize(isCompact: isCompact)))
                                 .foregroundStyle(Color(hex: "9CA3AF"))
                         }
                     }
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
                     .padding(.vertical, 10)
                     .background(
                         RoundedRectangle(cornerRadius: 10)
@@ -512,27 +521,27 @@ struct SettingsView: View {
                 NavigationLink(destination: ChatTestView()) {
                     HStack {
                         Image(systemName: "bubble.left.and.bubble.right")
-                            .font(.system(size: 14))
+                            .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                             .foregroundStyle(Color(hex: "F97316"))
                             .frame(width: 24)
 
                         Text("Chat Test")
-                            .font(.system(size: 14))
+                            .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                             .foregroundStyle(Color(hex: "1F2937"))
 
                         Spacer()
 
                         HStack(spacing: 4) {
                             Text("进入")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact), weight: .medium))
                                 .foregroundStyle(Color(hex: "6B7280"))
 
                             Image(systemName: "chevron.right")
-                                .font(.system(size: 12))
+                                .font(.system(size: AdaptiveLayout.Fonts.tinySize(isCompact: isCompact)))
                                 .foregroundStyle(Color(hex: "9CA3AF"))
                         }
                     }
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
                     .padding(.vertical, 10)
                     .background(
                         RoundedRectangle(cornerRadius: 10)
@@ -541,9 +550,9 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(16)
+            .padding(AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact), style: .continuous)
                     .fill(.white)
                     .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
             )
@@ -555,10 +564,10 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "cpu.fill")
-                    .font(.system(size: 16))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact)))
                     .foregroundStyle(Color(hex: "F97316"))
                 Text("AI 设置")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact), weight: .bold))
                     .foregroundStyle(Color(hex: "1F2937"))
             }
 
@@ -567,18 +576,18 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("AI 模型")
-                            .font(.system(size: 14))
+                            .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                             .foregroundStyle(Color(hex: "4B5563"))
 
                         Spacer()
 
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 12))
+                                .font(.system(size: AdaptiveLayout.Fonts.tinySize(isCompact: isCompact)))
                                 .foregroundStyle(Color(hex: "10B981"))
 
                             Text("qwen3.5-plus")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact), weight: .medium))
                                 .foregroundStyle(Color(hex: "1F2937"))
                         }
                         .padding(.horizontal, 10)
@@ -590,13 +599,13 @@ struct SettingsView: View {
                     }
 
                     Text("使用阿里云通义千问模型 qwen3.5-plus，支持中英文对话")
-                        .font(.system(size: 11))
+                        .font(.system(size: AdaptiveLayout.Fonts.tinySize(isCompact: isCompact)))
                         .foregroundStyle(Color(hex: "9CA3AF"))
                 }
             }
-            .padding(16)
+            .padding(AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact), style: .continuous)
                     .fill(.white)
                     .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
             )
@@ -608,25 +617,25 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "chart.bar.fill")
-                    .font(.system(size: 16))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact)))
                     .foregroundStyle(Color(hex: "F97316"))
                 Text("学习统计")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact), weight: .bold))
                     .foregroundStyle(Color(hex: "1F2937"))
             }
 
             VStack(spacing: 16) {
-                StatRow(icon: "clock.fill", iconColor: Color(hex: "3B82F6"), title: "总学习时长", value: "\(user.totalStudyTime) 分钟")
+                StatRow(icon: "clock.fill", iconColor: Color(hex: "3B82F6"), title: "总学习时长", value: "\(user.totalStudyTime) 分钟", isCompact: isCompact)
                 Divider().background(Color(hex: "E5E7EB"))
-                StatRow(icon: "book.fill", iconColor: Color(hex: "10B981"), title: "学习次数", value: "\(user.totalSessions) 次")
+                StatRow(icon: "book.fill", iconColor: Color(hex: "10B981"), title: "学习次数", value: "\(user.totalSessions) 次", isCompact: isCompact)
                 Divider().background(Color(hex: "E5E7EB"))
-                StatRow(icon: "flame.fill", iconColor: Color(hex: "EF4444"), title: "连续学习", value: "\(user.streakDays) 天")
+                StatRow(icon: "flame.fill", iconColor: Color(hex: "EF4444"), title: "连续学习", value: "\(user.streakDays) 天", isCompact: isCompact)
                 Divider().background(Color(hex: "E5E7EB"))
-                StatRow(icon: "calendar.badge.checkmark", iconColor: Color(hex: "8B5CF6"), title: "累计签到", value: "\(user.cloudCoinSystem.checkInRecords.count) 天")
+                StatRow(icon: "calendar.badge.checkmark", iconColor: Color(hex: "8B5CF6"), title: "累计签到", value: "\(user.cloudCoinSystem.checkInRecords.count) 天", isCompact: isCompact)
             }
-            .padding(16)
+            .padding(AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact), style: .continuous)
                     .fill(.white)
                     .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
             )
@@ -638,23 +647,23 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "info.circle.fill")
-                    .font(.system(size: 16))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact)))
                     .foregroundStyle(Color(hex: "F97316"))
 
                 Text("关于")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact), weight: .bold))
                     .foregroundStyle(Color(hex: "1F2937"))
             }
 
             VStack(spacing: 0) {
-                AboutRow(title: "应用名称", value: "EnglishBuddy")
-                Divider().padding(.leading, 16)
-                AboutRow(title: "版本", value: "1.0.0")
-                Divider().padding(.leading, 16)
-                AboutRow(title: "教材", value: "Power Up Level 1")
+                AboutRow(title: "应用名称", value: "EnglishBuddy", isCompact: isCompact)
+                Divider().padding(.leading, AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
+                AboutRow(title: "版本", value: "1.0.0", isCompact: isCompact)
+                Divider().padding(.leading, AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
+                AboutRow(title: "教材", value: "Power Up Level 1", isCompact: isCompact)
             }
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact), style: .continuous)
                     .fill(.white)
                     .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
             )
@@ -673,14 +682,15 @@ struct SettingsView: View {
 struct PracticeLessonCard: View {
     let lesson: Lesson
     let isSelected: Bool
+    var isCompact: Bool = false
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact)) {
             // Radio button style indicator
             ZStack {
                 Circle()
                     .fill(isSelected ? Color(hex: "F97316") : Color(hex: "E5E7EB"))
-                    .frame(width: 22, height: 22)
+                    .frame(width: isCompact ? 20 : 22, height: isCompact ? 20 : 22)
 
                 if isSelected {
                     Circle()
@@ -692,22 +702,22 @@ struct PracticeLessonCard: View {
             // Lesson info
             VStack(alignment: .leading, spacing: 2) {
                 Text("Unit \(lesson.id) - \(lesson.title)")
-                    .font(.system(size: 14, weight: isSelected ? .semibold : .regular))
+                    .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact), weight: isSelected ? .semibold : .regular))
                     .foregroundStyle(Color(hex: "1F2937"))
                     .lineLimit(1)
             }
 
             Spacer()
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 12)
+        .padding(.horizontal, AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
+        .padding(.vertical, AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
         .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact), style: .continuous)
                 .fill(isSelected ? Color(hex: "FFF7ED") : Color(hex: "F9FAFB"))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact), style: .continuous)
                 .stroke(isSelected ? Color(hex: "F97316") : Color(hex: "E5E7EB"), lineWidth: isSelected ? 2 : 1)
         )
     }
@@ -719,26 +729,27 @@ struct StatRow: View {
     let iconColor: Color
     let title: String
     let value: String
+    var isCompact: Bool = false
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact)) {
             Image(systemName: icon)
-                .font(.system(size: 18))
+                .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact)))
                 .foregroundStyle(iconColor)
-                .frame(width: 32, height: 32)
+                .frame(width: AdaptiveLayout.Dimensions.smallIconSize(isCompact: isCompact), height: AdaptiveLayout.Dimensions.smallIconSize(isCompact: isCompact))
                 .background(
                     RoundedRectangle(cornerRadius: 8)
                         .fill(iconColor.opacity(0.1))
                 )
 
             Text(title)
-                .font(.system(size: 14))
+                .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                 .foregroundStyle(Color(hex: "4B5563"))
 
             Spacer()
 
             Text(value)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact), weight: .semibold))
                 .foregroundStyle(Color(hex: "1F2937"))
         }
     }
@@ -748,21 +759,22 @@ struct StatRow: View {
 struct AboutRow: View {
     let title: String
     let value: String
+    var isCompact: Bool = false
 
     var body: some View {
         HStack {
             Text(title)
-                .font(.system(size: 14))
+                .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                 .foregroundStyle(Color(hex: "6B7280"))
 
             Spacer()
 
             Text(value)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact), weight: .medium))
                 .foregroundStyle(Color(hex: "1F2937"))
         }
-        .padding(.horizontal, 16)
-        .frame(height: 48)
+        .padding(.horizontal, AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
+        .frame(height: isCompact ? 44 : 48)
     }
 }
 

@@ -7,6 +7,10 @@ struct ChatView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.presentationMode) private var presentationMode
 
+    // Adaptive layout
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    private var isCompact: Bool { horizontalSizeClass == .compact }
+
     var body: some View {
         ZStack {
             // Layer 1: Background + Main Content (like HTML: header + chat-messages + voice-input-wrapper)
@@ -46,9 +50,9 @@ struct ChatView: View {
                 Spacer()
 
                 // Voice input buttons overlay (no background, just buttons)
-                VoiceInputContainer(viewModel: viewModel)
-                    .padding(.horizontal, 16)
-                    .frame(height: 88)
+                VoiceInputContainer(viewModel: viewModel, isCompact: isCompact)
+                    .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
+                    .frame(height: AdaptiveLayout.Dimensions.voiceInputHeight(isCompact: isCompact))
                     .background(Color.clear) // Transparent, overlay is below
             }
             .ignoresSafeArea(.container, edges: .bottom)
@@ -68,13 +72,15 @@ struct ChatView: View {
 
     // MARK: - Chat Header
     private var chatHeader: some View {
-        HStack(spacing: 0) {
+        let headerButtonSize = AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact)
+        let avatarSize = AdaptiveLayout.Dimensions.avatarSize(isCompact: isCompact)
+        return HStack(spacing: 0) {
             // Back button
             Button(action: { dismiss() }) {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .semibold))
                     .foregroundStyle(Color(hex: "6B7280"))
-                    .frame(width: 40, height: 40)
+                    .frame(width: headerButtonSize, height: headerButtonSize)
                     .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: "F3F4F6")))
             }
 
@@ -85,50 +91,52 @@ struct ChatView: View {
                 teacherAvatarImage
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 40, height: 40)
+                    .frame(width: avatarSize, height: avatarSize)
                     .clipShape(Circle())
                     .overlay(Circle().stroke(Color(hex: "FED7AA"), lineWidth: 2))
 
                 Text("Amy")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .bold))
                     .foregroundStyle(Color(hex: "1F2937"))
             }
 
             Spacer()
 
             // Spacer for alignment
-            Color.clear.frame(width: 40, height: 40)
+            Color.clear.frame(width: headerButtonSize, height: headerButtonSize)
         }
-        .frame(height: 60)
-        .padding(.horizontal, 16)
+        .frame(height: AdaptiveLayout.Dimensions.headerHeight(isCompact: isCompact))
+        .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
         .background(Color.white)
         .overlay(Rectangle().fill(Color(hex: "E5E7EB")).frame(height: 0.5), alignment: .bottom)
     }
 
     // MARK: - Messages List
     private var messagesList: some View {
-        ScrollViewReader { proxy in
+        let inputHeight = AdaptiveLayout.Dimensions.voiceInputHeight(isCompact: isCompact)
+        return ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: 24) {
+                LazyVStack(spacing: 20) {
                     ForEach(viewModel.messages) { message in
                         ChatBubble(
                             message: message,
                             isPlaying: viewModel.currentlyPlayingMessageId == message.id,
                             onTap: {
                                 viewModel.togglePlay(for: message)
-                            }
+                            },
+                            isCompact: isCompact
                         )
                         .id(message.id)
                     }
 
                     if viewModel.isLoading {
-                        TypingIndicator()
+                        TypingIndicator(isCompact: isCompact)
                             .id("typing")
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.top, 60)
-                .padding(.bottom, 136) // 88pt input area + 48pt spacing (2x bubble spacing)
+                .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
+                .padding(.top, AdaptiveLayout.Dimensions.headerHeight(isCompact: isCompact))
+                .padding(.bottom, inputHeight + 48)
             }
             .onChange(of: viewModel.messages.count) { _, _ in
                 scrollToBottom(proxy: proxy)
@@ -163,7 +171,7 @@ struct ChatView: View {
 
             // White background area for buttons
             Color.white
-                .frame(height: 88)
+                .frame(height: AdaptiveLayout.Dimensions.voiceInputHeight(isCompact: isCompact))
         }
         .safeAreaPadding(.bottom)
     }
@@ -175,8 +183,10 @@ struct ChatBubble: View {
     let message: ChatMessage
     let isPlaying: Bool
     let onTap: () -> Void
+    var isCompact: Bool = false
 
     var isAI: Bool { message.speaker == .ai }
+    private var avatarSize: CGFloat { AdaptiveLayout.Dimensions.chatAvatarSize(isCompact: isCompact) }
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
@@ -197,10 +207,10 @@ struct ChatBubble: View {
 
                 // 气泡
                 EmojiText(text: message.text)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 16)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
                     .background(
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
                             .fill(isAI ? Color(hex: "F97316") : Color(hex: "3B82F6"))
                     )
                     .contentShape(Rectangle())
@@ -214,7 +224,7 @@ struct ChatBubble: View {
                         .frame(width: 20, height: 20)
                 }
             }
-            .frame(maxWidth: UIScreen.main.bounds.width * 0.75, alignment: isAI ? .leading : .trailing)
+            .frame(maxWidth: AdaptiveLayout.Dimensions.chatBubbleMaxWidth(screenWidth: UIScreen.main.bounds.width, isCompact: isCompact), alignment: isAI ? .leading : .trailing)
 
             if isAI {
                 Spacer()
@@ -229,7 +239,7 @@ struct ChatBubble: View {
         teacherAvatarImage
             .resizable()
             .scaledToFill()
-            .frame(width: 36, height: 36)
+            .frame(width: avatarSize, height: avatarSize)
             .clipShape(Circle())
             .overlay(Circle().stroke(Color(hex: "F97316").opacity(0.5), lineWidth: 2))
     }
@@ -237,8 +247,8 @@ struct ChatBubble: View {
     private var userAvatar: some View {
         Circle()
             .fill(Color(hex: "DBEAFE"))
-            .frame(width: 36, height: 36)
-            .overlay(Image(systemName: "person.fill").font(.system(size: 16)).foregroundStyle(Color(hex: "3B82F6")))
+            .frame(width: avatarSize, height: avatarSize)
+            .overlay(Image(systemName: "person.fill").font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact))).foregroundStyle(Color(hex: "3B82F6")))
     }
 }
 
@@ -271,12 +281,13 @@ struct PlayingIndicator: View {
 // MARK: - Emoji Text (SwiftUI wrapper for emoji support)
 struct EmojiText: View {
     let text: String
+    var isCompact: Bool = false
 
     var body: some View {
         Text(text)
-            .font(.system(size: 18))
+            .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact)))
             .foregroundStyle(.white)
-            .lineSpacing(6)
+            .lineSpacing(4)
             .fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -286,13 +297,16 @@ struct TypingIndicator: View {
     @State private var showFirst = false
     @State private var showSecond = false
     @State private var showThird = false
+    var isCompact: Bool = false
+
+    private var avatarSize: CGFloat { AdaptiveLayout.Dimensions.chatAvatarSize(isCompact: isCompact) }
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             teacherAvatarImage
                 .resizable()
                 .scaledToFill()
-                .frame(width: 36, height: 36)
+                .frame(width: avatarSize, height: avatarSize)
                 .clipShape(Circle())
                 .overlay(Circle().stroke(Color(hex: "F97316").opacity(0.5), lineWidth: 2))
 
@@ -352,6 +366,10 @@ struct VoiceInputContainer: View {
     @State private var isInCancelZone = false
     @State private var cancelButtonFrame: CGRect = .zero
     @State private var isConnecting = false
+    var isCompact: Bool = false
+
+    private var inputHeight: CGFloat { AdaptiveLayout.Dimensions.voiceInputHeight(isCompact: isCompact) }
+    private var buttonHeight: CGFloat { AdaptiveLayout.Dimensions.bottomButtonHeight(isCompact: isCompact) }
 
     var body: some View {
         GeometryReader { geometry in
@@ -361,7 +379,7 @@ struct VoiceInputContainer: View {
                     // "松开取消" hint text (appears when over cancel button)
                     // Positioned above cancel button with 8px gap，文字大小和取消按钮一致
                     Text("松开取消")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact), weight: .medium))
                         .foregroundStyle(.white)
                         .opacity(viewModel.isRecording && isInCancelZone ? 1 : 0)
                         .offset(y: viewModel.isRecording && isInCancelZone ? 0 : 10)
@@ -370,7 +388,7 @@ struct VoiceInputContainer: View {
                     Spacer().frame(height: 8)
 
                     // Cancel button - positioned 24px above voice button
-                    CancelButton(isVisible: viewModel.isRecording, isHighlighted: isInCancelZone)
+                    CancelButton(isVisible: viewModel.isRecording, isHighlighted: isInCancelZone, isCompact: isCompact)
                         // Get the frame of cancel button in global coordinates
                         .background(
                             GeometryReader { cancelGeometry in
@@ -385,10 +403,10 @@ struct VoiceInputContainer: View {
                         )
                 }
                 // Position cancel button area 36px above voice button
-                .frame(width: geometry.size.width - 32, height: 52 + 8 + 20)
+                .frame(width: geometry.size.width - 32, height: buttonHeight + 8 + 20)
                 .position(
                     x: geometry.size.width / 2,
-                    y: geometry.size.height - 56 - 16 - 36 - 26 - 8 // Above voice button (36px gap + hint)
+                    y: geometry.size.height - buttonHeight - 16 - 36 - 26 - 8 // Above voice button (36px gap + hint)
                 )
 
                 // Main voice button - at bottom of container with vertical centering in white bg
@@ -396,11 +414,12 @@ struct VoiceInputContainer: View {
                     isRecording: viewModel.isRecording,
                     isDimmed: isInCancelZone,
                     isConnecting: isConnecting,
-                    text: buttonText
+                    text: buttonText,
+                    isCompact: isCompact
                 )
                 .position(
                     x: geometry.size.width / 2,
-                    y: geometry.size.height / 2 - 8 // Vertically centered in 88pt container, moved up more
+                    y: geometry.size.height / 2 - 8 // Vertically centered in container, moved up more
                 )
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .global)
@@ -452,7 +471,7 @@ struct VoiceInputContainer: View {
                 )
             }
         }
-        .frame(height: 88) // Match the input area background height
+        .frame(height: inputHeight) // Match the input area background height
     }
 
     private var buttonText: String {
@@ -472,6 +491,9 @@ struct VoiceButton: View {
     let isDimmed: Bool
     let isConnecting: Bool
     let text: String
+    var isCompact: Bool = false
+
+    private var buttonHeight: CGFloat { AdaptiveLayout.Dimensions.bottomButtonHeight(isCompact: isCompact) }
 
     // 是否显示录音中状态（正在录音或连接中都显示录音样式）
     private var showRecordingStyle: Bool {
@@ -481,15 +503,15 @@ struct VoiceButton: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: iconName)
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .semibold))
                 .foregroundStyle(.white)
 
             Text(text)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact), weight: .semibold))
                 .foregroundStyle(.white)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 56)
+        .frame(height: buttonHeight)
         .background(
             LinearGradient(
                 colors: showRecordingStyle ? recordingColors : normalColors,
@@ -527,15 +549,18 @@ struct VoiceButton: View {
 struct CancelButton: View {
     let isVisible: Bool
     let isHighlighted: Bool
+    var isCompact: Bool = false
+
+    private var buttonHeight: CGFloat { AdaptiveLayout.Dimensions.bottomButtonHeight(isCompact: isCompact) }
 
     // 默认状态：浅灰色背景，白色文字
     // 高亮状态：白色背景，黑色文字
     var body: some View {
         Text("取消")
-            .font(.system(size: 16, weight: .medium))
+            .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact), weight: .medium))
             .foregroundStyle(isHighlighted ? Color.black : Color.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 52)
+            .frame(height: buttonHeight)
             .background(
                 RoundedRectangle(cornerRadius: 26)
                     .fill(isHighlighted ? Color.white : Color(hex: "9CA3AF"))

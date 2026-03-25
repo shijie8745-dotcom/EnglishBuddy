@@ -82,16 +82,32 @@ enum AdaptiveLayout {
             screenWidth * (isCompact ? 0.85 : 0.75)
         }
 
-        // MARK: - Fixed Dimensions (works for both devices)
+        // MARK: - Layout Dimensions
 
-        /// 头部高度 (60pt - 通用)
-        static let headerHeight: CGFloat = 60
+        /// 头部高度 (iPhone 52pt / iPad 60pt)
+        static func headerHeight(isCompact: Bool) -> CGFloat {
+            isCompact ? 52 : 60
+        }
 
-        /// 底部按钮高度 (56pt - 通用)
-        static let bottomButtonHeight: CGFloat = 56
+        /// 头部按钮尺寸 (iPhone 40pt / iPad 44pt)
+        static func headerButtonSize(isCompact: Bool) -> CGFloat {
+            isCompact ? 40 : 44
+        }
 
-        /// 语音输入区域高度 (88pt - 通用)
-        static let voiceInputHeight: CGFloat = 88
+        /// 底部按钮高度 (iPhone 50pt / iPad 56pt)
+        static func bottomButtonHeight(isCompact: Bool) -> CGFloat {
+            isCompact ? 50 : 56
+        }
+
+        /// 语音输入区域高度 (iPhone 80pt / iPad 88pt)
+        static func voiceInputHeight(isCompact: Bool) -> CGFloat {
+            isCompact ? 80 : 88
+        }
+
+        /// 播放按钮尺寸 (iPhone 28pt / iPad 32pt)
+        static func speakerButtonSize(isCompact: Bool) -> CGFloat {
+            isCompact ? 28 : 32
+        }
     }
 
     // MARK: - Adaptive Font Sizes
@@ -101,6 +117,11 @@ enum AdaptiveLayout {
         /// 标题字体 (iPhone 24pt / iPad 28pt)
         static func titleSize(isCompact: Bool) -> CGFloat {
             isCompact ? 24 : 28
+        }
+
+        /// 卡片标题字体 (iPhone 20pt / iPad 24pt)
+        static func cardTitleSize(isCompact: Bool) -> CGFloat {
+            isCompact ? 20 : 24
         }
 
         /// 大标题 (iPhone 20pt / iPad 22pt)

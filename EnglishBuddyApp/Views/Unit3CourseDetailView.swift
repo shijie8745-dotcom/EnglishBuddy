@@ -41,19 +41,20 @@ struct Unit3CourseDetailView: View {
 
     // MARK: - Header
     private var headerSection: some View {
-        HStack(spacing: 0) {
+        let headerButtonSize = AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact)
+        return HStack(spacing: 0) {
             Button(action: { dismiss() }) {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .semibold))
                     .foregroundStyle(Color(hex: "6B7280"))
-                    .frame(width: 40, height: 40)
+                    .frame(width: headerButtonSize, height: headerButtonSize)
                     .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: "F3F4F6")))
             }
 
             Spacer()
 
             Text("Unit 3")
-                .font(.system(size: 20, weight: .bold))
+                .font(.system(size: AdaptiveLayout.Fonts.largeTitleSize(isCompact: isCompact), weight: .bold))
                 .foregroundStyle(Color(hex: "1F2937"))
 
             Spacer()
@@ -69,8 +70,8 @@ struct Unit3CourseDetailView: View {
                 }
             )
         }
-        .frame(height: 60)
-        .padding(.horizontal, 16)
+        .frame(height: AdaptiveLayout.Dimensions.headerHeight(isCompact: isCompact))
+        .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
         .background(Color.white)
         .overlay(Rectangle().fill(Color(hex: "E5E7EB")).frame(height: 0.5), alignment: .bottom)
     }
@@ -79,16 +80,16 @@ struct Unit3CourseDetailView: View {
     private var bannerSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Fun on the farm")
-                .font(.system(size: 14))
+                .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                 .foregroundStyle(.white.opacity(0.9))
             Text("农场乐趣")
-                .font(.system(size: 24, weight: .bold))
+                .font(.system(size: AdaptiveLayout.Fonts.titleSize(isCompact: isCompact), weight: .bold))
                 .foregroundStyle(.white)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
+        .padding(AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact) + 4)
         .background(LinearGradient(colors: [Color(hex: "84CC16"), Color(hex: "A3E635")], startPoint: .leading, endPoint: .trailing))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact), style: .continuous))
     }
 
     // MARK: - Vocabulary Section
@@ -96,10 +97,10 @@ struct Unit3CourseDetailView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 6) {
                 Image(systemName: "textformat")
-                    .font(.system(size: 16))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact)))
                     .foregroundStyle(Color(hex: "84CC16"))
                 Text("核心词汇")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact), weight: .bold))
                     .foregroundStyle(Color(hex: "1F2937"))
 
                 Spacer()
@@ -111,9 +112,9 @@ struct Unit3CourseDetailView: View {
                 }) {
                     HStack(spacing: 4) {
                         Text(isVocabExpanded ? "收起" : "展开")
-                            .font(.system(size: 13))
+                            .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                         Image(systemName: isVocabExpanded ? "chevron.up" : "chevron.down")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact) - 1, weight: .semibold))
                     }
                     .foregroundStyle(Color(hex: "84CC16"))
                     .padding(.horizontal, 12)
@@ -159,11 +160,11 @@ struct Unit3CourseDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text(title)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact), weight: .semibold))
                     .foregroundStyle(isExpanded ? Color(hex: "84CC16") : Color(hex: "4B5563"))
                 if isExpanded {
                     Text("拓展")
-                        .font(.system(size: 12))
+                        .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact) - 2))
                         .foregroundStyle(Color(hex: "84CC16"))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
@@ -177,8 +178,8 @@ struct Unit3CourseDetailView: View {
                 }
             }
         }
-        .padding(16)
-        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.white).shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2))
+        .padding(AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
+        .background(RoundedRectangle(cornerRadius: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact), style: .continuous).fill(.white).shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2))
     }
 
     // MARK: - Sentences Section
@@ -186,10 +187,10 @@ struct Unit3CourseDetailView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 6) {
                 Image(systemName: "text.bubble.fill")
-                    .font(.system(size: 16))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact)))
                     .foregroundStyle(Color(hex: "84CC16"))
                 Text("核心句型")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact), weight: .bold))
                     .foregroundStyle(Color(hex: "1F2937"))
             }
 
@@ -554,13 +555,14 @@ struct Unit3CourseDetailView: View {
     }
 
     private func speakerButton(text: String, size: CGFloat = 16) -> some View {
-        Button(action: {
+        let buttonSize = AdaptiveLayout.Dimensions.speakerButtonSize(isCompact: isCompact)
+        return Button(action: {
             TTSService.shared.speak(text)
         }) {
             Image(systemName: "speaker.wave.2.fill")
                 .font(.system(size: size - 4))
                 .foregroundStyle(Color(hex: "84CC16"))
-                .frame(width: 32, height: 32)
+                .frame(width: buttonSize + 4, height: buttonSize + 4)
                 .background(Circle().fill(Color(hex: "F0FDF4")))
         }
         .buttonStyle(.plain)
@@ -569,13 +571,13 @@ struct Unit3CourseDetailView: View {
     private func sentenceGroup<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact), weight: .semibold))
                 .foregroundStyle(Color(hex: "4B5563"))
 
             content()
         }
-        .padding(16)
-        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.white).shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2))
+        .padding(AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
+        .background(RoundedRectangle(cornerRadius: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact), style: .continuous).fill(.white).shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2))
     }
 
     private var bottomButton: some View {
@@ -586,18 +588,18 @@ struct Unit3CourseDetailView: View {
                 showingChat = true
             }) {
                 HStack(spacing: 8) {
-                    Image(systemName: "mic.fill").font(.system(size: 20))
-                    Text("开始对话练习").font(.system(size: 18, weight: .bold))
+                    Image(systemName: "mic.fill").font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact)))
+                    Text("开始对话练习").font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact) - 2, weight: .bold))
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
-                .frame(height: 56)
+                .frame(height: AdaptiveLayout.Dimensions.bottomButtonHeight(isCompact: isCompact))
                 .background(LinearGradient(colors: [Color(hex: "84CC16"), Color(hex: "A3E635")], startPoint: .leading, endPoint: .trailing))
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact), style: .continuous))
                 .shadow(color: Color(hex: "84CC16").opacity(0.3), radius: 12, x: 0, y: 4)
             }
             .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
-            .padding(.vertical, 16)
+            .padding(.vertical, AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
             .background(Color.white)
         }
     }
