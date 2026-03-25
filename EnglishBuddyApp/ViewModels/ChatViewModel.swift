@@ -316,7 +316,7 @@ class ChatViewModel {
             try await QwenTTSRealtimeService.shared.connect()
             print("[ChatViewModel] WebSocket 连接成功")
 
-            // 配置 session
+            // 配置 session（会等待 session.updated 确认）
             try await QwenTTSRealtimeService.shared.updateSession()
             print("[ChatViewModel] Session 配置成功")
 
@@ -324,9 +324,8 @@ class ChatViewModel {
             try await QwenTTSRealtimeService.shared.appendText(text)
             print("[ChatViewModel] 文本已发送: \(text.prefix(50))...")
 
-            // 结束会话（发送结束信号，让服务器知道文本发送完毕）
+            // 结束会话（告诉服务器文本发送完毕）
             QwenTTSRealtimeService.shared.finish()
-
             print("[ChatViewModel] 流式 TTS 文本已发送，等待音频...")
 
             // 等待音频数据完成（最多等待 30 秒）

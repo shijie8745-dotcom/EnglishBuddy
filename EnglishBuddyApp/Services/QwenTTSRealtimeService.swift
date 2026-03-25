@@ -40,6 +40,8 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
     // 连接完成的 continuation
     private var connectionContinuation: CheckedContinuation<Void, Error>?
+    // session 更新完成的 continuation
+    private var sessionUpdateContinuation: CheckedContinuation<Void, Error>?
 
     // MARK: - Initialization
 
@@ -135,6 +137,19 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
         ]
 
         try await sendJSON(sessionUpdate)
+
+        // 等待 session.updated 确认
+        try await withCheckedThrowingContinuation { continuation in
+            self.sessionUpdateContinuation = continuation
+            // 设置超时
+            DispatchQueue.global().asyncAfter(deadline: .now() + 10) { [weak self] in
+                if let cont = self?.sessionUpdateContinuation {
+                    self?.sessionUpdateContinuation = nil
+                    cont.resume(throwing: TTSSError.connectionTimeout)
+                }
+            }
+        }
+
         isReady = true
         print("[QwenTTS] Session 更新成功")
     }
@@ -172,6 +187,10 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
             connectionContinuation = nil
             cont.resume(throwing: TTSSError.notConnected)
         }
+        if let cont = sessionUpdateContinuation {
+            sessionUpdateContinuation = nil
+            cont.resume(throwing: TTSSError.notConnected)
+        }
 
         // 先清理引用，再关闭连接
         let taskToClose = webSocketTask
@@ -201,6 +220,7 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
         // 清理 continuation，避免关闭连接时影响新连接
         connectionContinuation = nil
+        sessionUpdateContinuation = nil
 
         // 先清理引用，再关闭连接（避免委托回调干扰）
         webSocketTask = nil
@@ -353,6 +373,13 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
                 if let session = json["session"] as? [String: Any],
                    let sessionId = session["id"] as? String {
                     print("[QwenTTS] Session ID: \(sessionId)")
+                }
+
+            case "session.updated":
+                print("[QwenTTS] 会话更新确认")
+                if let cont = self.sessionUpdateContinuation {
+                    self.sessionUpdateContinuation = nil
+                    cont.resume()
                 }
 
             case "response.audio.delta":
