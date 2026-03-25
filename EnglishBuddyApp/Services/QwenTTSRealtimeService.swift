@@ -122,14 +122,14 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
             throw TTSSError.notConnected
         }
 
+        // 参考官方 Python SDK 的配置格式
         let sessionUpdate: [String: Any] = [
             "type": "session.update",
             "session": [
                 "mode": "server_commit",
                 "voice": voice,
-                "language_type": "Auto",
-                "response_format": "pcm",
-                "sample_rate": 24000
+                "input_text_format": "plain_text",  // 输入文本格式
+                "response_format": "pcm_24000hz_mono_16bit"  // 完整的音频格式描述
             ]
         ]
 

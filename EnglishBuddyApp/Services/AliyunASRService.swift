@@ -243,7 +243,6 @@ final class AliyunASRService: NSObject, ObservableObject {
     private func sendSessionUpdate() async throws {
         // 参考 Python 示例的简单配置（非 VAD 模式）
         let sessionConfig: [String: Any] = [
-            "event_id": "session_\(UUID().uuidString)",
             "type": "session.update",
             "session": [
                 "modalities": ["text"],
@@ -269,7 +268,6 @@ final class AliyunASRService: NSObject, ObservableObject {
     /// 发送音频数据
     private func sendAudioData(_ base64Data: String) {
         let event: [String: Any] = [
-            "event_id": "audio_\(UUID().uuidString)",
             "type": "input_audio_buffer.append",
             "audio": base64Data
         ]
@@ -290,7 +288,6 @@ final class AliyunASRService: NSObject, ObservableObject {
     /// 发送 commit 请求（手动触发识别）
     private func sendInputBufferCommit() {
         let event: [String: Any] = [
-            "event_id": "commit_\(UUID().uuidString)",
             "type": "input_audio_buffer.commit"
         ]
 
@@ -309,7 +306,6 @@ final class AliyunASRService: NSObject, ObservableObject {
     /// 发送 clear 请求（清除音频缓冲区，取消当前识别）
     private func sendInputBufferClear() {
         let event: [String: Any] = [
-            "event_id": "clear_\(UUID().uuidString)",
             "type": "input_audio_buffer.clear"
         ]
 
@@ -334,7 +330,6 @@ final class AliyunASRService: NSObject, ObservableObject {
     /// 发送 session.finish 结束会话
     private func sendSessionFinish() {
         let event: [String: Any] = [
-            "event_id": "finish_\(UUID().uuidString)",
             "type": "session.finish"
         ]
 
