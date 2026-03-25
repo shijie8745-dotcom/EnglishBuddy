@@ -213,6 +213,9 @@ final class AliyunASRService: NSObject, ObservableObject {
             engine.inputNode.removeTap(onBus: 0)
         }
 
+        // 发送 clear 指令清除服务器端音频缓冲区
+        sendInputBufferClear()
+
         isRecording = false
         transcript = ""
     }
@@ -282,6 +285,25 @@ final class AliyunASRService: NSObject, ObservableObject {
                 print("[AliyunASR] 发送 commit 失败: \(error)")
             } else {
                 print("[AliyunASR] 发送 commit")
+            }
+        }
+    }
+
+    /// 发送 clear 请求（清除音频缓冲区，取消当前识别）
+    private func sendInputBufferClear() {
+        let event: [String: Any] = [
+            "event_id": "clear_\(UUID().uuidString)",
+            "type": "input_audio_buffer.clear"
+        ]
+
+        guard let jsonString = try? JSONSerialization.data(withJSONObject: event).string else { return }
+
+        let message = URLSessionWebSocketTask.Message.string(jsonString)
+        webSocketTask?.send(message) { error in
+            if let error = error {
+                print("[AliyunASR] 发送 clear 失败: \(error)")
+            } else {
+                print("[AliyunASR] 发送 clear (取消识别)")
             }
         }
     }
