@@ -195,6 +195,9 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
     /// 重置状态（用于新的合成任务）
     func reset() {
+        // 清理 continuation，避免关闭连接时影响新连接
+        connectionContinuation = nil
+
         // 关闭之前的连接，确保下次 connect() 会建立新连接并启动消息接收
         webSocketTask?.cancel(with: .normalClosure, reason: nil)
         webSocketTask = nil
