@@ -91,15 +91,15 @@ class SpeechRecognizer: ObservableObject {
     func startRecording() throws {
         print("[SpeechRecognizer] startRecording 被调用")
 
-        // ===== 关键步骤：先停止 TTS 服务，释放音频会话 =====
-        // 用户录音优先级高于 TTS 播放
+        // ===== 停止 TTS 播放（用户录音优先级最高）=====
+        // 注意：TTS 和 ASR 使用相同的 playAndRecord 模式，不需要切换音频会话
         if QwenTTSRealtimeService.shared.isPlaying || QwenTTSRealtimeService.shared.isReady {
-            print("[SpeechRecognizer] 停止 TTS 播放以释放音频会话")
+            print("[SpeechRecognizer] 停止 TTS 播放")
             QwenTTSRealtimeService.shared.stop()
         }
 
-        // 等待音频会话完全释放（iOS 需要时间处理）
-        Thread.sleep(forTimeInterval: 0.3)
+        // 短暂等待音频引擎停止（不需要等待音频会话切换）
+        Thread.sleep(forTimeInterval: 0.1)
 
         // 异步执行连接和录音
         Task {

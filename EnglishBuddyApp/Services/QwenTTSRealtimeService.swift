@@ -207,25 +207,17 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
         isPlaying = false
     }
 
-    /// 停止播放并释放音频会话
+    /// 停止播放（保留音频会话以便 ASR 可以直接使用）
     func stop() {
         // 停止播放节点
         playerNode?.stop()
 
         // 停止音频引擎
         audioEngine?.stop()
-
-        // 释放音频会话（让 ASR 可以使用）
-        do {
-            let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
-            print("[QwenTTS] 音频会话已释放")
-        } catch {
-            print("[QwenTTS] 释放音频会话失败: \(error)")
-        }
+        audioEngine?.inputNode.removeTap(onBus: 0)  // 确保释放输入 tap
 
         isPlaying = false
-        print("[QwenTTS] 播放已停止")
+        print("[QwenTTS] 播放已停止（音频会话保持 playAndRecord 模式）")
     }
 
     /// 重置状态（用于新的合成任务）
@@ -263,16 +255,7 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
             guard let self = self else { return }
             print("[QwenTTS] 播放完成，设置 isPlaying = false")
             self.isPlaying = false
-
-            // 重置音频会话为 ASR 兼容模式
-            do {
-                let audioSession = AVAudioSession.sharedInstance()
-                try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers])
-                try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
-                print("[QwenTTS] 音频会话已重置为 ASR 兼容模式")
-            } catch {
-                print("[QwenTTS] 重置音频会话失败: \(error)")
-            }
+            // 不需要切换音频会话，因为 TTS 和 ASR 使用相同的 playAndRecord 模式
         }
     }
 
@@ -295,11 +278,12 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
         guard let format = audioFormat else { return }
         audioEngine!.connect(playerNode!, to: audioEngine!.mainMixerNode, format: format)
 
-        // 配置音频会话
+        // 配置音频会话 - 使用 playAndRecord 模式以便与 ASR 兼容
         do {
             let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setCategory(.playback, mode: .default)
-            try audioSession.setActive(true)
+            try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers])
+            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            print("[QwenTTS] 音频会话已配置为 playAndRecord（兼容 ASR）")
         } catch {
             print("[QwenTTS] 音频会话配置失败: \(error)")
         }
@@ -460,10 +444,10 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
         // 确保音频引擎正在运行（可能被系统中断后停止）
         if !engine.isRunning {
             do {
-                // 重新激活音频会话
+                // 重新激活音频会话（使用与 ASR 兼容的模式）
                 let audioSession = AVAudioSession.sharedInstance()
-                try audioSession.setCategory(.playback, mode: .default)
-                try audioSession.setActive(true)
+                try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers])
+                try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
 
                 try engine.start()
                 print("[QwenTTS] 音频引擎重新启动")
