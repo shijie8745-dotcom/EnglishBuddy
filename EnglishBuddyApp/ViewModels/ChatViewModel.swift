@@ -142,6 +142,26 @@ class ChatViewModel {
         TTSService.shared.stop()
     }
 
+    /// 停止所有播放（用户录音时调用，优先级最高）
+    func stopAllPlayback() {
+        // 停止流式 TTS 播放
+        QwenTTSRealtimeService.shared.stop()
+
+        // 停止非流式 TTS 播放
+        TTSService.shared.stop()
+
+        // 清除播放状态和动画
+        currentlyPlayingMessageId = nil
+        streamingPlayingMessageId = nil
+
+        // 清除所有消息的播放状态
+        for index in messages.indices {
+            messages[index].isPlaying = false
+        }
+
+        print("[ChatViewModel] 已停止所有播放，释放音频会话")
+    }
+
     func loadInitialMessages(for lesson: Lesson) {
         currentLesson = lesson
         messages = []
@@ -417,6 +437,10 @@ class ChatViewModel {
     }
 
     func startRecording() {
+        // ===== 关键步骤：先停止 TTS 播放和动画 =====
+        // 用户录音优先级高于 TTS 播放
+        stopAllPlayback()
+
         // Initialize speech recognizer
         speechRecognizer = SpeechRecognizer()
 

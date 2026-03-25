@@ -207,10 +207,25 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
         isPlaying = false
     }
 
-    /// 停止播放
+    /// 停止播放并释放音频会话
     func stop() {
+        // 停止播放节点
         playerNode?.stop()
+
+        // 停止音频引擎
+        audioEngine?.stop()
+
+        // 释放音频会话（让 ASR 可以使用）
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
+            print("[QwenTTS] 音频会话已释放")
+        } catch {
+            print("[QwenTTS] 释放音频会话失败: \(error)")
+        }
+
         isPlaying = false
+        print("[QwenTTS] 播放已停止")
     }
 
     /// 重置状态（用于新的合成任务）
