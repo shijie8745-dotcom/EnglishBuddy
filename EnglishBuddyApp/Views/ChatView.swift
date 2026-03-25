@@ -86,7 +86,7 @@ struct ChatView: View {
 
             Spacer()
 
-            // 学习伙伴 Amy 头像和名字
+            // 学习伙伴 Emii 头像和名字
             HStack(spacing: 10) {
                 teacherAvatarImage
                     .resizable()
@@ -95,7 +95,7 @@ struct ChatView: View {
                     .clipShape(Circle())
                     .overlay(Circle().stroke(Color(hex: "FED7AA"), lineWidth: 2))
 
-                Text("Amy")
+                Text("Emii")
                     .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .bold))
                     .foregroundStyle(Color(hex: "1F2937"))
             }

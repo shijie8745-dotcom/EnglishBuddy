@@ -146,7 +146,7 @@ struct CourseListView: View {
                                     .font(.system(size: AdaptiveLayout.Fonts.titleSize(isCompact: isCompact), weight: .bold))
                                     .foregroundStyle(.white)
 
-                                Text("和 Amy 一起学英语")
+                                Text("和 Emii 一起学英语")
                                     .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                                     .foregroundStyle(.white.opacity(0.9))
                             }

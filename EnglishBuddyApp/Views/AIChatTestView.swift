@@ -57,7 +57,7 @@ struct AIChatTestView: View {
                     .overlay(Circle().stroke(Color(hex: "FED7AA"), lineWidth: 2))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Amy")
+                    Text("Emii")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(Color(hex: "1F2937"))
 

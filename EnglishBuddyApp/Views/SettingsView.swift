@@ -13,7 +13,7 @@ struct SettingsView: View {
 
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var avatarImage: UIImage?
-    @State private var ttsTestText: String = "Hello! I'm Amy. Let's practice English together!"
+    @State private var ttsTestText: String = "Hello! I'm Emii. Let's practice English together!"
     @State private var showingEditNameSheet = false
     @State private var editNameText = ""
 
