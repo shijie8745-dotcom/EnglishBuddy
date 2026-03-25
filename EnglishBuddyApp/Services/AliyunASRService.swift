@@ -370,8 +370,14 @@ final class AliyunASRService: NSObject, ObservableObject {
         if sourceSampleRate == targetSampleRate && sourceFormat.commonFormat == .pcmFormatInt16 {
             guard let int16Pointer = buffer.int16ChannelData?[0] else { return nil }
             let frameLength = Int(buffer.frameLength)
-            // 直接从指针创建 Data，避免悬空指针警告
-            return Data(bytes: int16Pointer, count: frameLength * 2)
+            guard frameLength > 0 else { return nil }
+            // 创建 Data 会自动复制数据，避免悬空指针
+            var data = Data(count: frameLength * 2)
+            data.withUnsafeMutableBytes { dest in
+                guard let destPtr = dest.baseAddress else { return }
+                memcpy(destPtr, int16Pointer, frameLength * 2)
+            }
+            return data
         }
 
         // 创建目标格式
@@ -415,8 +421,14 @@ final class AliyunASRService: NSObject, ObservableObject {
         // 提取 Int16 数据
         guard let int16Pointer = outputBuffer.int16ChannelData?[0] else { return nil }
         let frameLength = Int(outputBuffer.frameLength)
-        // 直接从指针创建 Data，避免悬空指针警告
-        return Data(bytes: int16Pointer, count: frameLength * 2)
+        guard frameLength > 0 else { return nil }
+        // 创建 Data 会自动复制数据，避免悬空指针
+        var data = Data(count: frameLength * 2)
+        data.withUnsafeMutableBytes { dest in
+            guard let destPtr = dest.baseAddress else { return }
+            memcpy(destPtr, int16Pointer, frameLength * 2)
+        }
+        return data
     }
 
     /// 开始接收消息

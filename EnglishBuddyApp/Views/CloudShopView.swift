@@ -70,6 +70,7 @@ struct CloudShopView: View {
             }
         }
         .navigationBarHidden(true)
+        .ignoresSafeArea(edges: .top)
         .alert("提示", isPresented: $showAlert) {
             Button("确定") {}
         } message: {
@@ -124,7 +125,16 @@ struct CloudShopView: View {
                 .padding(.top, 16)
                 .padding(.bottom, 20)
             }
+            // 为状态栏预留空间
+            .padding(.top, safeAreaTop)
         }
+    }
+
+    // 获取顶部安全区域高度
+    private var safeAreaTop: CGFloat {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows.first?.safeAreaInsets.top ?? 0
     }
 
     // MARK: - Pet Shop Section (云朵商店)

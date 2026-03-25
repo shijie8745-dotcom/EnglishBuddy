@@ -100,6 +100,7 @@ struct CourseListView: View {
                 }
             }
             .navigationBarHidden(true)
+            .ignoresSafeArea(edges: .top)
             .navigationDestination(isPresented: $showingCloudShop) {
                 CloudShopView(user: viewModel.user)
             }
@@ -169,8 +170,17 @@ struct CourseListView: View {
                     .padding(.top, isCompact ? 12 : 16)
                     .padding(.bottom, isCompact ? 14 : 20)
                 }
+                // 为状态栏预留空间
+                .padding(.top, safeAreaTop)
             }
         }
+    }
+
+    // 获取顶部安全区域高度
+    private var safeAreaTop: CGFloat {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows.first?.safeAreaInsets.top ?? 0
     }
 
     // MARK: - User Avatar (replaces pet avatar in header)

@@ -55,6 +55,7 @@ struct SettingsView: View {
             }
         }
         .navigationBarHidden(true)
+        .ignoresSafeArea(edges: .top)
         .onAppear {
             loadAvatar()
             selectedPracticeLessonId = user.currentPracticeLessonId ?? lessons.first?.id
@@ -174,7 +175,16 @@ struct SettingsView: View {
                 .padding(.top, AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
                 .padding(.bottom, AdaptiveLayout.Dimensions.sectionSpacing(isCompact: isCompact) + 4)
             }
+            // 为状态栏预留空间
+            .padding(.top, safeAreaTop)
         }
+    }
+
+    // 获取顶部安全区域高度
+    private var safeAreaTop: CGFloat {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows.first?.safeAreaInsets.top ?? 0
     }
 
     // MARK: - Profile Section
