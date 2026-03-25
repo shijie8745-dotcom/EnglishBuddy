@@ -294,8 +294,17 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
     /// 开始接收消息
     private func startReceiving() {
-        webSocketTask?.receive { [weak self] result in
+        print("[QwenTTS] 开始接收消息循环")
+        // 检查当前任务的引用，避免在旧任务上接收
+        let currentTask = webSocketTask
+        currentTask?.receive { [weak self] result in
             guard let self = self else { return }
+
+            // 确保我们还在处理同一个任务
+            guard self.webSocketTask === currentTask else {
+                print("[QwenTTS] 忽略旧任务的接收回调")
+                return
+            }
 
             switch result {
             case .success(let message):

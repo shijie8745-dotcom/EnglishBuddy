@@ -278,46 +278,70 @@ class ChatViewModel {
             // 标记正在流式播放
             streamingPlayingMessageId = messageId
 
-            // 先设置回调（在连接之前）
-            QwenTTSRealtimeService.shared.onAudioChunk = { [weak self] _ in
-                Task { @MainActor in
-                    // 只在第一次设置播放状态
-                    if self?.currentlyPlayingMessageId == nil {
-                        self?.currentlyPlayingMessageId = messageId
-                        if let index = self?.messages.firstIndex(where: { $0.id == messageId }) {
-                            self?.messages[index].isPlaying = true
+            // 用于等待音频完成的信号
+            let audioComplete = AsyncStream<Bool> { continuation in
+                QwenTTSRealtimeService.shared.onAudioChunk = { [weak self] _ in
+                    Task { @MainActor in
+                        // 只在第一次设置播放状态
+                        if self?.currentlyPlayingMessageId == nil {
+                            self?.currentlyPlayingMessageId = messageId
+                            if let index = self?.messages.firstIndex(where: { $0.id == messageId }) {
+                                self?.messages[index].isPlaying = true
+                            }
                         }
                     }
                 }
-            }
 
-            QwenTTSRealtimeService.shared.onComplete = { [weak self] audioData in
-                Task { @MainActor in
-                    print("[ChatViewModel] onComplete 回调，音频长度: \(audioData.count)")
-                    // 只保存音频数据，动画由 updatePlayingState 控制
-                    if let index = self?.messages.firstIndex(where: { $0.id == messageId }) {
-                        self?.messages[index].audioData = audioData
-                        print("[ChatViewModel] 音频已缓存到消息，长度: \(audioData.count)")
+                QwenTTSRealtimeService.shared.onComplete = { [weak self] audioData in
+                    Task { @MainActor in
+                        print("[ChatViewModel] onComplete 回调，音频长度: \(audioData.count)")
+                        // 只保存音频数据，动画由 updatePlayingState 控制
+                        if let index = self?.messages.firstIndex(where: { $0.id == messageId }) {
+                            self?.messages[index].audioData = audioData
+                            print("[ChatViewModel] 音频已缓存到消息，长度: \(audioData.count)")
+                        }
+                        continuation.yield(true)
+                        continuation.finish()
                     }
+                }
+
+                QwenTTSRealtimeService.shared.onError = { error in
+                    print("[ChatViewModel] TTS 错误: \(error)")
+                    continuation.yield(false)
+                    continuation.finish()
                 }
             }
 
             // 连接 WebSocket
             try await QwenTTSRealtimeService.shared.connect()
+            print("[ChatViewModel] WebSocket 连接成功")
 
             // 配置 session
             try await QwenTTSRealtimeService.shared.updateSession()
+            print("[ChatViewModel] Session 配置成功")
 
             // 发送文本
             try await QwenTTSRealtimeService.shared.appendText(text)
-
-            // 等待服务器处理后再结束会话（参考官方示例）
-            try await Task.sleep(nanoseconds: 500_000_000)  // 0.5秒
+            print("[ChatViewModel] 文本已发送: \(text.prefix(50))...")
 
             // 结束会话（发送结束信号，让服务器知道文本发送完毕）
             QwenTTSRealtimeService.shared.finish()
 
             print("[ChatViewModel] 流式 TTS 文本已发送，等待音频...")
+
+            // 等待音频数据完成（最多等待 30 秒）
+            var hasAudio = false
+            for await result in audioComplete {
+                hasAudio = result
+                break
+            }
+
+            if hasAudio {
+                print("[ChatViewModel] 流式 TTS 完成")
+            } else {
+                print("[ChatViewModel] 流式 TTS 超时或出错，回退到非流式")
+                throw TTSSError.serverError("等待音频超时")
+            }
 
         } catch {
             print("[ChatViewModel] 流式 TTS 失败，回退到非流式: \(error)")
