@@ -70,7 +70,6 @@ struct CloudShopView: View {
             }
         }
         .navigationBarHidden(true)
-        .ignoresSafeArea(edges: .top)
         .alert("提示", isPresented: $showAlert) {
             Button("确定") {}
         } message: {

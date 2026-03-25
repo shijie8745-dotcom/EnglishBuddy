@@ -100,7 +100,6 @@ struct CourseListView: View {
                 }
             }
             .navigationBarHidden(true)
-            .ignoresSafeArea(edges: .top)
             .navigationDestination(isPresented: $showingCloudShop) {
                 CloudShopView(user: viewModel.user)
             }

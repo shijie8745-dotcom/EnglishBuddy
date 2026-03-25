@@ -55,7 +55,6 @@ struct SettingsView: View {
             }
         }
         .navigationBarHidden(true)
-        .ignoresSafeArea(edges: .top)
         .onAppear {
             loadAvatar()
             selectedPracticeLessonId = user.currentPracticeLessonId ?? lessons.first?.id
