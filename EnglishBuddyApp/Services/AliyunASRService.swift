@@ -8,6 +8,9 @@ final class AliyunASRService: NSObject, ObservableObject {
     static let shared = AliyunASRService()
 
     @Published var transcript = ""
+
+    /// 标记当前会话是否已被取消（用于忽略取消后仍到达的异步消息）
+    private var isSessionCancelled = false
     @Published var isRecording = false
     @Published var isConnecting = false
     @Published var isReady = false  // WebSocket 已连接并准备好录音
@@ -141,6 +144,7 @@ final class AliyunASRService: NSObject, ObservableObject {
     func resetRecordingState() {
         isRecording = false
         transcript = ""
+        isSessionCancelled = false
     }
 
     // MARK: - Audio Recording
@@ -151,6 +155,9 @@ final class AliyunASRService: NSObject, ObservableObject {
             print("[AliyunASR] 已经在录音中")
             return
         }
+
+        // 重置取消标志，开始新的会话
+        isSessionCancelled = false
 
         // 清除之前的识别结果
         transcript = ""
@@ -211,16 +218,23 @@ final class AliyunASRService: NSObject, ObservableObject {
 
     /// 取消录音（不返回结果）
     func cancelRecording() {
+        print("[AliyunASR] cancelRecording 被调用")
+
+        // 标记会话已取消，忽略后续异步消息
+        isSessionCancelled = true
+
         if let engine = audioEngine, engine.isRunning {
             engine.stop()
             engine.inputNode.removeTap(onBus: 0)
         }
 
-        // 发送 clear 指令清除服务器端音频缓冲区
-        sendInputBufferClear()
-
+        // 立即清除本地状态
         isRecording = false
         transcript = ""
+
+        // 阿里云 ASR 不支持 input_audio_buffer.clear，需要断开连接来清除服务器端状态
+        disconnect()
+        print("[AliyunASR] 已断开连接以清除服务器端状态")
     }
 
     // MARK: - WebSocket Message Handlers
@@ -299,14 +313,20 @@ final class AliyunASRService: NSObject, ObservableObject {
             "type": "input_audio_buffer.clear"
         ]
 
-        guard let jsonString = try? JSONSerialization.data(withJSONObject: event).string else { return }
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: event),
+              let jsonString = String(data: jsonData, encoding: .utf8) else {
+            print("[AliyunASR] clear 消息序列化失败")
+            return
+        }
+
+        print("[AliyunASR] 发送 clear 消息: \(jsonString)")
 
         let message = URLSessionWebSocketTask.Message.string(jsonString)
         webSocketTask?.send(message) { error in
             if let error = error {
                 print("[AliyunASR] 发送 clear 失败: \(error)")
             } else {
-                print("[AliyunASR] 发送 clear (取消识别)")
+                print("[AliyunASR] 发送 clear 成功")
             }
         }
     }
@@ -456,9 +476,15 @@ final class AliyunASRService: NSObject, ObservableObject {
 
             case "input_audio_transcription.delta":
                 // 增量转录结果（实时部分识别）
+                // 如果会话已取消，忽略该消息
+                guard !self.isSessionCancelled else {
+                    print("[AliyunASR] 会话已取消，忽略 delta 消息")
+                    return
+                }
                 if let delta = json["delta"] as? [String: Any],
                    let text = delta["text"] as? String {
                     DispatchQueue.main.async {
+                        guard !self.isSessionCancelled else { return }
                         self.transcript = self.transcript + text
                         self.onTextReceived?(self.transcript, false)
                     }
@@ -466,8 +492,14 @@ final class AliyunASRService: NSObject, ObservableObject {
 
             case "input_audio_transcription.completed":
                 // 转录完成 - 最终完整结果
+                // 如果会话已取消，忽略该消息
+                guard !self.isSessionCancelled else {
+                    print("[AliyunASR] 会话已取消，忽略 completed 消息")
+                    return
+                }
                 if let transcript = json["transcript"] as? String {
                     DispatchQueue.main.async {
+                        guard !self.isSessionCancelled else { return }
                         self.transcript = transcript
                         self.onTextReceived?(transcript, true)
                     }
@@ -475,8 +507,14 @@ final class AliyunASRService: NSObject, ObservableObject {
 
             case "conversation.item.input_audio_transcription.text":
                 // 阿里云ASR实时增量结果 - 从 stash 字段获取
+                // 如果会话已取消，忽略该消息
+                guard !self.isSessionCancelled else {
+                    print("[AliyunASR] 会话已取消，忽略 text 消息")
+                    return
+                }
                 if let stash = json["stash"] as? String, !stash.isEmpty {
                     DispatchQueue.main.async {
+                        guard !self.isSessionCancelled else { return }
                         self.transcript = stash
                         self.onTextReceived?(stash, false)
                         print("[AliyunASR] 实时转录: \(stash)")
@@ -485,8 +523,14 @@ final class AliyunASRService: NSObject, ObservableObject {
 
             case "conversation.item.input_audio_transcription.completed":
                 // 阿里云ASR最终识别结果 - 从 transcript 字段获取
+                // 如果会话已取消，忽略该消息
+                guard !self.isSessionCancelled else {
+                    print("[AliyunASR] 会话已取消，忽略 completed 消息")
+                    return
+                }
                 if let transcript = json["transcript"] as? String, !transcript.isEmpty {
                     DispatchQueue.main.async {
+                        guard !self.isSessionCancelled else { return }
                         self.transcript = transcript
                         self.onTextReceived?(transcript, true)
                         print("[AliyunASR] 最终转录完成: \(transcript)")

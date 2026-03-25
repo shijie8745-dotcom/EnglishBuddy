@@ -433,8 +433,8 @@ class ChatViewModel {
 
         // ===== 第2步：异步清理ASR =====
         // 直接使用ASR服务取消录音（不发送commit）
+        // 注意：不调用 resetRecordingState()，保持 isSessionCancelled 标志
         AliyunASRService.shared.cancelRecording()
-        AliyunASRService.shared.resetRecordingState()
 
         print("[ChatViewModel] 录音已取消")
 
