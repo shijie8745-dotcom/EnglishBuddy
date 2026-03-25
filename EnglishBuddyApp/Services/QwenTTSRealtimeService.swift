@@ -144,8 +144,8 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
             throw TTSSError.notConnected
         }
 
+        // 注意：官方 API 不需要 event_id 字段
         let message: [String: Any] = [
-            "event_id": "text_\(UUID().uuidString)",
             "type": "input_text_buffer.append",
             "text": text
         ]
@@ -156,8 +156,8 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
     /// 结束会话
     func finish() {
+        // 注意：官方 API 不需要 event_id 字段
         let message: [String: Any] = [
-            "event_id": "finish_\(UUID().uuidString)",
             "type": "session.finish"
         ]
         sendJSON(message)
@@ -380,7 +380,25 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
     /// 播放音频块
     private func playAudioChunk(_ data: Data) {
-        guard let format = audioFormat else { return }
+        guard let format = audioFormat,
+              let engine = audioEngine,
+              let player = playerNode else { return }
+
+        // 确保音频引擎正在运行（可能被系统中断后停止）
+        if !engine.isRunning {
+            do {
+                // 重新激活音频会话
+                let audioSession = AVAudioSession.sharedInstance()
+                try audioSession.setCategory(.playback, mode: .default)
+                try audioSession.setActive(true)
+
+                try engine.start()
+                print("[QwenTTS] 音频引擎重新启动")
+            } catch {
+                print("[QwenTTS] 音频引擎启动失败: \(error)")
+                return
+            }
+        }
 
         let frameCount = UInt32(data.count / 2)  // 16bit = 2 bytes per sample
         guard frameCount > 0 else { return }
@@ -401,10 +419,10 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
             }
         }
 
-        playerNode?.scheduleBuffer(buffer, at: nil, options: [])
+        player.scheduleBuffer(buffer, at: nil, options: [])
 
-        if playerNode?.isPlaying == false {
-            playerNode?.play()
+        if !player.isPlaying {
+            player.play()
             isPlaying = true
         }
     }
