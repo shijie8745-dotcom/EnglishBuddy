@@ -93,23 +93,13 @@ class SpeechRecognizer: ObservableObject {
 
         // ===== 关键步骤：先停止 TTS 服务，释放音频会话 =====
         // 用户录音优先级高于 TTS 播放
-        if QwenTTSRealtimeService.shared.isPlaying {
+        if QwenTTSRealtimeService.shared.isPlaying || QwenTTSRealtimeService.shared.isReady {
             print("[SpeechRecognizer] 停止 TTS 播放以释放音频会话")
             QwenTTSRealtimeService.shared.stop()
-
-            // 等待音频会话释放
-            Thread.sleep(forTimeInterval: 0.1)
         }
 
-        // 清理 TTS 的音频会话，为 ASR 准备环境
-        do {
-            let audioSession = AVAudioSession.sharedInstance()
-            // 先停用当前会话
-            try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
-            print("[SpeechRecognizer] 已停用音频会话，准备切换到录音模式")
-        } catch {
-            print("[SpeechRecognizer] 停用音频会话失败: \(error)")
-        }
+        // 等待音频会话完全释放（iOS 需要时间处理）
+        Thread.sleep(forTimeInterval: 0.3)
 
         // 异步执行连接和录音
         Task {
@@ -127,7 +117,7 @@ class SpeechRecognizer: ObservableObject {
                     print("[SpeechRecognizer] isRecording 设置为 true")
                 }
 
-                // 开始录音
+                // 开始录音（内部会配置音频会话）
                 try asrService.startRecording()
                 print("[SpeechRecognizer] 录音已开始")
             } catch {

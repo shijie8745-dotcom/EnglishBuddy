@@ -173,10 +173,20 @@ final class AliyunASRService: NSObject, ObservableObject {
             throw ASRError.notConnected
         }
 
-        // 配置音频会话 - 停止其他音频会话（如 TTS）后再配置
+        // 配置音频会话 - 确保干净的切换
         let audioSession = AVAudioSession.sharedInstance()
-        // 先停用当前的会话，确保干净的切换
-        try? audioSession.setActive(false)
+
+        // 先停用当前会话（确保 TTS 等 AudioSession 完全释放）
+        do {
+            try audioSession.setActive(false, options: .notifyOthersOnDeactivation)
+            print("[AliyunASR] 已停用旧音频会话")
+        } catch {
+            print("[AliyunASR] 停用旧音频会话失败（可能已经未激活）: \(error)")
+        }
+
+        // 短暂等待，确保系统处理完成
+        Thread.sleep(forTimeInterval: 0.1)
+
         // 配置为录音模式
         try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers])
         try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
