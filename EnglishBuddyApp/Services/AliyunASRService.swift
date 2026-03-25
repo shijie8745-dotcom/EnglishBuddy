@@ -346,18 +346,10 @@ final class AliyunASRService: NSObject, ObservableObject {
 
         // 如果格式已经是目标格式，直接转换
         if sourceSampleRate == targetSampleRate && sourceFormat.commonFormat == .pcmFormatInt16 {
-            guard let int16Data = buffer.int16ChannelData?[0] else { return nil }
+            guard let int16Pointer = buffer.int16ChannelData?[0] else { return nil }
             let frameLength = Int(buffer.frameLength)
-            var data = Data()
-            data.reserveCapacity(frameLength * 2)
-            for i in 0..<frameLength {
-                let sample = int16Data[i]
-                // 将 Int16 转换为两个字节的 UInt8 数组
-                let byte1 = UInt8(sample & 0xFF)
-                let byte2 = UInt8((sample >> 8) & 0xFF)
-                data.append(contentsOf: [byte1, byte2])
-            }
-            return data
+            // 直接从指针创建 Data，避免悬空指针警告
+            return Data(bytes: int16Pointer, count: frameLength * 2)
         }
 
         // 创建目标格式
@@ -399,18 +391,10 @@ final class AliyunASRService: NSObject, ObservableObject {
         }
 
         // 提取 Int16 数据
-        guard let int16Data = outputBuffer.int16ChannelData?[0] else { return nil }
+        guard let int16Pointer = outputBuffer.int16ChannelData?[0] else { return nil }
         let frameLength = Int(outputBuffer.frameLength)
-        var data = Data()
-        data.reserveCapacity(frameLength * 2)
-        for i in 0..<frameLength {
-            let sample = int16Data[i]
-            // 将 Int16 转换为两个字节的 UInt8 数组
-            let byte1 = UInt8(sample & 0xFF)
-            let byte2 = UInt8((sample >> 8) & 0xFF)
-            data.append(contentsOf: [byte1, byte2])
-        }
-        return data
+        // 直接从指针创建 Data，避免悬空指针警告
+        return Data(bytes: int16Pointer, count: frameLength * 2)
     }
 
     /// 开始接收消息
