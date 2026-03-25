@@ -65,8 +65,12 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
         }
 
         // 清理旧连接
-        webSocketTask?.cancel()
+        let oldTask = webSocketTask
         webSocketTask = nil
+        oldTask?.cancel(with: .normalClosure, reason: nil)
+
+        // 等待旧连接关闭
+        try await Task.sleep(nanoseconds: 100_000_000)  // 0.1秒
 
         isConnecting = true
         errorMessage = nil
@@ -175,8 +179,11 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
             cont.resume(throwing: TTSSError.notConnected)
         }
 
-        webSocketTask?.cancel(with: .normalClosure, reason: nil)
+        // 先清理引用，再关闭连接
+        let taskToClose = webSocketTask
         webSocketTask = nil
+
+        taskToClose?.cancel(with: .normalClosure, reason: nil)
 
         audioEngine?.stop()
         audioEngine = nil
@@ -195,11 +202,13 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
     /// 重置状态（用于新的合成任务）
     func reset() {
+        // 先记录要关闭的任务
+        let taskToClose = webSocketTask
+
         // 清理 continuation，避免关闭连接时影响新连接
         connectionContinuation = nil
 
-        // 关闭之前的连接，确保下次 connect() 会建立新连接并启动消息接收
-        webSocketTask?.cancel(with: .normalClosure, reason: nil)
+        // 先清理引用，再关闭连接（避免委托回调干扰）
         webSocketTask = nil
 
         accumulatedAudioData = Data()
@@ -208,6 +217,9 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
         isReady = false
         isConnecting = false
         isDataComplete = false
+
+        // 最后关闭旧连接
+        taskToClose?.cancel(with: .normalClosure, reason: nil)
     }
 
     /// 检测播放完成
@@ -483,6 +495,11 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
 extension QwenTTSRealtimeService: URLSessionWebSocketDelegate {
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
+        // 只处理当前任务的回调
+        guard webSocketTask === self.webSocketTask else {
+            print("[QwenTTS] 忽略旧任务的连接打开回调")
+            return
+        }
         print("[QwenTTS] WebSocket 连接已打开")
 
         // 恢复等待连接的 continuation
@@ -493,6 +510,11 @@ extension QwenTTSRealtimeService: URLSessionWebSocketDelegate {
     }
 
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+        // 只处理当前任务的回调
+        guard webSocketTask === self.webSocketTask else {
+            print("[QwenTTS] 忽略旧任务的连接关闭回调")
+            return
+        }
         print("[QwenTTS] WebSocket 连接已关闭: \(closeCode)")
 
         // 如果有等待的 continuation，恢复它并抛出错误
@@ -508,6 +530,11 @@ extension QwenTTSRealtimeService: URLSessionWebSocketDelegate {
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        // 只处理当前任务的回调
+        guard task === self.webSocketTask else {
+            print("[QwenTTS] 忽略旧任务的任务完成回调")
+            return
+        }
         if let error = error {
             print("[QwenTTS] WebSocket 任务错误: \(error)")
 
