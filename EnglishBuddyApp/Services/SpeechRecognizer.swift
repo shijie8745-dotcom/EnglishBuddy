@@ -25,7 +25,7 @@ class SpeechRecognizer: ObservableObject {
             }
         }
 
-        asrService.onError = { [weak self] error in
+        asrService.onError = { error in
             DispatchQueue.main.async {
                 print("[SpeechRecognizer] ASR 错误: \(error.localizedDescription)")
             }

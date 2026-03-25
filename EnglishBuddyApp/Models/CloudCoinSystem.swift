@@ -7,6 +7,7 @@ class CloudCoinSystem: Codable {
     var totalEarned: Int              // 累计获得
     var checkInRecords: [CheckInRecord]  // 打卡记录
     var todayChatCount: Int           // 今日对话次数
+    var totalChatCount: Int           // 累计对话次数（历史所有对话）
     var lastChatDate: Date?           // 最后对话日期
     var lastCheckInDate: Date?        // 最后打卡日期
 
@@ -15,12 +16,13 @@ class CloudCoinSystem: Codable {
         self.totalEarned = totalEarned
         self.checkInRecords = []
         self.todayChatCount = 0
+        self.totalChatCount = 0
         self.lastChatDate = nil
         self.lastCheckInDate = nil
     }
 
     enum CodingKeys: String, CodingKey {
-        case coins, totalEarned, checkInRecords, todayChatCount, lastChatDate, lastCheckInDate
+        case coins, totalEarned, checkInRecords, todayChatCount, totalChatCount, lastChatDate, lastCheckInDate
     }
 
     required init(from decoder: Decoder) throws {
@@ -29,6 +31,7 @@ class CloudCoinSystem: Codable {
         totalEarned = try container.decode(Int.self, forKey: .totalEarned)
         checkInRecords = try container.decode([CheckInRecord].self, forKey: .checkInRecords)
         todayChatCount = try container.decode(Int.self, forKey: .todayChatCount)
+        totalChatCount = try container.decodeIfPresent(Int.self, forKey: .totalChatCount) ?? 0
         lastChatDate = try container.decodeIfPresent(Date.self, forKey: .lastChatDate)
         lastCheckInDate = try container.decodeIfPresent(Date.self, forKey: .lastCheckInDate)
     }
@@ -39,6 +42,7 @@ class CloudCoinSystem: Codable {
         try container.encode(totalEarned, forKey: .totalEarned)
         try container.encode(checkInRecords, forKey: .checkInRecords)
         try container.encode(todayChatCount, forKey: .todayChatCount)
+        try container.encode(totalChatCount, forKey: .totalChatCount)
         try container.encodeIfPresent(lastChatDate, forKey: .lastChatDate)
         try container.encodeIfPresent(lastCheckInDate, forKey: .lastCheckInDate)
     }
@@ -56,6 +60,7 @@ class CloudCoinSystem: Codable {
         }
 
         todayChatCount += 1
+        totalChatCount += 1  // 累计对话次数
         lastChatDate = Date()
     }
 

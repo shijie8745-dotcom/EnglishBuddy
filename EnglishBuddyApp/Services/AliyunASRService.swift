@@ -329,8 +329,11 @@ final class AliyunASRService: NSObject, ObservableObject {
             var data = Data()
             data.reserveCapacity(frameLength * 2)
             for i in 0..<frameLength {
-                var sample = int16Data[i]
-                data.append(UnsafeBufferPointer(start: &sample, count: 1))
+                let sample = int16Data[i]
+                // 将 Int16 转换为两个字节的 UInt8 数组
+                let byte1 = UInt8(sample & 0xFF)
+                let byte2 = UInt8((sample >> 8) & 0xFF)
+                data.append(contentsOf: [byte1, byte2])
             }
             return data
         }
@@ -379,8 +382,11 @@ final class AliyunASRService: NSObject, ObservableObject {
         var data = Data()
         data.reserveCapacity(frameLength * 2)
         for i in 0..<frameLength {
-            var sample = int16Data[i]
-            data.append(UnsafeBufferPointer(start: &sample, count: 1))
+            let sample = int16Data[i]
+            // 将 Int16 转换为两个字节的 UInt8 数组
+            let byte1 = UInt8(sample & 0xFF)
+            let byte2 = UInt8((sample >> 8) & 0xFF)
+            data.append(contentsOf: [byte1, byte2])
         }
         return data
     }

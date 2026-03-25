@@ -142,23 +142,43 @@ class ChatViewModel {
 
     // MARK: - Chat Session Tracking
 
-    /// 记录一次对话，增加对话次数，自动计算云朵币
-    /// 返回本次对话获得的云朵币数量（包括打卡奖励）
-    func recordChatInteraction() -> Int {
+    /// 记录一次对话，增加对话次数
+    func recordChatInteraction() {
         // Load user
-        var user = DataStore.loadUser()
+        let user = DataStore.loadUser()
 
-        // Increment chat count
+        // Increment chat count (both today and total)
         user.cloudCoinSystem.incrementChatCount()
 
-        // Calculate study time (1 minute = 1 coin)
+        // Save user
+        DataStore.shared.saveUser(user)
+    }
+
+    /// 结束对话会话，统计学习时长并检查打卡
+    /// 在退出对话页时调用
+    func finishSession() {
+        let user = DataStore.loadUser()
+
+        // Calculate study time: >30秒算1分钟，<30秒不算
         var earnedCoins = 0
         if let startTime = sessionStartTime {
-            let studyMinutes = Int(Date().timeIntervalSince(startTime)) / 60
+            let totalSeconds = Date().timeIntervalSince(startTime)
+            let studyMinutes: Int
+            let fullMinutes = Int(totalSeconds) / 60
+            let remainingSeconds = Int(totalSeconds) % 60
+
+            // >30秒算1分钟
+            if remainingSeconds >= 30 {
+                studyMinutes = fullMinutes + 1
+            } else {
+                studyMinutes = fullMinutes
+            }
+
             if studyMinutes > 0 {
-                earnedCoins += user.cloudCoinSystem.earnCoinsFromStudy(minutes: studyMinutes)
-                // Reset session start time for next calculation
-                sessionStartTime = Date()
+                // 更新用户学习时长
+                user.totalStudyTime += studyMinutes
+                // 获得云朵币（1分钟=1币）
+                earnedCoins = user.cloudCoinSystem.earnCoinsFromStudy(minutes: studyMinutes)
             }
         }
 
@@ -173,7 +193,7 @@ class ChatViewModel {
         DataStore.shared.saveUser(user)
 
         sessionEarnedCoins += earnedCoins
-        return earnedCoins
+        sessionStartTime = nil
     }
 
     /// 获取当前对话次数
@@ -232,7 +252,7 @@ class ChatViewModel {
 
         // Record chat interaction for cloud coin system (only for user messages)
         await MainActor.run {
-            _ = self.recordChatInteraction()
+            self.recordChatInteraction()
         }
 
         // Use AI to respond
@@ -348,7 +368,7 @@ class ChatViewModel {
         speechRecognizer = nil
 
         // 通知ASR停止录音（发送commit，触发最终识别）
-        AliyunASRService.shared.stopRecording()
+        _ = AliyunASRService.shared.stopRecording()
 
         // ===== 第2步：延迟处理识别结果（保证准确率）=====
         // 等待1秒让ASR返回最终结果（最后的音频需要处理时间）

@@ -6,6 +6,10 @@ struct Unit6CourseDetailView: View {
     @State private var isVocabExpanded = true
     @Environment(\.dismiss) private var dismiss
 
+    // Adaptive layout
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    private var isCompact: Bool { horizontalSizeClass == .compact }
+
     var body: some View {
         ZStack {
             Color(hex: "F8FAFC")
@@ -21,7 +25,7 @@ struct Unit6CourseDetailView: View {
                         sentencesSection
                         Spacer().frame(height: 100)
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
                     .padding(.top, 20)
                 }
 
@@ -161,7 +165,7 @@ struct Unit6CourseDetailView: View {
                 }
             }
 
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: AdaptiveLayout.Dimensions.vocabularyGridColumns(isCompact: isCompact)), spacing: AdaptiveLayout.Dimensions.gridSpacing(isCompact: isCompact)) {
                 ForEach(words, id: \.0) { word, meaning in
                     VocabCard(item: VocabularyItem(word: word, meaning: meaning, phonetic: nil, category: title, image: nil))
                 }
@@ -480,7 +484,7 @@ struct Unit6CourseDetailView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .shadow(color: Color(hex: "06B6D4").opacity(0.3), radius: 12, x: 0, y: 4)
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
             .padding(.vertical, 16)
             .background(Color.white)
         }

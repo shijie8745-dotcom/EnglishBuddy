@@ -44,10 +44,21 @@ class CloudShopViewModel {
     // MARK: - Data Loading
 
     func loadData(user: User) {
-        self.user = user
-        loadCloudCoinData(user: user)
-        loadCheckInData(user: user)
-        loadPetData(user: user)
+        // Always load fresh data from DataStore to get latest chat count
+        let freshUser = DataStore.loadUser()
+        self.user = freshUser
+        loadCloudCoinData(user: freshUser)
+        loadCheckInData(user: freshUser)
+        loadPetData(user: freshUser)
+    }
+
+    /// 刷新数据（从 DataStore 重新加载最新数据）
+    func refreshData() {
+        let freshUser = DataStore.loadUser()
+        self.user = freshUser
+        loadCloudCoinData(user: freshUser)
+        loadCheckInData(user: freshUser)
+        loadPetData(user: freshUser)
     }
 
     private func loadCloudCoinData(user: User) {

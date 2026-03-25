@@ -58,7 +58,8 @@ struct ChatView: View {
             viewModel.requestSpeechAuthorization()
         }
         .onDisappear {
-            // 退出会话时清理音频缓存
+            // 退出会话时统计学习时长并清理音频缓存
+            viewModel.finishSession()
             viewModel.clearAudioCache()
         }
         .navigationBarHidden(true)
@@ -774,23 +775,7 @@ private var rabbitAvatarImage: Image {
 
 // 学习伙伴 Amy 的头像
 private var teacherAvatarImage: Image {
-    // Try multiple paths to find teacher.png
-    let possiblePaths = [
-        "/Users/wjsun/.claude/dice-projects/learning-assistant/teacher.png",
-        Bundle.main.path(forResource: "teacher", ofType: "png"),
-        Bundle.main.bundlePath + "/Resources/teacher.png",
-        Bundle.main.bundlePath + "/teacher.png"
-    ]
-
-    for path in possiblePaths {
-        if let path = path, FileManager.default.fileExists(atPath: path),
-           let uiImage = UIImage(contentsOfFile: path) {
-            return Image(uiImage: uiImage)
-        }
-    }
-
-    // Fallback to system image (person)
-    return Image(systemName: "person.circle.fill")
+    Image("teacher")
 }
 
 // MARK: - Geometry Preference Key

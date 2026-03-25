@@ -19,12 +19,20 @@ class CourseViewModel {
         progress.filter { $0.isCompleted }.count
     }
 
-    var totalStudyTime: Int {
-        progress.reduce(0) { $0 + $1.totalStudyTime }
+    // MARK: - Stats for Home Page
+    /// 累计打卡次数
+    var totalCheckIns: Int {
+        user.cloudCoinSystem.checkInRecords.count
     }
 
-    var totalSessions: Int {
-        progress.reduce(0) { $0 + $1.studyCount }
+    /// 学习时长（分钟）
+    var totalStudyTime: Int {
+        user.totalStudyTime
+    }
+
+    /// 累计对话次数
+    var totalChatCount: Int {
+        user.cloudCoinSystem.totalChatCount
     }
 
     // MARK: - Pet
@@ -51,10 +59,6 @@ class CourseViewModel {
     }
 
     // MARK: - Check-in Feature (Cloud Coin System)
-    var totalCheckIns: Int {
-        user.cloudCoinSystem.checkInRecords.count
-    }
-
     var consecutiveDays: Int {
         calculateConsecutiveDays()
     }
@@ -161,5 +165,10 @@ class CourseViewModel {
 
         dataStore.saveUser(user)
         return earned
+    }
+
+    /// 刷新用户数据（从 DataStore 重新加载）
+    func refreshUserData() {
+        user = DataStore.loadUser()
     }
 }

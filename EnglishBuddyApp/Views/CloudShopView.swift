@@ -12,6 +12,10 @@ struct CloudShopView: View {
     @State private var unlockedPetName = ""
     @State private var selectedPetForPreview: PetDefinition? = nil
 
+    // Adaptive layout
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    private var isCompact: Bool { horizontalSizeClass == .compact }
+
     var body: some View {
         ZStack {
             // Background
@@ -25,27 +29,27 @@ struct CloudShopView: View {
 
                     // Pet Shop Section (now called 云朵商店)
                     petShopSection
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
                         .padding(.top, 16)
 
                     // Stats section
                     statsSection
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
                         .padding(.top, 20)
 
                     // Check-in progress (above calendar)
                     checkInProgressSection
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
                         .padding(.top, 20)
 
                     // Calendar section
                     calendarSection
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
                         .padding(.top, 20)
 
                     // Rules section
                     rulesSection
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
                         .padding(.top, 20)
                         .padding(.bottom, 32)
                 }
@@ -157,8 +161,8 @@ struct CloudShopView: View {
                 )
             }
 
-            // Pet grid - 4 columns for 10 pets (3 rows: 4+4+2)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 12) {
+            // Pet grid - adaptive columns for 10 pets (3 rows: 4+4+2 on iPad, 3+3+3+1 on iPhone)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: AdaptiveLayout.Dimensions.petShopColumns(isCompact: isCompact)), spacing: AdaptiveLayout.Dimensions.gridSpacing(isCompact: isCompact)) {
                 ForEach(viewModel.allPets) { pet in
                     PetShopCard(
                         pet: pet,
@@ -169,7 +173,7 @@ struct CloudShopView: View {
                 }
             }
         }
-        .padding(16)
+        .padding(AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(.white)
@@ -179,7 +183,8 @@ struct CloudShopView: View {
 
     // MARK: - Pet Preview Overlay
     private func petPreviewOverlay(pet: PetDefinition) -> some View {
-        ZStack {
+        let previewSize = AdaptiveLayout.Dimensions.petPreviewSize(isCompact: isCompact)
+        return ZStack {
             Color.black.opacity(0.5)
                 .ignoresSafeArea()
                 .onTapGesture {
@@ -191,11 +196,11 @@ struct CloudShopView: View {
                 petImage(named: pet.imageName)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 280, height: 280)
+                    .frame(width: previewSize, height: previewSize)
 
                 // Pet name
                 Text(pet.name)
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.system(size: AdaptiveLayout.Fonts.titleSize(isCompact: isCompact), weight: .bold))
                     .foregroundStyle(Color(hex: "1F2937"))
 
                 // Status
@@ -211,9 +216,9 @@ struct CloudShopView: View {
                             }
                         }) {
                             Text("切换")
-                                .font(.system(size: 18, weight: .bold))
+                                .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .bold))
                                 .foregroundStyle(.white)
-                                .frame(width: 140)
+                                .frame(width: isCompact ? 100 : 140)
                                 .padding(.vertical, 14)
                                 .background(
                                     LinearGradient(
@@ -235,7 +240,7 @@ struct CloudShopView: View {
                                 .frame(width: 24, height: 24)
 
                             Text("200")
-                                .font(.system(size: 18, weight: .bold))
+                                .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .bold))
                                 .foregroundStyle(Color(hex: "F59E0B"))
                         }
 
@@ -243,9 +248,9 @@ struct CloudShopView: View {
                             handlePetPurchase(pet: pet)
                         }) {
                             Text("购买")
-                                .font(.system(size: 18, weight: .bold))
+                                .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .bold))
                                 .foregroundStyle(.white)
-                                .frame(width: 140)
+                                .frame(width: isCompact ? 100 : 140)
                                 .padding(.vertical, 14)
                                 .background(
                                     viewModel.cloudCoins >= 200
@@ -577,20 +582,8 @@ struct CloudShopView: View {
     }
 
     private func petImage(named: String) -> Image {
-        let possiblePaths = [
-            "/Users/wjsun/.claude/dice-projects/learning-assistant/EnglishBuddyApp/EnglishBuddyApp/picture/pets/\(named).png",
-            Bundle.main.path(forResource: named, ofType: "png", inDirectory: "pets"),
-            Bundle.main.bundlePath + "/picture/pets/\(named).png"
-        ]
-
-        for path in possiblePaths {
-            if let path = path, FileManager.default.fileExists(atPath: path),
-               let uiImage = UIImage(contentsOfFile: path) {
-                return Image(uiImage: uiImage)
-            }
-        }
-
-        return Image(systemName: "pawprint.fill")
+        // 从 Assets.xcassets 加载宠物图片
+        Image(named)
     }
 }
 
@@ -601,24 +594,28 @@ struct CloudShopStatCard: View {
     let value: String
     let label: String
 
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    private var isCompact: Bool { horizontalSizeClass == .compact }
+
     var body: some View {
+        let iconSize = AdaptiveLayout.Dimensions.statIconSize(isCompact: isCompact)
         VStack(spacing: 8) {
             ZStack {
                 Circle()
                     .fill(iconColor.opacity(0.1))
-                    .frame(width: 48, height: 48)
+                    .frame(width: iconSize, height: iconSize)
 
                 Image(systemName: icon)
-                    .font(.system(size: 20))
+                    .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact)))
                     .foregroundStyle(iconColor)
             }
 
             Text(value)
-                .font(.system(size: 24, weight: .bold))
+                .font(.system(size: AdaptiveLayout.Fonts.titleSize(isCompact: isCompact), weight: .bold))
                 .foregroundStyle(Color(hex: "1F2937"))
 
             Text(label)
-                .font(.system(size: 12))
+                .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                 .foregroundStyle(Color(hex: "6B7280"))
         }
         .frame(maxWidth: .infinity)
@@ -638,24 +635,29 @@ struct PetShopCard: View {
     let isCurrent: Bool
     let onTap: () -> Void
 
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    private var isCompact: Bool { horizontalSizeClass == .compact }
+
     var body: some View {
+        let cardHeight: CGFloat = isCompact ? 70 : 85
+        let petImageSize: CGFloat = isCompact ? 56 : 72
         Button(action: onTap) {
             VStack(spacing: 6) {
                 // Pet image
                 ZStack {
                     RoundedRectangle(cornerRadius: 14)
                         .fill(isUnlocked ? Color(hex: "FEF3C7") : Color(hex: "F3F4F6"))
-                        .frame(height: 85)
+                        .frame(height: cardHeight)
 
                     petImage(named: pet.imageName)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 72, height: 72)
+                        .frame(width: petImageSize, height: petImageSize)
                         .opacity(isUnlocked ? 1.0 : 0.5)
 
                     if !isUnlocked {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 18))
+                            .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact)))
                             .foregroundStyle(Color(hex: "9CA3AF"))
                     }
 
@@ -666,7 +668,7 @@ struct PetShopCard: View {
                             HStack {
                                 Spacer()
                                 Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 18))
+                                    .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact)))
                                     .foregroundStyle(Color(hex: "10B981"))
                                     .background(Circle().fill(.white))
                                     .offset(x: -4, y: 4)
@@ -676,7 +678,7 @@ struct PetShopCard: View {
                 }
 
                 Text(pet.name)
-                    .font(.system(size: 13, weight: isUnlocked ? .semibold : .regular))
+                    .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact), weight: isUnlocked ? .semibold : .regular))
                     .foregroundStyle(isUnlocked ? Color(hex: "1F2937") : Color(hex: "9CA3AF"))
             }
         }
@@ -684,20 +686,8 @@ struct PetShopCard: View {
     }
 
     private func petImage(named: String) -> Image {
-        let possiblePaths = [
-            "/Users/wjsun/.claude/dice-projects/learning-assistant/EnglishBuddyApp/EnglishBuddyApp/picture/pets/\(named).png",
-            Bundle.main.path(forResource: named, ofType: "png", inDirectory: "pets"),
-            Bundle.main.bundlePath + "/picture/pets/\(named).png"
-        ]
-
-        for path in possiblePaths {
-            if let path = path, FileManager.default.fileExists(atPath: path),
-               let uiImage = UIImage(contentsOfFile: path) {
-                return Image(uiImage: uiImage)
-            }
-        }
-
-        return Image(systemName: "pawprint.fill")
+        // 从 Assets.xcassets 加载宠物图片
+        Image(named)
     }
 }
 

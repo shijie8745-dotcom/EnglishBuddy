@@ -12,13 +12,17 @@ struct CourseListView: View {
     @State private var dragOffset: CGSize = .zero  // 当前拖动的偏移量
     @State private var isDragging = false
 
+    // Adaptive layout
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    private var isCompact: Bool { horizontalSizeClass == .compact }
+
     var body: some View {
         NavigationStack {
             GeometryReader { geometry in
                 let screenW = geometry.size.width
                 let screenH = geometry.size.height
-                let petSize: CGFloat = 250
-                let hPadding: CGFloat = -20  // 水平方向更小边距，让宠物能更贴边
+                let petSize = AdaptiveLayout.Dimensions.floatingPetSize(isCompact: isCompact)
+                let hPadding: CGFloat = isCompact ? -16 : -20  // 水平方向更小边距，让宠物能更贴边
                 let vPadding: CGFloat = 10   // 垂直方向边距
 
                 // Limit bounds (pet edges can't go beyond screen)
@@ -54,17 +58,17 @@ struct CourseListView: View {
 
                             // Practice & Cloud Shop Row
                             practiceAndCloudShopSection
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
                                 .padding(.top, 16)
 
                             // Statistics section
                             statsSection
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
                                 .padding(.top, 16)
 
                             // Lesson list section
                             lessonListSection
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
                                 .padding(.top, 24)
                                 .padding(.bottom, 140)
                         }
@@ -102,6 +106,8 @@ struct CourseListView: View {
             }
             .onAppear {
                 loadAvatar()
+                // 刷新用户数据以获取最新的对话次数统计
+                viewModel.refreshUserData()
             }
         }
     }
@@ -160,7 +166,7 @@ struct CourseListView: View {
                                 )
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
                     .padding(.top, 16)
                     .padding(.bottom, 20)
                 }
@@ -170,12 +176,13 @@ struct CourseListView: View {
 
     // MARK: - User Avatar (replaces pet avatar in header)
     private var userAvatar: some View {
-        Group {
+        let avatarSize = AdaptiveLayout.Dimensions.avatarSize(isCompact: isCompact)
+        return Group {
             if let avatarImage {
                 Image(uiImage: avatarImage)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 52, height: 52)
+                    .frame(width: avatarSize, height: avatarSize)
                     .clipShape(Circle())
                     .overlay(
                         Circle()
@@ -185,10 +192,10 @@ struct CourseListView: View {
                 ZStack {
                     Circle()
                         .fill(.white.opacity(0.2))
-                        .frame(width: 52, height: 52)
+                        .frame(width: avatarSize, height: avatarSize)
 
                     Image(systemName: "person.fill")
-                        .font(.system(size: 24))
+                        .font(.system(size: isCompact ? 20 : 24))
                         .foregroundStyle(.white)
                 }
                 .overlay(
@@ -201,30 +208,19 @@ struct CourseListView: View {
 
     // MARK: - Floating Pet Image
     private var floatingPetImage: some View {
-        petImageFromFile(named: viewModel.currentPetImageName)
+        let petImageSize = AdaptiveLayout.Dimensions.floatingPetSize(isCompact: isCompact)
+        return petImageFromFile(named: viewModel.currentPetImageName)
             .resizable()
             .scaledToFit()
-            .frame(width: 250, height: 250)
+            .frame(width: petImageSize, height: petImageSize)
             .shadow(color: .gray.opacity(0.3), radius: 20, x: 0, y: 0)
             .shadow(color: .gray.opacity(0.2), radius: 40, x: 0, y: 0)
             .shadow(color: .gray.opacity(0.1), radius: 60, x: 0, y: 0)
     }
 
     private func petImageFromFile(named: String) -> Image {
-        let possiblePaths = [
-            "/Users/wjsun/.claude/dice-projects/learning-assistant/EnglishBuddyApp/EnglishBuddyApp/picture/pets/\(named).png",
-            Bundle.main.path(forResource: named, ofType: "png", inDirectory: "pets"),
-            Bundle.main.bundlePath + "/picture/pets/\(named).png"
-        ]
-
-        for path in possiblePaths {
-            if let path = path, FileManager.default.fileExists(atPath: path),
-               let uiImage = UIImage(contentsOfFile: path) {
-                return Image(uiImage: uiImage)
-            }
-        }
-
-        return Image(systemName: "pawprint.fill")
+        // 从 Assets.xcassets 加载宠物图片
+        Image(named)
     }
 
     // MARK: - Practice & Cloud Shop Section
@@ -272,16 +268,16 @@ struct CourseListView: View {
                 // Right side - play button
                 Circle()
                     .fill(.white)
-                    .frame(width: 48, height: 48)
+                    .frame(width: AdaptiveLayout.Dimensions.statIconSize(isCompact: isCompact), height: AdaptiveLayout.Dimensions.statIconSize(isCompact: isCompact))
                     .overlay(
                         Image(systemName: "play.fill")
-                            .font(.system(size: 20, weight: .bold))
+                            .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .bold))
                             .foregroundStyle(Color(hex: "0d9488"))
                     )
                     .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
+            .padding(.horizontal, AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
+            .padding(.vertical, AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
             .background(
                 LinearGradient(
                     colors: [
@@ -302,15 +298,17 @@ struct CourseListView: View {
 
     // MARK: - Cloud Shop Button
     private var cloudShopButton: some View {
-        Button(action: { showingCloudShop = true }) {
+        let buttonSize = AdaptiveLayout.Dimensions.statIconSize(isCompact: isCompact) + 32
+        let coinSize = AdaptiveLayout.Dimensions.statIconSize(isCompact: isCompact) + 8
+        return Button(action: { showingCloudShop = true }) {
             ZStack {
                 // Coin image
                 coinImage
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 56, height: 56)
+                    .frame(width: coinSize, height: coinSize)
             }
-            .frame(width: 80, height: 80)
+            .frame(width: buttonSize, height: buttonSize)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(.white)
@@ -328,24 +326,25 @@ struct CourseListView: View {
     private var statsSection: some View {
         HStack(spacing: 12) {
             StatCard(
-                icon: "book.fill",
-                iconColor: Color(hex: "F97316"),
-                value: "\(viewModel.completedLessonsCount)",
-                label: "已完成课程"
+                icon: "calendar.badge.checkmark",
+                iconColor: Color(hex: "8B5CF6"),
+                value: "\(viewModel.totalCheckIns)",
+                label: "累计打卡"
             )
 
             StatCard(
                 icon: "clock.fill",
                 iconColor: Color(hex: "3B82F6"),
                 value: "\(viewModel.totalStudyTime)",
-                label: "学习分钟"
+                label: "学习时长",
+                unit: "(分钟)"
             )
 
             StatCard(
-                icon: "flame.fill",
-                iconColor: Color(hex: "EF4444"),
-                value: "\(viewModel.totalSessions)",
-                label: "学习次数"
+                icon: "bubble.left.and.bubble.right.fill",
+                iconColor: Color(hex: "10B981"),
+                value: "\(viewModel.totalChatCount)",
+                label: "累计对话"
             )
         }
     }
@@ -413,26 +412,42 @@ struct StatCard: View {
     let iconColor: Color
     let value: String
     let label: String
+    var unit: String? = nil  // 可选的单位文字，会以小号显示在label后面
+
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    private var isCompact: Bool { horizontalSizeClass == .compact }
 
     var body: some View {
+        let iconSize = AdaptiveLayout.Dimensions.statIconSize(isCompact: isCompact)
         VStack(spacing: 8) {
             ZStack {
                 Circle()
                     .fill(iconColor.opacity(0.1))
-                    .frame(width: 48, height: 48)
+                    .frame(width: iconSize, height: iconSize)
 
                 Image(systemName: icon)
-                    .font(.system(size: 20))
+                    .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact)))
                     .foregroundStyle(iconColor)
             }
 
             Text(value)
-                .font(.system(size: 24, weight: .bold))
+                .font(.system(size: AdaptiveLayout.Fonts.titleSize(isCompact: isCompact), weight: .bold))
                 .foregroundStyle(Color(hex: "1F2937"))
 
-            Text(label)
-                .font(.system(size: 12))
+            // 支持带单位小号文字的label
+            if let unit = unit {
+                HStack(spacing: 2) {
+                    Text(label)
+                        .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
+                    Text(unit)
+                        .font(.system(size: AdaptiveLayout.Fonts.tinySize(isCompact: isCompact)))
+                }
                 .foregroundStyle(Color(hex: "6B7280"))
+            } else {
+                Text(label)
+                    .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
+                    .foregroundStyle(Color(hex: "6B7280"))
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
@@ -449,27 +464,31 @@ struct LessonRow: View {
     let lesson: Lesson
     let status: LessonStatus
 
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    private var isCompact: Bool { horizontalSizeClass == .compact }
+
     var body: some View {
+        let iconSize = AdaptiveLayout.Dimensions.statIconSize(isCompact: isCompact)
         HStack(spacing: 16) {
             // Status icon
             ZStack {
                 Circle()
                     .fill(statusBackgroundColor)
-                    .frame(width: 48, height: 48)
+                    .frame(width: iconSize, height: iconSize)
 
                 Image(systemName: statusIcon)
-                    .font(.system(size: 20))
+                    .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact)))
                     .foregroundStyle(statusForegroundColor)
             }
 
             // Lesson info
             VStack(alignment: .leading, spacing: 4) {
                 Text(lesson.displayTitle)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact), weight: .semibold))
                     .foregroundStyle(status == .locked ? Color(hex: "9CA3AF") : Color(hex: "1F2937"))
 
                 Text(lesson.subtitle)
-                    .font(.system(size: 13))
+                    .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
                     .foregroundStyle(Color(hex: "6B7280"))
                     .lineLimit(1)
             }
@@ -487,7 +506,7 @@ struct LessonRow: View {
                     .foregroundStyle(Color(hex: "9CA3AF"))
             }
         }
-        .padding(16)
+        .padding(AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(.white)
