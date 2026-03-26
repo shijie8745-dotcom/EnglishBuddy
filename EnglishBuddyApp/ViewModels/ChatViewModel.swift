@@ -34,6 +34,9 @@ class ChatViewModel {
     private var cancellables = Set<AnyCancellable>()
     private var ttsObservation: AnyCancellable?
 
+    /// 防重入标志（togglePlay）
+    private var isTogglingPlay = false
+
     init() {
         // 监听 TTS 播放状态变化
         ttsObservation = Timer.publish(every: 0.1, on: .main, in: .common)
@@ -86,12 +89,20 @@ class ChatViewModel {
 
     /// 点击消息播放/停止
     func togglePlay(for message: ChatMessage) {
+        // 防重入保护
+        guard !isTogglingPlay else { return }
+        isTogglingPlay = true
+
         // 排除错误消息
-        guard !message.isError else { return }
+        guard !message.isError else {
+            isTogglingPlay = false
+            return
+        }
 
         // 如果正在播放这条消息，则停止
         if currentlyPlayingMessageId == message.id {
             TTSService.shared.stop()
+            isTogglingPlay = false
             return
         }
 
@@ -111,6 +122,10 @@ class ChatViewModel {
                 TTSService.shared.playFromCache(voiceData, for: message.id)
             } else {
                 print("[ChatViewModel] 用户消息没有录音数据")
+            }
+            // 延迟重置防重入标志
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                self?.isTogglingPlay = false
             }
             return
         }
@@ -132,6 +147,11 @@ class ChatViewModel {
                     }
                 }
             }
+        }
+
+        // 延迟重置防重入标志
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.isTogglingPlay = false
         }
     }
 
