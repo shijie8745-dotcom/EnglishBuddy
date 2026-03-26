@@ -250,12 +250,49 @@ class ChatViewModel {
         sessionEarnedCoins = 0
         checkInMessage = nil
 
-        // 预连接 WebSocket
-        prepareRecording()
+        // 显示加载状态
+        isLoading = true
 
-        // Start with an AI greeting using the model
+        // 预连接 WebSocket 并发送AI问候
         Task {
-            await generateAIResponse(to: "Hello! I'm ready to learn \(lesson.title).")
+            // 先预连接
+            await prepareRecordingAsync()
+
+            // 再发送AI问候（检查网络）
+            let greeting = "Hello! I'm ready to learn \(lesson.title)."
+            let ttsConnected = await ensureTTSConnection()
+            if ttsConnected {
+                await generateAIResponse(to: greeting)
+            } else {
+                // 断网时显示提示，不发送fallback响应
+                // 保持 loading 状态 3 秒，让用户看到发送中状态
+                await MainActor.run {
+                    showNetworkErrorToast()
+                }
+                try? await Task.sleep(nanoseconds: 3_000_000_000)  // 3 秒
+                await MainActor.run {
+                    isLoading = false
+                }
+            }
+        }
+    }
+
+    /// 预连接 WebSocket（异步版本，可等待）
+    private func prepareRecordingAsync() async {
+        guard !isPreparing else { return }
+
+        isPreparing = true
+        print("[ChatViewModel] 开始预连接...")
+
+        let success = await AliyunASRService.shared.prepare()
+
+        await MainActor.run {
+            isPreparing = false
+            if success {
+                print("[ChatViewModel] 预连接完成")
+            } else {
+                print("[ChatViewModel] 预连接失败")
+            }
         }
     }
 
