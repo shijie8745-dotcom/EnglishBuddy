@@ -337,10 +337,15 @@ class ChatViewModel {
         Task {
             print("[ChatViewModel] 开始预连接...")
             // 直接使用 ASR 服务预连接
-            await AliyunASRService.shared.prepare()
+            let success = await AliyunASRService.shared.prepare()
             await MainActor.run {
                 isPreparing = false
-                print("[ChatViewModel] 预连接完成")
+                if success {
+                    print("[ChatViewModel] 预连接完成")
+                } else {
+                    print("[ChatViewModel] 预连接失败")
+                    showNetworkErrorToast("语音服务连接失败，请重试")
+                }
             }
         }
     }

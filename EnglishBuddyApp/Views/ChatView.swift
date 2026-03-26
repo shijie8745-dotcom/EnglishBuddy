@@ -432,7 +432,7 @@ struct VoiceInputContainer: View {
                 VoiceButton(
                     isRecording: viewModel.isRecording,
                     isDimmed: isInCancelZone,
-                    isConnecting: isConnecting,
+                    isConnecting: isConnecting || viewModel.isPreparing,
                     text: buttonText,
                     isCompact: isCompact
                 )
@@ -443,7 +443,10 @@ struct VoiceInputContainer: View {
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .global)
                         .onChanged { value in
-                            print("[ChatView] DragGesture onChanged, isPressed: \(isPressed), isConnecting: \(isConnecting)")
+                            print("[ChatView] DragGesture onChanged, isPressed: \(isPressed), isConnecting: \(isConnecting), isPreparing: \(viewModel.isPreparing)")
+
+                            // 正在准备时不允许录音
+                            guard !viewModel.isPreparing else { return }
 
                             if !isPressed && !isConnecting {
                                 // 防抖检查：两次点击间隔需大于 0.3 秒
@@ -499,7 +502,9 @@ struct VoiceInputContainer: View {
     }
 
     private var buttonText: String {
-        if isConnecting && !viewModel.isRecording {
+        if viewModel.isPreparing {
+            return "准备中..."
+        } else if isConnecting && !viewModel.isRecording {
             return "连接中..."
         } else if viewModel.isRecording {
             return "松开发送"

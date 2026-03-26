@@ -105,21 +105,25 @@ final class AliyunASRService: NSObject, ObservableObject {
     }
 
     /// 预连接 WebSocket（在进入页面时调用）
-    func prepare() async {
+    /// 返回是否连接成功
+    @discardableResult
+    func prepare() async -> Bool {
         print("[AliyunASR] prepare() 被调用，isReady: \(isReady), isConnecting: \(isConnecting)")
         guard !isReady && !isConnecting else {
             print("[AliyunASR] 跳过预连接，当前状态 - isReady: \(isReady), isConnecting: \(isConnecting)")
-            return
+            return isReady
         }
 
         do {
             print("[AliyunASR] 预连接 WebSocket...")
             try await connect()
             print("[AliyunASR] 预连接成功")
+            return true
         } catch {
             print("[AliyunASR] 预连接失败: \(error.localizedDescription)")
             isReady = false
             isConnecting = false
+            return false
         }
     }
 
