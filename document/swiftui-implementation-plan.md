@@ -98,13 +98,55 @@ func sendMessage(
 ```
 
 ### 3.2 TTS 服务
-**文件**: `Services/TTSService.swift`
+**文件**: `Services/TTSService.swift`, `Services/QwenTTSRealtimeService.swift`
 
 **已实现**:
 - [x] 阿里云 TTS API 调用
 - [x] 音频数据缓存
 - [x] 播放状态管理
 - [x] 语速控制
+- [x] 流式 TTS（WebSocket 实时语音合成）
+- [x] 低延迟播放（~0.3s）
+
+**流式 TTS 优化**:
+| 对比项 | 非流式 TTS | 流式 TTS |
+|--------|-----------|----------|
+| 模型 | cosyvoice-v2 | qwen3-tts-instruct-flash-realtime |
+| 连接方式 | HTTP REST | WebSocket |
+| 延迟 | 1-2s | ~0.3s |
+| 音频格式 | WAV | PCM 24000Hz → WAV |
+| 边下载边播 | ❌ | ✅ |
+| 自动回退 | - | ✅ 回退到非流式 |
+
+**核心方法**:
+```swift
+// 流式 TTS
+QwenTTSRealtimeService.shared.connect()
+QwenTTSRealtimeService.shared.updateSession(voice: "Cherry")
+QwenTTSRealtimeService.shared.appendText(text)
+QwenTTSRealtimeService.shared.finish()
+
+// 非流式 TTS (fallback)
+TTSService.shared.speak(text, for: messageId)
+```
+
+**可靠性优化**:
+- [x] 音频会话统一（TTS/ASR 共用 playAndRecord 模式）
+- [x] WebSocket 竞态条件处理（任务引用检查）
+- [x] 录音优先级机制（用户录音时强制停止 TTS）
+- [x] 10 秒超时自动回退非流式 TTS
+- [x] 连接状态重置优化
+
+**音频会话架构**:
+```
+┌─────────────────────────────────────────────────────┐
+│            AVAudioSession (playAndRecord)           │
+├─────────────────────────────────────────────────────┤
+│  TTS 播放时              │  ASR 录音时              │
+│  - AVAudioEngine 播放    │  - AVAudioEngine 录音   │
+│  - 无需切换音频会话      │  - 无需切换音频会话     │
+└─────────────────────────────────────────────────────┘
+```
 
 ### 3.3 语音识别服务
 **文件**: `Services/AliyunASRService.swift`
@@ -272,7 +314,8 @@ ChatView
     └── ChatViewModel
         ├── AIChatService
         ├── AliyunASRService
-        ├── TTSService
+        ├── TTSService (非流式 fallback)
+        ├── QwenTTSRealtimeService (流式 TTS)
         └── PromptConfig
 
 CloudShopView
@@ -333,6 +376,8 @@ User Action → View → ViewModel → Service → API/Storage
 
 | 日期 | 版本 | 变更内容 |
 |------|------|----------|
+| 2026-03-26 | 2.2 | 音频会话统一、竞态条件处理、录音优先级机制、超时回退机制 |
+| 2026-03-25 | 2.1 | 新增流式 TTS 服务，优化语音延迟至 ~0.3s |
 | 2026-03-25 | 2.0 | 更新云朵币系统、宠物商店、iPhone 适配、阿里云 ASR |
 | 2026-03-18 | 1.0 | 完成所有 Phase，添加多轮对话支持 |
 | 2026-03-16 | 0.9 | 完成 AI 测试页面 |

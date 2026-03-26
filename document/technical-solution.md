@@ -152,16 +152,66 @@ class DataStore {
 
 ### 3.2 TTS (文本转语音)
 
-**阿里云 qwen3-TTS-Instruct-Flash**:
+#### 3.2.1 流式 TTS（主要方案）
+
+**模型**: `qwen3-tts-instruct-flash-realtime` (阿里云 DashScope)
+
+**连接方式**: WebSocket
+```
+wss://dashscope.aliyuncs.com/api-ws/v1/realtime?model=qwen3-tts-instruct-flash-realtime
+```
+
+**核心实现**:
+```swift
+class QwenTTSRealtimeService {
+    var webSocketTask: URLSessionWebSocketTask?
+    var playerNode: AVAudioPlayerNode?
+    var onAudioChunk: ((Data) -> Void)?      // 收到音频块回调
+    var onComplete: ((Data) -> Void)?         // 音频数据接收完成
+
+    func connect() async throws               // 建立 WebSocket 连接
+    func updateSession(voice: String) async   // 配置会话参数
+    func appendText(_ text: String) async     // 发送文本
+    func finish()                             // 结束会话
+}
+```
+
+**音频参数**:
+- 采样率: 24000 Hz
+- 格式: PCM 16-bit Mono
+- 编码: Base64 (传输) → WAV (缓存)
+
+**工作流程**:
+```
+1. 建立 WebSocket 连接
+2. 发送 session.update 配置（voice, mode, sample_rate）
+3. 发送 input_text_buffer.append 文本
+4. 接收 response.audio.delta 音频块（边收边播）
+5. 收到 session.finished 结束
+6. 音频时长计算后触发播放完成
+```
+
+**性能指标**:
+| 指标 | 值 |
+|------|-----|
+| 首字延迟 | ~0.3s |
+| 语音同步 | 动画与播放时长同步 |
+| 缓存格式 | WAV (支持重播) |
+
+#### 3.2.2 非流式 TTS（降级方案）
+
+**模型**: `cosyvoice-v2`
+
+**请求方式**: HTTP REST
+
 ```swift
 func speak(_ text: String, for messageId: UUID) async -> Data? {
     let requestBody: [String: Any] = [
-        "model": "cosyvoice-v1",
-        "input": text,
-        "voice": "longxiaochun",
-        "format": "wav"
+        "model": "cosyvoice-v2",
+        "input": ["text": text, "voice": "longxiaochun"],
+        "stream": false
     ]
-    // 请求并返回音频数据
+    // 返回完整 WAV 音频数据
 }
 ```
 
@@ -173,6 +223,147 @@ class TTSService {
 
     func playFromCache(_ data: Data, for messageId: UUID)
     func stop()
+}
+```
+
+#### 3.2.3 音频会话管理
+
+**问题背景**: TTS 和 ASR 需要共享音频会话，iOS 音频会话类别切换不可靠。
+
+**解决方案**: TTS 和 ASR 统一使用 `playAndRecord` 模式
+
+```swift
+// TTS 和 ASR 共用相同的音频会话配置
+let audioSession = AVAudioSession.sharedInstance()
+try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers])
+try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+```
+
+**优势**:
+| 对比项 | 之前（切换模式） | 之后（统一模式） |
+|--------|-----------------|-----------------|
+| 模式切换 | playback ↔ playAndRecord | 无需切换 |
+| 切换延迟 | ~0.4秒 | ~0.1秒 |
+| 可靠性 | 不可靠 | 稳定 |
+| 录音打断播放 | 可能冲突 | 无冲突 |
+
+#### 3.2.4 竞态条件处理
+
+**WebSocket 任务引用检查**:
+
+```swift
+// 问题：旧任务的回调可能在新任务运行时触发
+// 解决：使用 === 比较任务引用
+
+private func startReceiving() {
+    let currentTask = webSocketTask  // 捕获当前引用
+    currentTask?.receive { [weak self] result in
+        guard self?.webSocketTask === currentTask else {
+            print("忽略旧任务的接收回调")
+            return
+        }
+        // 处理消息...
+    }
+}
+
+// 委托方法也需要检查
+func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
+    guard webSocketTask === self.webSocketTask else {
+        print("忽略旧任务的连接打开回调")
+        return
+    }
+    // 处理连接...
+}
+```
+
+**重置连接时的顺序问题**:
+
+```swift
+func reset() {
+    let taskToClose = webSocketTask  // 先保存引用
+    connectionContinuation = nil      // 清理 continuation
+    webSocketTask = nil               // 清理引用
+    // ... 重置其他状态 ...
+    taskToClose?.cancel()             // 最后关闭旧连接
+}
+```
+
+#### 3.2.5 录音优先级机制
+
+**问题**: 用户在 TTS 播放时录音，导致 ASR 识别不准或无声音。
+
+**解决方案**: 用户录音操作优先级最高，强制停止 TTS
+
+```swift
+// SpeechRecognizer.startRecording()
+func startRecording() throws {
+    // 1. 停止 TTS 播放
+    if QwenTTSRealtimeService.shared.isPlaying {
+        QwenTTSRealtimeService.shared.stop()
+    }
+
+    // 2. 等待音频引擎停止（无需等待音频会话切换）
+    Thread.sleep(forTimeInterval: 0.1)
+
+    // 3. 开始录音（音频会话已是 playAndRecord）
+    try asrService.startRecording()
+}
+
+// ChatViewModel.stopAllPlayback()
+func stopAllPlayback() {
+    QwenTTSRealtimeService.shared.stop()
+    TTSService.shared.stop()
+    currentlyPlayingMessageId = nil
+    streamingPlayingMessageId = nil
+    // 清除所有消息的播放状态
+    for index in messages.indices {
+        messages[index].isPlaying = false
+    }
+}
+```
+
+#### 3.2.6 超时回退机制
+
+**问题**: 流式 TTS 偶发性超时，服务器不返回音频。
+
+**解决方案**: 10 秒超时后自动回退到非流式 TTS
+
+```swift
+let audioComplete = AsyncStream<Bool?> { continuation in
+    var isFinished = false
+
+    QwenTTSRealtimeService.shared.onComplete = { audioData in
+        guard !isFinished else { return }
+        isFinished = true
+        // 保存音频并完成
+        continuation.yield(true)
+        continuation.finish()
+    }
+
+    QwenTTSRealtimeService.shared.onError = { error in
+        guard !isFinished else { return }
+        isFinished = true
+        continuation.yield(false)
+        continuation.finish()
+    }
+
+    // 超时机制
+    Task {
+        try? await Task.sleep(nanoseconds: 10_000_000_000)  // 10 秒
+        if !isFinished {
+            isFinished = true
+            continuation.yield(nil)  // 超时信号
+            continuation.finish()
+        }
+    }
+}
+
+// 处理结果
+if result == true {
+    print("流式 TTS 完成")
+} else {
+    // 回退到非流式 TTS
+    await addAIMessageWithNonStreamingTTS(text, messageId: messageId)
 }
 ```
 
@@ -597,7 +788,8 @@ EnglishBuddyApp/
 | 服务 | 用途 | 配置项 |
 |------|------|--------|
 | 阿里云 DashScope | AI 对话 | API Key, Model |
-| 阿里云 TTS | 语音合成 | API Key |
+| 阿里云 TTS (流式) | 实时语音合成 | API Key, WebSocket, qwen3-tts-instruct-flash-realtime |
+| 阿里云 TTS (非流式) | 语音合成降级 | API Key, cosyvoice-v2 |
 | 阿里云 ASR | 实时语音识别 | API Key, WebSocket |
 
 ### 13.3 设备适配
@@ -612,6 +804,8 @@ EnglishBuddyApp/
 
 | 日期 | 版本 | 变更内容 |
 |------|------|----------|
+| 2026-03-26 | 2.2 | 音频会话统一、竞态条件处理、录音优先级机制、超时回退机制 |
+| 2026-03-25 | 2.1 | 新增流式 TTS 技术方案（WebSocket 实时语音合成） |
 | 2026-03-25 | 2.0 | 更新云朵币系统、阿里云 ASR、响应式布局方案 |
 | 2026-03-18 | 1.0 | 添加多轮对话技术方案 |
 | 2026-03-08 | 0.5 | 初始版本 |
