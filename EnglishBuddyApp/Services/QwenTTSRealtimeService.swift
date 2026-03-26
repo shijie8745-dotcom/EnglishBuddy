@@ -43,6 +43,9 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
     // session 更新完成的 continuation
     private var sessionUpdateContinuation: CheckedContinuation<Void, Error>?
 
+    // 播放完成检测定时器
+    private var playbackCheckWorkItem: DispatchWorkItem?
+
     // MARK: - Initialization
 
     private override init() {
@@ -209,6 +212,10 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
     /// 停止播放（保留音频会话以便 ASR 可以直接使用）
     func stop() {
+        // 取消播放完成检测定时器
+        playbackCheckWorkItem?.cancel()
+        playbackCheckWorkItem = nil
+
         // 停止播放节点
         playerNode?.stop()
 
@@ -222,6 +229,10 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
     /// 重置状态（用于新的合成任务）
     func reset() {
+        // 取消播放完成检测定时器
+        playbackCheckWorkItem?.cancel()
+        playbackCheckWorkItem = nil
+
         // 先记录要关闭的任务
         let taskToClose = webSocketTask
 
@@ -245,18 +256,25 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
     /// 检测播放完成
     private func startPlaybackCompletionCheck() {
+        // 取消之前的定时器
+        playbackCheckWorkItem?.cancel()
+
         // 计算音频时长：PCM 24000Hz Mono 16bit
         // 时长(秒) = 字节数 / (采样率 * 每样本字节数 * 声道数)
         let audioDuration = Double(accumulatedAudioData.count) / (24000.0 * 2.0 * 1.0)
         print("[QwenTTS] 音频时长: \(audioDuration) 秒")
 
-        // 等待音频播放完成（加 0.3 秒缓冲）
-        DispatchQueue.main.asyncAfter(deadline: .now() + audioDuration + 0.3) { [weak self] in
+        // 创建新的定时任务
+        let workItem = DispatchWorkItem { [weak self] in
             guard let self = self else { return }
             print("[QwenTTS] 播放完成，设置 isPlaying = false")
             self.isPlaying = false
             // 不需要切换音频会话，因为 TTS 和 ASR 使用相同的 playAndRecord 模式
         }
+        playbackCheckWorkItem = workItem
+
+        // 等待音频播放完成（加 0.3 秒缓冲）
+        DispatchQueue.main.asyncAfter(deadline: .now() + audioDuration + 0.3, execute: workItem)
     }
 
     // MARK: - Private Methods
