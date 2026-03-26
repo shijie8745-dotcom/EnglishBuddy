@@ -167,7 +167,7 @@ class ChatViewModel {
     }
 
     /// 显示网络错误 Toast 通知
-    private func showNetworkErrorToast(_ message: String = "网络连接失败，请检查网络后重试") {
+    private func showNetworkErrorToast(_ message: String = "没网络啦，连网后再尝试") {
         toastMessage = message
         showToast = true
         // 2秒后自动隐藏
@@ -597,16 +597,18 @@ class ChatViewModel {
                 return
             }
 
-            // Send the recognized text to AI（同时确保 TTS 连接可用）
+            // 先检查网络连接（通过 TTS 连接状态判断）
             Task {
-                // 尝试重连 TTS WebSocket（按需重连）
+                // 尝试连接 TTS WebSocket（用于判断网络是否可用）
                 let ttsConnected = await self.ensureTTSConnection()
                 if !ttsConnected {
-                    // TTS 重连失败，显示提示（但仍然发送消息给 AI）
+                    // 断网，显示 Toast 并不发送消息
                     await MainActor.run {
-                        self.showNetworkErrorToast("网络连接失败，语音可能无法播放")
+                        self.showNetworkErrorToast()
                     }
+                    return
                 }
+                // 网络正常，发送消息
                 await self.sendMessage(trimmedText, voiceData: nil)
             }
         }
