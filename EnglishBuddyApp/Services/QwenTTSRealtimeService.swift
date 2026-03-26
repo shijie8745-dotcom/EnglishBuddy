@@ -37,6 +37,7 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
     var onComplete: ((Data) -> Void)?  // 音频数据接收完成
     var onPlaybackComplete: (() -> Void)?  // 音频播放完成
     var onError: ((Error) -> Void)?
+    var onPlayingStateChanged: ((Bool) -> Void)?  // 播放状态变化
 
     // 连接完成的 continuation
     private var connectionContinuation: CheckedContinuation<Void, Error>?
@@ -223,7 +224,10 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
         audioEngine?.stop()
         audioEngine?.inputNode.removeTap(onBus: 0)  // 确保释放输入 tap
 
-        isPlaying = false
+        if isPlaying {
+            isPlaying = false
+            onPlayingStateChanged?(false)
+        }
         print("[QwenTTS] 播放已停止（音频会话保持 playAndRecord 模式）")
     }
 
@@ -269,7 +273,7 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
             guard let self = self else { return }
             print("[QwenTTS] 播放完成，设置 isPlaying = false")
             self.isPlaying = false
-            // 不需要切换音频会话，因为 TTS 和 ASR 使用相同的 playAndRecord 模式
+            self.onPlayingStateChanged?(false)
         }
         playbackCheckWorkItem = workItem
 
@@ -499,6 +503,7 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
         if !player.isPlaying {
             player.play()
             isPlaying = true
+            onPlayingStateChanged?(true)
         }
     }
 

@@ -32,7 +32,6 @@ class ChatViewModel {
 
     private var speechRecognizer: SpeechRecognizer?
     private var cancellables = Set<AnyCancellable>()
-    private var ttsObservation: AnyCancellable?
 
     /// 防重入标志（togglePlay）
     private var isTogglingPlay = false
@@ -41,52 +40,53 @@ class ChatViewModel {
     private var recordingStartTime: Date?
 
     init() {
-        // 监听 TTS 播放状态变化
-        ttsObservation = Timer.publish(every: 0.1, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                self?.updatePlayingState()
-            }
-    }
-
-    private func updatePlayingState() {
-        // 检查流式 TTS 播放状态
-        let streamingPlaying = QwenTTSRealtimeService.shared.isPlaying
-
-        // 检查非流式 TTS 播放状态
-        let ttsPlaying = TTSService.shared.isSpeaking
-        let ttsPlayingId = ttsPlaying ? TTSService.shared.currentPlayingMessageId : nil
-
-        // 确定当前的播放状态
-        var newPlayingId: UUID? = nil
-        if streamingPlaying, let streamingId = streamingPlayingMessageId {
-            // 流式播放中
-            newPlayingId = streamingId
-        } else if ttsPlaying, let id = ttsPlayingId {
-            // 非流式播放中
-            newPlayingId = id
+        // 设置流式 TTS 播放状态回调
+        QwenTTSRealtimeService.shared.onPlayingStateChanged = { [weak self] isPlaying in
+            self?.handleStreamingTTSStateChange(isPlaying: isPlaying)
         }
 
-        // 如果播放状态变化，更新消息状态
-        if currentlyPlayingMessageId != newPlayingId {
-            // 清除之前的播放状态
-            if let oldId = currentlyPlayingMessageId,
-               let index = messages.firstIndex(where: { $0.id == oldId }) {
+        // 设置非流式 TTS 播放状态回调
+        TTSService.shared.onPlayingStateChanged = { [weak self] isPlaying, messageId in
+            self?.handleNonStreamingTTSStateChange(isPlaying: isPlaying, messageId: messageId)
+        }
+    }
+
+    /// 处理流式 TTS 播放状态变化
+    private func handleStreamingTTSStateChange(isPlaying: Bool) {
+        if isPlaying {
+            // 流式播放开始，更新消息状态
+            if let streamingId = streamingPlayingMessageId {
+                currentlyPlayingMessageId = streamingId
+                if let index = messages.firstIndex(where: { $0.id == streamingId }) {
+                    messages[index].isPlaying = true
+                }
+            }
+        } else {
+            // 流式播放结束
+            if let currentId = currentlyPlayingMessageId,
+               let index = messages.firstIndex(where: { $0.id == currentId }) {
                 messages[index].isPlaying = false
             }
+            currentlyPlayingMessageId = nil
+            streamingPlayingMessageId = nil
+        }
+    }
 
-            // 清除流式播放标记
-            if !streamingPlaying {
-                streamingPlayingMessageId = nil
-            }
-
-            // 设置新的播放状态
-            if let newId = newPlayingId,
-               let index = messages.firstIndex(where: { $0.id == newId }) {
+    /// 处理非流式 TTS 播放状态变化
+    private func handleNonStreamingTTSStateChange(isPlaying: Bool, messageId: UUID?) {
+        if isPlaying, let id = messageId {
+            // 非流式播放开始
+            currentlyPlayingMessageId = id
+            if let index = messages.firstIndex(where: { $0.id == id }) {
                 messages[index].isPlaying = true
             }
-
-            currentlyPlayingMessageId = newPlayingId
+        } else {
+            // 非流式播放结束
+            if let currentId = currentlyPlayingMessageId,
+               let index = messages.firstIndex(where: { $0.id == currentId }) {
+                messages[index].isPlaying = false
+            }
+            currentlyPlayingMessageId = nil
         }
     }
 
