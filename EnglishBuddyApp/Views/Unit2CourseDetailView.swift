@@ -131,32 +131,24 @@ struct Unit2CourseDetailView: View {
                 VStack(spacing: 12) {
                     // 家庭成员
                     vocabCategoryCard(title: "家庭成员", words: [
-                        ("mum", "妈妈"), ("dad", "爸爸"), ("sister", "姐妹"),
-                        ("brother", "兄弟"), ("grandma", "奶奶/外婆"), ("grandpa", "爷爷/外公"),
-                        ("friend", "朋友"), ("child", "孩子"), ("children", "孩子们")
+                        ("family", "家人"), ("mum", "妈妈"), ("dad", "爸爸"),
+                        ("sister", "姐妹"), ("brother", "兄弟"), ("baby", "婴儿/宝宝")
                     ])
 
                     // 身体部位
                     vocabCategoryCard(title: "身体部位", words: [
-                        ("head", "头"), ("eye", "眼睛"), ("ear", "耳朵"),
-                        ("nose", "鼻子"), ("mouth", "嘴巴"), ("face", "脸"),
-                        ("hair", "头发"), ("body", "身体"), ("arm", "手臂"),
-                        ("leg", "腿"), ("foot", "脚"), ("feet", "双脚"),
-                        ("hand", "手"), ("tail", "尾巴"), ("wing", "翅膀")
+                        ("head", "头"), ("eyes", "眼睛"), ("ears", "耳朵"),
+                        ("nose", "鼻子"), ("mouth", "嘴巴"), ("hair", "头发")
                     ])
 
-                    // 外貌与颜色
-                    vocabCategoryCard(title: "外貌与颜色", words: [
-                        ("big", "大的"), ("small", "小的"), ("long", "长的"),
-                        ("short", "短的"), ("tall", "高的"), ("fat", "胖的"),
-                        ("thin", "瘦的"), ("red", "红色"), ("yellow", "黄色"),
-                        ("blue", "蓝色"), ("green", "绿色"), ("white", "白色"),
-                        ("black", "黑色"), ("brown", "棕色"), ("orange", "橙色")
+                    // 外貌颜色
+                    vocabCategoryCard(title: "外貌颜色", words: [
+                        ("brown", "棕色"), ("green", "绿色"), ("blue", "蓝色")
                     ])
 
                     // 拓展词汇
                     vocabCategoryCard(title: "拓展词汇", words: [
-                        ("see", "看见"), ("hear", "听见"), ("touch", "触摸"), ("smell", "闻")
+                        ("see", "看"), ("hear", "听"), ("smell", "闻"), ("taste", "尝"), ("touch", "触摸")
                     ], isExpanded: true)
                 }
             }

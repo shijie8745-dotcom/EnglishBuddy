@@ -128,27 +128,28 @@ struct Unit6CourseDetailView: View {
 
             if isVocabExpanded {
                 VStack(spacing: 12) {
-                    vocabCategoryCard(title: "地点类", words: [
-                        ("park", "公园"), ("zoo", "动物园"), ("school", "学校"),
-                        ("cinema", "电影院"), ("lake", "湖"), ("beach", "海滩"),
-                        ("mountain", "山"), ("city", "城市"), ("country", "乡村")
+                    vocabCategoryCard(title: "地点", words: [
+                        ("zoo", "动物园"), ("park", "公园"), ("garden", "花园"),
+                        ("bus stop", "公共汽车站"), ("shop", "商店")
                     ])
 
                     vocabCategoryCard(title:"交通工具", words: [
-                        ("bus", "公共汽车"), ("car", "汽车"), ("bike", "自行车"),
-                        ("train", "火车"), ("ship", "轮船"), ("plane", "飞机"),
-                        ("boat", "小船"), ("taxi", "出租车"), ("metro", "地铁")
+                        ("bus", "公交车"), ("car", "汽车"), ("lorry", "卡车"),
+                        ("motorbike", "摩托车"), ("train", "火车")
                     ])
 
-                    vocabCategoryCard(title: "野生动物", words: [
-                        ("fox", "狐狸"), ("hippo", "河马"), ("monkey", "猴子"),
-                        ("tiger", "老虎"), ("lion", "狮子"), ("elephant", "大象"),
-                        ("bear", "熊"), ("wolf", "狼"), ("snake", "蛇")
+                    vocabCategoryCard(title: "动植物", words: [
+                        ("tree", "树"), ("bear", "熊"), ("snake", "蛇"),
+                        ("crocodile", "鳄鱼"), ("monkey", "猴子"), ("tiger", "老虎"),
+                        ("elephant", "大象"), ("giraffe", "长颈鹿"), ("polar bear", "北极熊"),
+                        ("lizard", "蜥蜴"), ("hippo", "河马"), ("zebra", "斑马")
                     ])
 
-                    vocabCategoryCard(title: "其他", words: [
-                        ("trip", "旅行"), ("_picnic", "野餐"), ("family", "家庭"),
-                        ("visit", "参观"), ("see", "看见"), ("near", "附近")
+                    // 拓展词汇
+                    vocabCategoryCard(title: "拓展词汇", words: [
+                        ("sea", "海洋"), ("jungle", "丛林"), ("Antarctica", "南极洲"),
+                        ("rhino", "犀牛"), ("frog", "青蛙"), ("boa", "蟒蛇"),
+                        ("penguin", "企鹅"), ("dolphin", "海豚")
                     ], isExpanded: true)
                 }
             }

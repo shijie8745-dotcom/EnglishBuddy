@@ -127,29 +127,21 @@ struct Unit3CourseDetailView: View {
             if isVocabExpanded {
                 VStack(spacing: 12) {
                     vocabCategoryCard(title: "农场动物", words: [
-                        ("horse", "马"), ("cow", "牛"), ("pig", "猪"),
-                        ("chicken", "鸡"), ("hen", "母鸡"), ("ducks", "鸭子（复数）"),
-                        ("gander", "公鹅"), ("goose", "鹅"), ("sheep", "绵羊"),
-                        ("lamb", "小羊"), ("goat", "山羊"), ("donkey", "驴")
+                        ("cow", "奶牛"), ("donkey", "驴"), ("horse", "马"),
+                        ("spider", "蜘蛛"), ("sheep", "绵羊"), ("goat", "山羊"),
+                        ("cat", "猫"), ("chicken", "鸡"), ("dog", "狗"), ("duck", "鸭子")
                     ])
 
-                    vocabCategoryCard(title: "动物形容词", words: [
-                        ("big", "大的"), ("small", "小的"), ("long", "长的"),
-                        ("short", "短的"), ("fat", "胖的"), ("thin", "瘦的"),
-                        ("tall", "高的"), ("cute", "可爱的"), ("strong", "强壮的"),
-                        ("lovely", "可爱的"), ("naughty", "淘气的")
+                    vocabCategoryCard(title: "形容词", words: [
+                        ("small", "小的"), ("big", "大的"), ("long", "长的"),
+                        ("short", "短的"), ("young", "年轻的"), ("old", "年长的"),
+                        ("funny", "有趣的"), ("ugly", "丑陋的"), ("angry", "生气的"),
+                        ("sad", "伤心的"), ("beautiful", "美丽的"), ("happy", "开心的")
                     ])
 
-                    vocabCategoryCard(title: "其他名词", words: [
-                        ("farm", "农场"), ("farmer", "农民"), ("zoo", "动物园"),
-                        ("tree", "树"), ("grass", "草"), ("body", "身体"),
-                        ("leg", "腿"), ("head", "头"), ("tail", "尾巴"),
-                        ("ear", "耳朵"), ("eye", "眼睛"), ("mouth", "嘴巴")
-                    ])
-
+                    // 拓展词汇
                     vocabCategoryCard(title: "拓展词汇", words: [
-                        ("合体展示", "合体展示"), ("again please", "请再来一次"), ("quack quack", "嘎嘎"), ("oink oink", "哼哼"),
-                        ("moo moo", "哞哞"), ("baa baa", "咩咩"), ("neigh", "嘶叫"), ("bee", "蜜蜂")
+                        ("milk", "牛奶"), ("egg", "鸡蛋"), ("wool", "羊毛"), ("meat", "肉")
                     ], isExpanded: true)
                 }
             }

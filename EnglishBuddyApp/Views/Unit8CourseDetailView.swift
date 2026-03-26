@@ -128,28 +128,22 @@ struct Unit8CourseDetailView: View {
 
             if isVocabExpanded {
                 VStack(spacing: 12) {
-                    vocabCategoryCard(title: "房间名称", words: [
-                        ("bedroom", "卧室"), ("living room", "客厅"), ("kitchen", "厨房"),
-                        ("bathroom", "浴室"), ("study", "书房"), ("dining room", "餐厅"),
-                        ("home", "家"), ("house", "房子"), ("room", "房间")
+                    vocabCategoryCard(title: "房间", words: [
+                        ("living room", "客厅"), ("bedroom", "卧室"), ("kitchen", "厨房"),
+                        ("dining room", "餐厅"), ("bathroom", "浴室"), ("hall", "门厅")
                     ])
 
-                    vocabCategoryCard(title: "家具类", words: [
-                        ("bed", "床"), ("sofa", "沙发"), ("chair", "椅子"),
-                        ("table", "桌子"), ("desk", "书桌"), ("lamp", "台灯"),
-                        ("TV", "电视"), ("fridge", "冰箱"), ("phone", "电话"),
-                        ("clock", "时钟"), ("picture", "图片/画"), ("shelf", "架子")
+                    vocabCategoryCard(title: "家具和物品", words: [
+                        ("bed", "床"), ("radio", "收音机"), ("bath", "浴缸"),
+                        ("mirror", "镜子"), ("rug", "小地毯"), ("sofa", "沙发"),
+                        ("floor", "地板"), ("armchair", "扶手椅"), ("lamp", "灯"),
+                        ("phone", "电话"), ("painting", "画"), ("clock", "钟")
                     ])
 
-                    vocabCategoryCard(title: "家居物品", words: [
-                        ("book", "书"), ("computer", "电脑"), ("toy", "玩具"),
-                        ("bag", "包"), ("box", "盒子"), ("bottle", "瓶子"),
-                        ("cup", "杯子"), ("ball", "球"), ("hat", "帽子")
-                    ])
-
-                    vocabCategoryCard(title: "方位介词", words: [
-                        ("in", "在...里面"), ("on", "在...上面"), ("under", "在...下面"),
-                        ("behind", "在...后面"), ("beside", "在...旁边"), ("near", "在...附近")
+                    // 拓展词汇
+                    vocabCategoryCard(title: "拓展词汇", words: [
+                        ("flats", "公寓"), ("hut", "小屋"), ("detached house", "独立式住宅"),
+                        ("stilt-house", "高脚屋"), ("houseboat", "船屋"), ("ranch", "大牧场")
                     ], isExpanded: true)
                 }
             }

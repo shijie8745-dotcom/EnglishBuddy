@@ -128,28 +128,24 @@ struct Unit9CourseDetailView: View {
 
             if isVocabExpanded {
                 VStack(spacing: 12) {
-                    vocabCategoryCard(title: "天气类", words: [
-                        ("weather", "天气"), ("sunny", "晴朗的"), ("cloudy", "多云的"),
-                        ("rainy", "下雨的"), ("snowy", "下雪的"), ("windy", "有风的"),
-                        (".hot", "热的"), ("cold", "冷的"), ("warm", "温暖的"),
-                        ("cool", "凉爽的")
+                    vocabCategoryCard(title: "服装", words: [
+                        ("trousers", "裤子"), ("hat", "帽子"), ("sunglasses", "太阳镜"),
+                        ("shirt", "衬衫"), ("short", "短裤"), ("boots", "靴子"),
+                        ("jacket", "夹克"), ("skirt", "裙子"), ("baseball cap", "棒球帽"),
+                        ("jeans", "牛仔裤"), ("dress", "连衣裙"), ("shoes", "鞋子"), ("T-shirt", "T恤衫")
                     ])
 
-                    vocabCategoryCard(title: "季节类", words: [
-                        ("season", "季节"), ("spring", "春天"), ("summer", "夏天"),
-                        ("autumn", "秋天"), ("_.winter", "冬天"), ("year", "年")
+                    vocabCategoryCard(title: "户外", words: [
+                        ("sun", "太阳"), ("fishing", "钓鱼"), ("jellyfish", "水母"),
+                        ("fish", "鱼"), ("sea", "海洋"), ("boat", "小船"),
+                        ("beach", "沙滩"), ("camera", "照相机"), ("sand", "沙子"), ("shell", "贝壳")
                     ])
 
-                    vocabCategoryCard(title: "活动类", words: [
-                        ("holiday", "假期"), ("vacation", "假期"), ("travel", "旅行"),
-                        ("visit", "参观"), ("play", "玩耍"), ("swim", "游泳"),
-                        ("ski", "滑雪"), ("climb", "爬山"), ("camp", "露营")
-                    ])
-
-                    vocabCategoryCard(title: "感受与情绪", words: [
-                        ("feel", "感觉"), ("happy", "开心的"), ("sad", "难过的"),
-                        ("tired", "累的"), ("excited", "兴奋的"), ("hungry", "饿的"),
-                        ("thirsty", "渴的"), ("hot", "热的"), ("cold", "冷的")
+                    // 拓展词汇
+                    vocabCategoryCard(title: "拓展词汇", words: [
+                        ("shells", "贝壳"), ("snow", "雪"), ("flowers", "花"), ("tree", "树木"),
+                        ("forest", "森林"), ("mountain", "山脉"), ("river", "河流"),
+                        ("waterfall", "瀑布"), ("frog", "青蛙"), ("rocks", "岩石"), ("jellyfish", "水母")
                     ], isExpanded: true)
                 }
             }

@@ -255,10 +255,10 @@
 				DEVELOPMENT_TEAM = 56YCM37BPT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "英语伙伴";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "我们需要访问麦克风来识别您的语音，让您可以和Sam进行英语对话练习。";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "我们需要访问照片库来设置您的个人头像。";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "我们需要语音识别权限来帮助您练习英语口语，将您说的话转换成文字。";
-				INFOPLIST_KEY_CFBundleDisplayName = "英语伙伴";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -288,10 +288,10 @@
 				DEVELOPMENT_TEAM = 56YCM37BPT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "英语伙伴";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "我们需要访问麦克风来识别您的语音，让您可以和Sam进行英语对话练习。";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "我们需要访问照片库来设置您的个人头像。";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "我们需要语音识别权限来帮助您练习英语口语，将您说的话转换成文字。";
-				INFOPLIST_KEY_CFBundleDisplayName = "英语伙伴";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

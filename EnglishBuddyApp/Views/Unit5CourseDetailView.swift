@@ -123,29 +123,19 @@ struct Unit5CourseDetailView: View {
 
             if isVocabExpanded {
                 VStack(spacing: 12) {
-                    vocabCategoryCard(title: "月份", words: [
-                        ("January", "一月"), ("February", "二月"), ("March", "三月"),
-                        ("April", "四月"), ("May", "五月"), ("June", "六月"),
-                        ("July", "七月"), ("August", "八月"), ("September", "九月"),
-                        ("October", "十月"), ("November", "十一月"), ("December", "十二月")
+                    vocabCategoryCard(title: "玩具", words: [
+                        ("ball", "球"), ("bike", "自行车"), ("kite", "风筝"),
+                        ("robot", "机器人"), ("car", "汽车"), ("doll", "洋娃娃"),
+                        ("plane", "飞机"), ("house", "房子"), ("teddy", "泰迪熊"),
+                        ("computer", "电脑"), ("mouse", "鼠标"), ("balloon", "气球"),
+                        ("keyboard", "键盘"), ("radio", "收音机"), ("board game", "桌游"),
+                        ("helicopter", "直升机"), ("ship", "轮船"), ("box", "盒子")
                     ])
 
-                    vocabCategoryCard(title: "玩具类", words: [
-                        ("ball", "球"), ("doll", "玩偶"), ("scooter", "滑板车"),
-                        ("robot", "机器人"), ("skateboard", "滑板"), ("toy car", "玩具车"),
-                        ("toy plane", "玩具飞机"), ("toy boat", "玩具船"), ("teddy bear", "泰迪熊")
-                    ])
-
-                    vocabCategoryCard(title:"数字与生日", words: [
-                        ("birthday", "生日"), ("present", "礼物"), ("card", "卡片"),
-                        ("party", "聚会"), ("candle", "蜡烛"), ("cake", "蛋糕"),
-                        ("first", "第一"), ("second", "第二"), ("third", "第三"),
-                        ("How old", "多少岁"), ("When", "什么时候")
-                    ])
-
-                    vocabCategoryCard(title: "其他", words: [
-                        ("toy", "玩具"), (" zoo", "动物园"), ("love", "爱"),
-                        ("fun", "乐趣"), ("weather", "天气"), ("rainy", "下雨的")
+                    // 拓展词汇
+                    vocabCategoryCard(title: "拓展词汇", words: [
+                        ("circle", "圆形"), ("square", "正方形"), ("triangle", "三角形"),
+                        ("rectangle", "长方形"), ("star", "星形")
                     ], isExpanded: true)
                 }
             }

@@ -123,34 +123,20 @@ struct Unit4CourseDetailView: View {
 
             if isVocabExpanded {
                 VStack(spacing: 12) {
-                    vocabCategoryCard(title: "水果类", words: [
-                        ("apple", "苹果"), ("orange", "橙子"), ("banana", "香蕉"),
-                        ("pear", "梨"), ("grapes", "葡萄"), ("watermelon", "西瓜"),
-                        ("pineapple", "菠萝"), ("mango", "芒果"), ("peach", "桃子"),
-                        ("lemon", "柠檬")
+                    vocabCategoryCard(title: "食物", words: [
+                        ("chicken", "鸡肉"), ("chocolate", "巧克力"), ("cake", "蛋糕"),
+                        ("bread", "面包"), ("bananas", "香蕉"), ("mangoes", "芒果"),
+                        ("burgers", "汉堡"), ("salad", "沙拉"), ("fruit", "水果"),
+                        ("apples", "苹果"), ("oranges", "橙子"), ("grapes", "葡萄"),
+                        ("meat", "肉类"), ("meatballs", "肉丸"), ("sausages", "香肠"),
+                        ("beans", "豆子"), ("lemonade", "柠檬水"), ("water", "水"), ("juice", "果汁")
                     ])
 
-                    vocabCategoryCard(title: "食物类", words: [
-                        ("noodles", "面条"), ("rice", "米饭"), ("cake", "蛋糕"),
-                        ("bread", "面包"), ("egg", "鸡蛋"), ("pies", "馅饼"),
-                        ("hamburger", "汉堡包"), ("hot dog", "热狗"), ("pizza", "披萨"),
-                        ("chicken", "鸡肉"), ("fish", "鱼"), ("chocolates", "巧克力"),
-                        ("sweet", "糖果"), ("jelly", "果冻")
-                    ])
-
-                    vocabCategoryCard(title: "饮料类", words: [
-                        ("water", "水"), ("milk", "牛奶"), ("juice", "果汁")
-                    ])
-
-                    vocabCategoryCard(title: "餐具类", words: [
-                        ("plate", "盘子"), ("bowl", "碗"), ("fork", "叉子"),
-                        ("knife", "刀"), ("spoon", "勺子"), ("chopsticks", "筷子"),
-                        ("cup", "杯子"), ("glass", "玻璃杯")
-                    ])
-
-                    vocabCategoryCard(title: "其他", words: [
-                        ("food", "食物"), ("vegetable", "蔬菜"), ("meat", "肉"),
-                        ("ice cream", "冰淇淋"), ("colour", "颜色"), ("favourite", "最喜欢的")
+                    // 拓展词汇
+                    vocabCategoryCard(title: "拓展词汇", words: [
+                        ("carrots", "胡萝卜"), ("eggs", "鸡蛋"), ("onions", "洋葱"),
+                        ("tomatoes", "西红柿"), ("cheese", "奶酪"), ("pasta", "意大利面"),
+                        ("potatoes", "土豆"), ("rice", "米饭"), ("meat", "肉类")
                     ], isExpanded: true)
                 }
             }

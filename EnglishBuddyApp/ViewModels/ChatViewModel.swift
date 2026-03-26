@@ -178,8 +178,10 @@ class ChatViewModel {
 
     /// 清理超出限制的音频缓存（保留最近的 N 条）
     private func cleanupAudioCacheIfNeeded() {
-        // 获取所有有音频的消息索引（按时间排序，最新的在后面）
-        let messagesWithAudio = messages.enumerated().filter { $0.element.audioData != nil }
+        // 获取所有有音频的消息索引（AI 音频或用户录音）
+        let messagesWithAudio = messages.enumerated().filter {
+            $0.element.audioData != nil || $0.element.userVoiceData != nil
+        }
         let count = messagesWithAudio.count
 
         // 如果超过限制，清理最旧的
@@ -188,6 +190,7 @@ class ChatViewModel {
             for i in 0..<toRemove {
                 let index = messagesWithAudio[i].offset
                 messages[index].audioData = nil
+                messages[index].userVoiceData = nil
                 print("[ChatViewModel] 清理旧音频缓存，索引: \(index)")
             }
         }
@@ -704,6 +707,9 @@ class ChatViewModel {
             // 获取最终识别结果
             let finalText = AliyunASRService.shared.transcript
 
+            // 获取录音数据（在 resetRecordingState 之前）
+            let voiceData = AliyunASRService.shared.getRecordedAudioData()
+
             // Clean up ASR状态
             AliyunASRService.shared.resetRecordingState()
 
@@ -713,7 +719,7 @@ class ChatViewModel {
             print("[ChatViewModel] 最终识别文本: '\(trimmedText)'")
 
             // ===== 第6步：先检查网络连接 =====
-            Task {
+            Task { [voiceData] in
                 // 尝试连接 TTS WebSocket（用于判断网络是否可用）
                 let ttsConnected = await self.ensureTTSConnection()
                 if !ttsConnected {
@@ -734,8 +740,8 @@ class ChatViewModel {
                     }
                 }
 
-                // 发送消息
-                await self.sendMessage(trimmedText, voiceData: nil)
+                // 发送消息（带上用户录音数据）
+                await self.sendMessage(trimmedText, voiceData: voiceData)
             }
         }
     }

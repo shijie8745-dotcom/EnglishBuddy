@@ -128,27 +128,22 @@ struct Unit7CourseDetailView: View {
 
             if isVocabExpanded {
                 VStack(spacing: 12) {
-                    vocabCategoryCard(title: "运动项目", words: [
-                        ("football", "足球"), ("basketball", "篮球"), ("table tennis", "乒乓球"),
-                        ("tennis", "网球"), ("swimming", "游泳"), ("running", "跑步"),
-                        ("jumping", "跳跃"), ("skating", "滑冰"), ("riding", "骑行")
+                    vocabCategoryCard(title: "活动", words: [
+                        ("play football", "足球"), ("play basketball", "篮球"), ("play tennis", "网球"),
+                        ("play badminton", "羽毛球"), ("play baseball", "棒球"), ("play hockey", "曲棍球"),
+                        ("play the guitar", "吉他"), ("play the piano", "钢琴"), ("ride a bike", "自行车"),
+                        ("ride the skateboard", "滑板"), ("watch television", "电视")
                     ])
 
-                    vocabCategoryCard(title: "动作词汇", words: [
-                        ("play", "玩/打"), ("kick", "踢"), ("throw", "扔"),
-                        ("catch", "接"), ("bounce", "拍/弹"), ("hit", "打"),
-                        ("pass", "传"), ("run", "跑"), ("jump", "跳"),
-                        ("swim", "游泳"), ("skate", "滑冰"), ("ride", "骑")
+                    vocabCategoryCard(title: "动词", words: [
+                        ("swim", "游泳"), ("run", "跑步"), ("throw", "扔"),
+                        ("catch", "接"), ("kick", "踢"), ("hit", "击打"),
+                        ("jump", "跳")
                     ])
 
-                    vocabCategoryCard(title: "能力与邀请", words: [
-                        ("can", "能/会"), ("can't", "不能/不会"), ("well", "好地"),
-                        ("try", "尝试"), ("let's", "让我们"), ("together", "一起"),
-                        ("team", "队伍"), ("game", "游戏/比赛"), ("fun", "乐趣")
-                    ])
-
-                    vocabCategoryCard(title: "其他", words: [
-                        ("boy", "男孩"), ("girl", "女孩"), ("children", "孩子们")
+                    // 拓展词汇
+                    vocabCategoryCard(title: "拓展词汇", words: [
+                        ("stretch your arms", "伸直手臂"), ("stretch your legs", "伸直腿"), ("stretch your body", "伸直身体")
                     ], isExpanded: true)
                 }
             }

@@ -132,25 +132,21 @@ struct Unit1CourseDetailView: View {
                     // 文具类
                     vocabCategoryCard(title: "文具类", words: [
                         ("pencil", "铅笔"), ("rubber", "橡皮"), ("crayon", "蜡笔"),
-                        ("pen", "钢笔"), ("pencil case", "铅笔盒"), ("ruler", "尺子"),
-                        ("book", "书"), ("paper", "纸")
+                        ("pen", "钢笔"), ("pencil case", "文具盒"), ("ruler", "尺子"),
+                        ("book", "书"), ("bag", "书包")
                     ])
 
                     // 教室设施
                     vocabCategoryCard(title: "教室设施", words: [
                         ("desk", "书桌"), ("chair", "椅子"), ("bookcase", "书柜"),
                         ("cupboard", "橱柜"), ("door", "门"), ("window", "窗户"),
-                        ("wall", "墙"), ("board", "黑板")
+                        ("wall", "墙"), ("board", "黑板"), ("playground", "游戏场"),
+                        ("paper", "纸")
                     ])
 
                     // 人物与场所
                     vocabCategoryCard(title: "人物与场所", words: [
-                        ("teacher", "老师"), ("classroom", "教室"), ("playground", "操场")
-                    ])
-
-                    // 其他物品
-                    vocabCategoryCard(title: "其他物品", words: [
-                        ("bag", "书包"), ("picture", "图片"), ("television", "电视")
+                        ("teacher", "老师"), ("classroom", "教室")
                     ])
 
                     // 拓展词汇

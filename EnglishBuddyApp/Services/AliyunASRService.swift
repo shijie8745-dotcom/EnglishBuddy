@@ -34,6 +34,9 @@ final class AliyunASRService: NSObject, ObservableObject {
     private let sampleRate: Double = 16000
     private let audioFormat = "pcm"
 
+    // 用户录音数据缓冲（用于保存用户语音，可重播）
+    private var recordedAudioData = Data()
+
     // 回调
     var onTextReceived: ((String, Bool) -> Void)?
     var onError: ((Error) -> Void)?
@@ -162,11 +165,53 @@ final class AliyunASRService: NSObject, ObservableObject {
         transcript = ""
         isSessionCancelled = false
         hasValidAudio = false
+        recordedAudioData = Data()  // 清空录音数据
     }
 
     /// 检查是否检测到有效音频
     func hasDetectedValidAudio() -> Bool {
         return hasValidAudio
+    }
+
+    /// 获取录音数据（WAV 格式，可用于播放）
+    func getRecordedAudioData() -> Data? {
+        guard !recordedAudioData.isEmpty else { return nil }
+        return createWavDataFromPCM(recordedAudioData)
+    }
+
+    /// 将 PCM 数据转换为 WAV 格式
+    private func createWavDataFromPCM(_ pcmData: Data) -> Data {
+        var wavData = Data()
+
+        let sampleRateValue: UInt32 = UInt32(sampleRate)
+        let channels: UInt16 = 1
+        let bitsPerSample: UInt16 = 16
+        let byteRate: UInt32 = sampleRateValue * UInt32(channels) * UInt32(bitsPerSample) / 8
+        let blockAlign: UInt16 = channels * bitsPerSample / 8
+        let dataSize: UInt32 = UInt32(pcmData.count)
+        let fileSize: UInt32 = 36 + dataSize
+
+        // RIFF header
+        wavData.append(contentsOf: "RIFF".utf8)
+        wavData.append(contentsOf: withUnsafeBytes(of: fileSize.littleEndian) { Array($0) })
+        wavData.append(contentsOf: "WAVE".utf8)
+
+        // fmt chunk
+        wavData.append(contentsOf: "fmt ".utf8)
+        wavData.append(contentsOf: withUnsafeBytes(of: UInt32(16).littleEndian) { Array($0) })  // Chunk size
+        wavData.append(contentsOf: withUnsafeBytes(of: UInt16(1).littleEndian) { Array($0) })   // Audio format (PCM)
+        wavData.append(contentsOf: withUnsafeBytes(of: channels.littleEndian) { Array($0) })
+        wavData.append(contentsOf: withUnsafeBytes(of: sampleRateValue.littleEndian) { Array($0) })
+        wavData.append(contentsOf: withUnsafeBytes(of: byteRate.littleEndian) { Array($0) })
+        wavData.append(contentsOf: withUnsafeBytes(of: blockAlign.littleEndian) { Array($0) })
+        wavData.append(contentsOf: withUnsafeBytes(of: bitsPerSample.littleEndian) { Array($0) })
+
+        // data chunk
+        wavData.append(contentsOf: "data".utf8)
+        wavData.append(contentsOf: withUnsafeBytes(of: dataSize.littleEndian) { Array($0) })
+        wavData.append(pcmData)
+
+        return wavData
     }
 
     // MARK: - Audio Recording
@@ -183,6 +228,9 @@ final class AliyunASRService: NSObject, ObservableObject {
 
         // 重置音量检测状态
         hasValidAudio = false
+
+        // 清空录音数据缓冲区
+        recordedAudioData = Data()
 
         // 清除之前的识别结果
         transcript = ""
@@ -399,6 +447,10 @@ final class AliyunASRService: NSObject, ObservableObject {
             return
         }
 
+        // 保存录音数据到本地缓冲区
+        recordedAudioData.append(resampledData)
+
+        // 发送到服务器进行识别
         sendAudioData(resampledData.base64EncodedString())
     }
 
