@@ -147,6 +147,8 @@ class ChatViewModel {
                     // 保存音频数据到消息
                     if let index = messages.firstIndex(where: { $0.id == message.id }) {
                         messages[index].audioData = audioData
+                        // 清理超出限制的音频缓存
+                        cleanupAudioCacheIfNeeded()
                     }
                 }
             }
@@ -168,6 +170,26 @@ class ChatViewModel {
             messages[index].audioData = nil
             messages[index].userVoiceData = nil
             messages[index].isPlaying = false
+        }
+    }
+
+    /// 音频缓存最大数量
+    private let maxCachedAudioCount = 20
+
+    /// 清理超出限制的音频缓存（保留最近的 N 条）
+    private func cleanupAudioCacheIfNeeded() {
+        // 获取所有有音频的消息索引（按时间排序，最新的在后面）
+        let messagesWithAudio = messages.enumerated().filter { $0.element.audioData != nil }
+        let count = messagesWithAudio.count
+
+        // 如果超过限制，清理最旧的
+        if count >= maxCachedAudioCount {
+            let toRemove = count - maxCachedAudioCount + 1
+            for i in 0..<toRemove {
+                let index = messagesWithAudio[i].offset
+                messages[index].audioData = nil
+                print("[ChatViewModel] 清理旧音频缓存，索引: \(index)")
+            }
         }
     }
 
@@ -382,6 +404,8 @@ class ChatViewModel {
                         if let index = self?.messages.firstIndex(where: { $0.id == messageId }) {
                             self?.messages[index].audioData = audioData
                             print("[ChatViewModel] 音频已缓存到消息，长度: \(audioData.count)")
+                            // 清理超出限制的音频缓存
+                            self?.cleanupAudioCacheIfNeeded()
                         }
                         continuation.yield(true)
                         continuation.finish()
@@ -455,6 +479,8 @@ class ChatViewModel {
         if let audioData = await TTSService.shared.speak(text, for: messageId) {
             if let index = messages.firstIndex(where: { $0.id == messageId }) {
                 messages[index].audioData = audioData
+                // 清理超出限制的音频缓存
+                cleanupAudioCacheIfNeeded()
             }
         } else {
             // 非 流式 TTS 也失败，显示网络错误提示
