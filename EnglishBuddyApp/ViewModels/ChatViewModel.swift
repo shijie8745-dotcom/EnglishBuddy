@@ -37,6 +37,9 @@ class ChatViewModel {
     /// 防重入标志（togglePlay）
     private var isTogglingPlay = false
 
+    /// 录音开始时间（用于检查录音时长）
+    private var recordingStartTime: Date?
+
     init() {
         // 监听 TTS 播放状态变化
         ttsObservation = Timer.publish(every: 0.1, on: .main, in: .common)
@@ -524,6 +527,9 @@ class ChatViewModel {
         // 用户录音优先级高于 TTS 播放
         stopAllPlayback()
 
+        // 记录录音开始时间
+        recordingStartTime = Date()
+
         // Initialize speech recognizer
         speechRecognizer = SpeechRecognizer()
 
@@ -584,11 +590,29 @@ class ChatViewModel {
             return
         }
 
-        // ===== 第1步：立即更新UI，让用户感知到操作响应 =====
+        // ===== 第1步：计算录音时长 =====
+        let recordingDuration: TimeInterval
+        if let startTime = recordingStartTime {
+            recordingDuration = Date().timeIntervalSince(startTime)
+        } else {
+            recordingDuration = 0
+        }
+
+        // ===== 第2步：立即更新UI，让用户感知到操作响应 =====
         isRecording = false
         recognizedText = ""
         cancellables.removeAll()
         speechRecognizer = nil
+        recordingStartTime = nil
+
+        // ===== 第3步：检查录音时长是否足够 =====
+        if recordingDuration < 0.5 {
+            // 录音时间太短，直接忽略（不显示任何提示）
+            print("[ChatViewModel] 录音时长 \(recordingDuration)s 太短，忽略")
+            AliyunASRService.shared.cancelRecording()
+            AliyunASRService.shared.resetRecordingState()
+            return
+        }
 
         // 通知ASR停止录音（发送commit，触发最终识别）
         _ = AliyunASRService.shared.stopRecording()
