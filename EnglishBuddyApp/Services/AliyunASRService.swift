@@ -16,7 +16,7 @@ final class AliyunASRService: NSObject, ObservableObject {
     private var hasValidAudio = false
 
     /// 音量阈值（低于此值视为静音）
-    private let volumeThreshold: Float = 0.01
+    private let volumeThreshold: Float = 0.03
     @Published var isRecording = false
     @Published var isConnecting = false
     @Published var isReady = false  // WebSocket 已连接并准备好录音
