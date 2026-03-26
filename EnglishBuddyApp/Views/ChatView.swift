@@ -383,6 +383,7 @@ struct VoiceInputContainer: View {
     @State private var isInCancelZone = false
     @State private var cancelButtonFrame: CGRect = .zero
     @State private var isConnecting = false
+    @State private var lastTapTime: Date = Date.distantPast  // 防抖
     var isCompact: Bool = false
 
     private var inputHeight: CGFloat { AdaptiveLayout.Dimensions.voiceInputHeight(isCompact: isCompact) }
@@ -444,6 +445,11 @@ struct VoiceInputContainer: View {
                             print("[ChatView] DragGesture onChanged, isPressed: \(isPressed), isConnecting: \(isConnecting)")
 
                             if !isPressed && !isConnecting {
+                                // 防抖检查：两次点击间隔需大于 0.3 秒
+                                let now = Date()
+                                guard now.timeIntervalSince(lastTapTime) > 0.3 else { return }
+                                lastTapTime = now
+
                                 isPressed = true
                                 isConnecting = true
                                 print("[ChatView] 开始连接并录音...")
