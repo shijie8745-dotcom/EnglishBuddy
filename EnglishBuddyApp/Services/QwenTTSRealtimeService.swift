@@ -44,8 +44,10 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
     // session 更新完成的 continuation
     private var sessionUpdateContinuation: CheckedContinuation<Void, Error>?
 
-    // 播放完成检测定时器
-    private var playbackCheckWorkItem: DispatchWorkItem?
+    // 音频块播放追踪
+    private var pendingBufferCount: Int = 0
+    private var isLastBuffer: Bool = false
+    private var hasPlaybackCompleted: Bool = false  // 防止重复触发
 
     // MARK: - Initialization
 
@@ -213,9 +215,10 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
     /// 停止播放（保留音频会话以便 ASR 可以直接使用）
     func stop() {
-        // 取消播放完成检测定时器
-        playbackCheckWorkItem?.cancel()
-        playbackCheckWorkItem = nil
+        // 重置音频块追踪状态
+        pendingBufferCount = 0
+        isLastBuffer = false
+        hasPlaybackCompleted = true  // 标记已处理，防止后续 completion 触发
 
         // 停止播放节点
         playerNode?.stop()
@@ -233,9 +236,10 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
     /// 重置状态（用于新的合成任务）
     func reset() {
-        // 取消播放完成检测定时器
-        playbackCheckWorkItem?.cancel()
-        playbackCheckWorkItem = nil
+        // 重置音频块追踪状态
+        pendingBufferCount = 0
+        isLastBuffer = false
+        hasPlaybackCompleted = false
 
         // 先记录要关闭的任务
         let taskToClose = webSocketTask
@@ -256,29 +260,6 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
         // 最后关闭旧连接
         taskToClose?.cancel(with: .normalClosure, reason: nil)
-    }
-
-    /// 检测播放完成
-    private func startPlaybackCompletionCheck() {
-        // 取消之前的定时器
-        playbackCheckWorkItem?.cancel()
-
-        // 计算音频时长：PCM 24000Hz Mono 16bit
-        // 时长(秒) = 字节数 / (采样率 * 每样本字节数 * 声道数)
-        let audioDuration = Double(accumulatedAudioData.count) / (24000.0 * 2.0 * 1.0)
-        print("[QwenTTS] 音频时长: \(audioDuration) 秒")
-
-        // 创建新的定时任务
-        let workItem = DispatchWorkItem { [weak self] in
-            guard let self = self else { return }
-            print("[QwenTTS] 播放完成，设置 isPlaying = false")
-            self.isPlaying = false
-            self.onPlayingStateChanged?(false)
-        }
-        playbackCheckWorkItem = workItem
-
-        // 等待音频播放完成（加 0.3 秒缓冲）
-        DispatchQueue.main.asyncAfter(deadline: .now() + audioDuration + 0.3, execute: workItem)
     }
 
     // MARK: - Private Methods
@@ -437,9 +418,16 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
                 self.onComplete?(wavData)
                 print("[QwenTTS] onComplete 回调已执行")
 
-                // 不在这里设置 isPlaying = false，让 startPlaybackCompletionCheck 来处理
-                // 启动播放完成检测
-                self.startPlaybackCompletionCheck()
+                // 标记最后一个音频块，播放完成后触发回调
+                self.isLastBuffer = true
+
+                // 如果没有待播放的音频块，直接触发播放完成
+                if self.pendingBufferCount == 0 && !self.hasPlaybackCompleted {
+                    self.hasPlaybackCompleted = true
+                    print("[QwenTTS] 没有待播放的音频块，直接结束播放")
+                    self.isPlaying = false
+                    self.onPlayingStateChanged?(false)
+                }
 
             case "error":
                 if let error = json["error"] as? [String: Any],
@@ -498,7 +486,24 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
             }
         }
 
-        player.scheduleBuffer(buffer, at: nil, options: [])
+        // 增加待播放计数
+        pendingBufferCount += 1
+
+        player.scheduleBuffer(buffer, at: nil, options: []) {
+            // 音频块播放完成
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.pendingBufferCount -= 1
+
+                // 检查是否所有块播放完成且会话已结束
+                if self.isLastBuffer && self.pendingBufferCount == 0 && !self.hasPlaybackCompleted {
+                    self.hasPlaybackCompleted = true
+                    print("[QwenTTS] 最后一个音频块播放完成")
+                    self.isPlaying = false
+                    self.onPlayingStateChanged?(false)
+                }
+            }
+        }
 
         if !player.isPlaying {
             player.play()
