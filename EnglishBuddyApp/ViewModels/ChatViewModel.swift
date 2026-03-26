@@ -587,17 +587,7 @@ class ChatViewModel {
 
             print("[ChatViewModel] 最终识别文本: '\(trimmedText)'")
 
-            // Check if speech is too short (less than 2 characters)
-            if trimmedText.count < 2 {
-                // Add AI message asking user to repeat
-                self.messages.append(ChatMessage(text: "[未听清]", speaker: .user))
-                Task {
-                    await self.addAIMessage("I didn't hear you clearly. Can you say that again? 🎤")
-                }
-                return
-            }
-
-            // 先检查网络连接（通过 TTS 连接状态判断）
+            // ===== 第3步：先检查网络连接 =====
             Task {
                 // 尝试连接 TTS WebSocket（用于判断网络是否可用）
                 let ttsConnected = await self.ensureTTSConnection()
@@ -608,7 +598,21 @@ class ChatViewModel {
                     }
                     return
                 }
-                // 网络正常，发送消息
+
+                // ===== 第4步：网络正常，验证文本并发送 =====
+                await MainActor.run {
+                    // Check if speech is too short (less than 2 characters)
+                    if trimmedText.count < 2 {
+                        // Add AI message asking user to repeat
+                        self.messages.append(ChatMessage(text: "[未听清]", speaker: .user))
+                        Task {
+                            await self.addAIMessage("I didn't hear you clearly. Can you say that again? 🎤")
+                        }
+                        return
+                    }
+                }
+
+                // 发送消息
                 await self.sendMessage(trimmedText, voiceData: nil)
             }
         }
