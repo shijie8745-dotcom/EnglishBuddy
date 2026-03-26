@@ -157,13 +157,15 @@ class ChatViewModel {
 
     /// 清理所有音频数据（在退出会话时调用）
     func clearAudioCache() {
+        // 先停止所有播放（包括流式和非流式 TTS）
+        stopAllPlayback()
+
+        // 清理音频缓存
         for index in messages.indices {
             messages[index].audioData = nil
             messages[index].userVoiceData = nil
             messages[index].isPlaying = false
         }
-        currentlyPlayingMessageId = nil
-        TTSService.shared.stop()
     }
 
     /// 停止所有播放（用户录音时调用，优先级最高）
