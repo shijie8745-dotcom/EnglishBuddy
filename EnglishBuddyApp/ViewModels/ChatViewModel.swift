@@ -14,6 +14,10 @@ class ChatViewModel {
     var errorMessage: String?
     var currentLesson: Lesson?
 
+    /// Toast 通知
+    var showToast = false
+    var toastMessage = ""
+
     /// 当前正在播放的消息ID
     var currentlyPlayingMessageId: UUID?
 
@@ -160,6 +164,35 @@ class ChatViewModel {
         }
 
         print("[ChatViewModel] 已停止所有播放，释放音频会话")
+    }
+
+    /// 显示网络错误 Toast 通知
+    private func showNetworkErrorToast(_ message: String = "网络连接失败，请检查网络后重试") {
+        toastMessage = message
+        showToast = true
+        // 2秒后自动隐藏
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            self?.showToast = false
+        }
+    }
+
+    /// 确保 TTS WebSocket 连接可用（用于按需重连）
+    private func ensureTTSConnection() async -> Bool {
+        // 检查连接状态
+        if QwenTTSRealtimeService.shared.isReady {
+            return true
+        }
+
+        // 尝试重连
+        print("[ChatViewModel] TTS WebSocket 未连接，尝试重连...")
+        do {
+            try await QwenTTSRealtimeService.shared.connect()
+            print("[ChatViewModel] TTS WebSocket 重连成功")
+            return true
+        } catch {
+            print("[ChatViewModel] TTS WebSocket 重连失败: \(error.localizedDescription)")
+            return false
+        }
     }
 
     func loadInitialMessages(for lesson: Lesson) {
@@ -398,6 +431,12 @@ class ChatViewModel {
             if let index = messages.firstIndex(where: { $0.id == messageId }) {
                 messages[index].audioData = audioData
             }
+        } else {
+            // 非 流式 TTS 也失败，显示网络错误提示
+            print("[ChatViewModel] 非流式 TTS 也失败，显示网络错误提示")
+            await MainActor.run {
+                showNetworkErrorToast("语音播放失败，请检查网络后重试")
+            }
         }
     }
 
@@ -558,8 +597,16 @@ class ChatViewModel {
                 return
             }
 
-            // Send the recognized text to AI
+            // Send the recognized text to AI（同时确保 TTS 连接可用）
             Task {
+                // 尝试重连 TTS WebSocket（按需重连）
+                let ttsConnected = await self.ensureTTSConnection()
+                if !ttsConnected {
+                    // TTS 重连失败，显示提示（但仍然发送消息给 AI）
+                    await MainActor.run {
+                        self.showNetworkErrorToast("网络连接失败，语音可能无法播放")
+                    }
+                }
                 await self.sendMessage(trimmedText, voiceData: nil)
             }
         }

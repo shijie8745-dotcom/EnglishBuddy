@@ -56,6 +56,23 @@ struct ChatView: View {
                     .background(Color.clear) // Transparent, overlay is below
             }
             .ignoresSafeArea(.container, edges: .bottom)
+
+            // Layer 5: Toast 通知
+            if viewModel.showToast {
+                VStack {
+                    Spacer()
+                    Text(viewModel.toastMessage)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(Color.black.opacity(0.8))
+                        .cornerRadius(25)
+                        .padding(.bottom, 120)
+                }
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                .animation(.easeInOut(duration: 0.3), value: viewModel.showToast)
+            }
         }
         .onAppear {
             viewModel.loadInitialMessages(for: lesson)
