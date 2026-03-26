@@ -155,6 +155,7 @@ struct ChatView: View {
                 .padding(.top, AdaptiveLayout.Dimensions.headerHeight(isCompact: isCompact))
                 .padding(.bottom, inputHeight + 48)
             }
+            .background(Color.white)  // 添加白色背景
             .onChange(of: viewModel.messages.count) { _, _ in
                 scrollToBottom(proxy: proxy)
             }

@@ -617,10 +617,21 @@ class ChatViewModel {
         // 通知ASR停止录音（发送commit，触发最终识别）
         _ = AliyunASRService.shared.stopRecording()
 
-        // ===== 第2步：延迟处理识别结果（保证准确率）=====
+        // ===== 第4步：检查是否检测到有效音频 =====
+        let hasValidAudio = AliyunASRService.shared.hasDetectedValidAudio()
+        print("[ChatViewModel] 检测到有效音频: \(hasValidAudio)")
+
+        // ===== 第5步：延迟处理识别结果（保证准确率）=====
         // 等待1秒让ASR返回最终结果（最后的音频需要处理时间）
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
+
+            // 检查是否检测到有效音频（用于过滤静音误识别）
+            guard hasValidAudio else {
+                print("[ChatViewModel] 未检测到有效音频，忽略识别结果")
+                AliyunASRService.shared.resetRecordingState()
+                return
+            }
 
             // 获取最终识别结果
             let finalText = AliyunASRService.shared.transcript
@@ -633,7 +644,7 @@ class ChatViewModel {
 
             print("[ChatViewModel] 最终识别文本: '\(trimmedText)'")
 
-            // ===== 第3步：先检查网络连接 =====
+            // ===== 第6步：先检查网络连接 =====
             Task {
                 // 尝试连接 TTS WebSocket（用于判断网络是否可用）
                 let ttsConnected = await self.ensureTTSConnection()
@@ -645,7 +656,7 @@ class ChatViewModel {
                     return
                 }
 
-                // ===== 第4步：网络正常，验证文本并发送 =====
+                // ===== 第7步：网络正常，验证文本并发送 =====
                 await MainActor.run {
                     // Check if speech is too short (less than 2 characters)
                     if trimmedText.count < 2 {

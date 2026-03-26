@@ -11,6 +11,12 @@ final class AliyunASRService: NSObject, ObservableObject {
 
     /// 标记当前会话是否已被取消（用于忽略取消后仍到达的异步消息）
     private var isSessionCancelled = false
+
+    /// 标记是否检测到有效音频（音量超过阈值）
+    private var hasValidAudio = false
+
+    /// 音量阈值（低于此值视为静音）
+    private let volumeThreshold: Float = 0.01
     @Published var isRecording = false
     @Published var isConnecting = false
     @Published var isReady = false  // WebSocket 已连接并准备好录音
@@ -151,6 +157,12 @@ final class AliyunASRService: NSObject, ObservableObject {
         isRecording = false
         transcript = ""
         isSessionCancelled = false
+        hasValidAudio = false
+    }
+
+    /// 检查是否检测到有效音频
+    func hasDetectedValidAudio() -> Bool {
+        return hasValidAudio
     }
 
     // MARK: - Audio Recording
@@ -164,6 +176,9 @@ final class AliyunASRService: NSObject, ObservableObject {
 
         // 重置取消标志，开始新的会话
         isSessionCancelled = false
+
+        // 重置音量检测状态
+        hasValidAudio = false
 
         // 清除之前的识别结果
         transcript = ""
@@ -358,6 +373,22 @@ final class AliyunASRService: NSObject, ObservableObject {
     /// 处理音频缓冲区并发送
     private func processAudioBuffer(_ buffer: AVAudioPCMBuffer) {
         guard buffer.frameLength > 0 else { return }
+
+        // 检测音量（RMS）
+        if let floatChannelData = buffer.floatChannelData {
+            let frameLength = Int(buffer.frameLength)
+            var rms: Float = 0
+            for i in 0..<frameLength {
+                let sample = floatChannelData[0][i]
+                rms += sample * sample
+            }
+            rms = sqrt(rms / Float(frameLength))
+
+            // 如果音量超过阈值，标记为有效音频
+            if rms > volumeThreshold {
+                hasValidAudio = true
+            }
+        }
 
         // 重采样到 16000Hz, Int16
         guard let resampledData = resampleBuffer(buffer, targetSampleRate: sampleRate) else {
