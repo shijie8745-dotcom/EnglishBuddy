@@ -37,6 +37,9 @@ class ChatViewModel {
     /// 防重入标志（togglePlay）
     private var isTogglingPlay = false
 
+    /// 录音开始时间（用于检查录音时长）
+    private var recordingStartTime: Date?
+
     init() {
         // 监听 TTS 播放状态变化
         ttsObservation = Timer.publish(every: 0.1, on: .main, in: .common)
@@ -524,6 +527,9 @@ class ChatViewModel {
         // 用户录音优先级高于 TTS 播放
         stopAllPlayback()
 
+        // 记录录音开始时间
+        recordingStartTime = Date()
+
         // Initialize speech recognizer
         speechRecognizer = SpeechRecognizer()
 
@@ -554,6 +560,7 @@ class ChatViewModel {
             errorMessage = "无法开始录音，请检查麦克风权限"
             isRecording = false
             speechRecognizer = nil
+            recordingStartTime = nil
         }
     }
 
@@ -584,16 +591,35 @@ class ChatViewModel {
             return
         }
 
-        // ===== 第1步：立即更新UI，让用户感知到操作响应 =====
+        // ===== 第1步：计算录音时长 =====
+        let recordingDuration: TimeInterval
+        if let startTime = recordingStartTime {
+            recordingDuration = Date().timeIntervalSince(startTime)
+        } else {
+            recordingDuration = 0
+        }
+
+        // ===== 第2步：立即更新UI，让用户感知到操作响应 =====
         isRecording = false
         recognizedText = ""
         cancellables.removeAll()
         speechRecognizer = nil
+        recordingStartTime = nil  // 清除录音开始时间
+
+        // ===== 第3步：检查录音时长是否足够 =====
+        if recordingDuration < 1.0 {
+            // 录音时间太短，显示 Toast 提示
+            showNetworkErrorToast("录音时间太短，请重试")
+            // 清理 ASR 状态
+            AliyunASRService.shared.cancelRecording()
+            AliyunASRService.shared.resetRecordingState()
+            return
+        }
 
         // 通知ASR停止录音（发送commit，触发最终识别）
         _ = AliyunASRService.shared.stopRecording()
 
-        // ===== 第2步：延迟处理识别结果（保证准确率）=====
+        // ===== 第4步：延迟处理识别结果（保证准确率）=====
         // 等待1秒让ASR返回最终结果（最后的音频需要处理时间）
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
@@ -609,7 +635,7 @@ class ChatViewModel {
 
             print("[ChatViewModel] 最终识别文本: '\(trimmedText)'")
 
-            // ===== 第3步：先检查网络连接 =====
+            // ===== 第5步：先检查网络连接 =====
             Task {
                 // 尝试连接 TTS WebSocket（用于判断网络是否可用）
                 let ttsConnected = await self.ensureTTSConnection()
@@ -621,15 +647,12 @@ class ChatViewModel {
                     return
                 }
 
-                // ===== 第4步：网络正常，验证文本并发送 =====
+                // ===== 第6步：网络正常，验证文本并发送 =====
                 await MainActor.run {
                     // Check if speech is too short (less than 2 characters)
                     if trimmedText.count < 2 {
-                        // Add AI message asking user to repeat
-                        self.messages.append(ChatMessage(text: "[未听清]", speaker: .user))
-                        Task {
-                            await self.addAIMessage("I didn't hear you clearly. Can you say that again? 🎤")
-                        }
+                        // 录音内容太短，显示 Toast 提示
+                        self.showNetworkErrorToast("没听清楚，请重试")
                         return
                     }
                 }
