@@ -128,6 +128,7 @@ class DataStore {
 - `user` - 用户信息（含 petCollection, cloudCoinSystem）
 - `progress` - 学习进度
 - `userAvatar` - 用户头像数据
+- `chatHistory` - 对话历史记录（按 unit 存储）
 
 ## 3. AI 对话实现
 
@@ -731,7 +732,99 @@ LazyVStack(spacing: 12) {
 }
 ```
 
-## 12. 开发规范
+## 12. 历史对话记录
+
+### 12.1 存储架构
+
+**文件**: `Services/ChatHistoryStore.swift`
+
+```swift
+class ChatHistoryStore {
+    static let shared = ChatHistoryStore()
+    private let maxMessagesPerUnit = 200
+    private let historyKey = "chatHistory"
+
+    // 存储结构：[unitId: [PersistableMessage]]
+    private var history: [Int: [PersistableMessage]] = [:]
+
+    func loadHistory(for unitId: Int) -> [ChatMessage]
+    func saveHistory(for unitId: Int, messages: [ChatMessage])
+}
+```
+
+### 12.2 数据模型
+
+```swift
+// 可持久化的消息结构（不包含音频数据）
+struct PersistableMessage: Codable {
+    let id: UUID
+    let text: String
+    let speaker: Speaker
+    let timestamp: Date
+    let isError: Bool
+}
+```
+
+**设计决策**:
+- 音频数据不保存（节省存储空间）
+- 按 unit 分隔存储（不同课程独立历史）
+- 最多 200 条消息（防止存储过大）
+
+### 12.3 时间标签实现
+
+```swift
+private func formatTimeLabel(_ date: Date) -> String {
+    let calendar = Calendar.current
+
+    if calendar.isDateInToday(date) {
+        return DateFormatter.dateFormat(fromTemplate: "HH:mm")!.string(from: date)
+    } else if calendar.isDateInYesterday(date) {
+        return "昨天 " + DateFormatter.dateFormat(fromTemplate: "HH:mm")!.string(from: date)
+    } else if calendar.isDate(date, equalTo: Date(), toGranularity: .weekOfYear) {
+        // 本周：星期x HH:mm
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE HH:mm"
+        formatter.locale = Locale(identifier: "zh_CN")
+        return formatter.string(from: date)
+    } else {
+        // 其他：x月x日 HH:mm
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M月d日 HH:mm"
+        return formatter.string(from: date)
+    }
+}
+```
+
+### 12.4 会话隔离
+
+**问题**: 历史消息不应发送给 AI，每次进入对话页都是新会话。
+
+**解决方案**: 使用 `sessionStartTime` 区分当前会话和历史消息
+
+```swift
+// ChatViewModel.finishSession()
+func finishSession() {
+    // ... 统计学习时长 ...
+
+    // 保存对话历史
+    if let lesson = currentLesson {
+        ChatHistoryStore.shared.saveHistory(for: lesson.id, messages: messages)
+    }
+}
+
+// ChatViewModel.generateAIResponse()
+private func generateAIResponse(to text: String) async {
+    // 只发送当前会话的消息作为历史（不包含历史会话消息）
+    let currentSessionMessages = messages.filter { message in
+        guard let sessionStart = sessionStartTime else { return true }
+        return message.timestamp >= sessionStart
+    }
+    let historyMessages = currentSessionMessages.dropLast()
+    // ...
+}
+```
+
+## 13. 开发规范
 
 ### 12.1 代码组织
 
@@ -804,6 +897,7 @@ EnglishBuddyApp/
 
 | 日期 | 版本 | 变更内容 |
 |------|------|----------|
+| 2026-03-27 | 2.3 | 新增历史对话记录技术方案（ChatHistoryStore、时间标签、会话隔离） |
 | 2026-03-26 | 2.2 | 音频会话统一、竞态条件处理、录音优先级机制、超时回退机制 |
 | 2026-03-25 | 2.1 | 新增流式 TTS 技术方案（WebSocket 实时语音合成） |
 | 2026-03-25 | 2.0 | 更新云朵币系统、阿里云 ASR、响应式布局方案 |

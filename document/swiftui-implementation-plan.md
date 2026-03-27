@@ -172,6 +172,8 @@ TTSService.shared.speak(text, for: messageId)
 - [x] 多轮对话上下文记忆
 - [x] 学习时长统计 (>30秒算1分钟)
 - [x] 对话次数统计
+- [x] 时间标签显示 (不同分钟时显示)
+- [x] 历史对话加载与保存
 
 **代码结构**:
 ```swift
@@ -182,7 +184,35 @@ struct ChatView: View {
 }
 ```
 
-### 3.5 对话消息组件
+### 3.5 对话历史记录
+**文件**: `Services/ChatHistoryStore.swift`
+
+**已实现**:
+- [x] 按 unit 分别存储历史记录
+- [x] 每个 unit 最多 200 条消息
+- [x] 进入对话页加载历史记录
+- [x] 退出对话页保存历史记录
+- [x] 历史消息不发送给 AI（每次都是新对话）
+
+**核心方法**:
+```swift
+class ChatHistoryStore {
+    static let shared = ChatHistoryStore()
+
+    func loadHistory(for unitId: Int) -> [ChatMessage]
+    func saveHistory(for unitId: Int, messages: [ChatMessage])
+}
+```
+
+**时间标签格式**:
+| 场景 | 格式 | 示例 |
+|------|------|------|
+| 今天 | HH:mm | 14:30 |
+| 昨天 | 昨天 HH:mm | 昨天 14:30 |
+| 本周 | 星期x HH:mm | 星期一 14:30 |
+| 其他 | x月x日 HH:mm | 3月27日 14:30 |
+
+### 3.6 对话消息组件
 **文件**: `Views/ChatView.swift` (嵌套组件)
 
 - [x] ChatBubble - 消息气泡组件
@@ -316,6 +346,7 @@ ChatView
         ├── AliyunASRService
         ├── TTSService (非流式 fallback)
         ├── QwenTTSRealtimeService (流式 TTS)
+        ├── ChatHistoryStore (历史记录)
         └── PromptConfig
 
 CloudShopView
@@ -376,6 +407,7 @@ User Action → View → ViewModel → Service → API/Storage
 
 | 日期 | 版本 | 变更内容 |
 |------|------|----------|
+| 2026-03-27 | 2.3 | 新增历史对话记录功能（ChatHistoryStore），时间标签显示 |
 | 2026-03-26 | 2.2 | 音频会话统一、竞态条件处理、录音优先级机制、超时回退机制 |
 | 2026-03-25 | 2.1 | 新增流式 TTS 服务，优化语音延迟至 ~0.3s |
 | 2026-03-25 | 2.0 | 更新云朵币系统、宠物商店、iPhone 适配、阿里云 ASR |
