@@ -15,9 +15,71 @@ class TTSService: NSObject {
     /// 播放状态变化回调
     var onPlayingStateChanged: ((Bool, UUID?) -> Void)?
 
+    /// 音频会话中断追踪
+    private var wasSpeakingBeforeInterruption: Bool = false
+
     override init() {
         super.init()
         synthesizer.delegate = self
+        setupInterruptionObserver()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    /// 监听音频会话中断通知
+    private func setupInterruptionObserver() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAudioSessionInterruption(_:)),
+            name: AVAudioSession.interruptionNotification,
+            object: nil
+        )
+    }
+
+    @objc private func handleAudioSessionInterruption(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
+            return
+        }
+
+        switch type {
+        case .began:
+            // 中断开始（电话、闹钟等）
+            print("[TTSService] 音频会话中断开始")
+            wasSpeakingBeforeInterruption = isSpeaking
+            if isSpeaking {
+                // 停止播放
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.audioPlayer?.stop()
+                    self.synthesizer.stopSpeaking(at: .immediate)
+                    self.isSpeaking = false
+                    let messageId = self.currentPlayingMessageId
+                    self.currentPlayingMessageId = nil
+                    self.onPlayingStateChanged?(false, messageId)
+                    print("[TTSService] 中断时已停止播放并通知 UI")
+                }
+            }
+
+        case .ended:
+            // 中断结束 - 重新激活音频会话
+            print("[TTSService] 音频会话中断结束，重新激活音频会话")
+            do {
+                let audioSession = AVAudioSession.sharedInstance()
+                try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers])
+                try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+                print("[TTSService] 音频会话已重新激活")
+            } catch {
+                print("[TTSService] 恢复音频会话失败: \(error)")
+            }
+            wasSpeakingBeforeInterruption = false
+
+        @unknown default:
+            break
+        }
     }
 
     private let apiKey = APIConfig.dashScopeAPIKey

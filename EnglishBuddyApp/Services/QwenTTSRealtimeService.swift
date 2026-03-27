@@ -94,14 +94,21 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
             }
 
         case .ended:
-            // 中断结束
-            print("[QwenTTS] 音频会话中断结束")
-            if let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt {
-                let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
-                if options.contains(.shouldResume) && wasPlayingBeforeInterruption {
-                    // 可以恢复播放（但流式 TTS 数据已丢失，不自动恢复）
-                    print("[QwenTTS] 中断结束，可恢复播放（但不自动恢复）")
+            // 中断结束 - 重新激活音频会话
+            print("[QwenTTS] 音频会话中断结束，重新激活音频会话")
+            do {
+                let audioSession = AVAudioSession.sharedInstance()
+                try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .mixWithOthers])
+                try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+                print("[QwenTTS] 音频会话已重新激活")
+
+                // 如果音频引擎存在但未运行，尝试重新启动
+                if let engine = audioEngine, !engine.isRunning {
+                    try engine.start()
+                    print("[QwenTTS] 音频引擎已重新启动")
                 }
+            } catch {
+                print("[QwenTTS] 恢复音频会话失败: \(error)")
             }
             wasPlayingBeforeInterruption = false
 
