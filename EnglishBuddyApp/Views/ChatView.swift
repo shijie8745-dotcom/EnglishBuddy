@@ -79,7 +79,7 @@ struct ChatView: View {
             viewModel.setupTTSCallbacks()
             viewModel.loadInitialMessages(for: lesson)
             viewModel.requestSpeechAuthorization()
-            if let data = DataStore.shared.loadUserAvatar() {
+            if let data = DataStore.loadUserAvatar() {
                 userAvatarImage = UIImage(data: data)
             }
         }
