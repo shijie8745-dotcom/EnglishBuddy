@@ -282,13 +282,15 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
         pendingBufferCount = 0
         isLastBuffer = false
         hasPlaybackCompleted = true  // 标记已处理，防止后续 completion 触发
+        isDataComplete = true  // 标记数据接收完成，防止后续触发
 
         // 停止播放节点
         playerNode?.stop()
 
-        // 停止音频引擎
+        // 停止音频引擎（但不释放 input tap，因为 TTS 不需要 input）
         audioEngine?.stop()
-        audioEngine?.inputNode.removeTap(onBus: 0)  // 确保释放输入 tap
+        // 注意：不要调用 audioEngine?.inputNode.removeTap(onBus: 0)
+        // 这可能会影响 ASR 的音频引擎
 
         // 确保状态更新和回调在主线程
         DispatchQueue.main.async { [weak self] in
@@ -305,6 +307,7 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
         pendingBufferCount = 0
         isLastBuffer = false
         hasPlaybackCompleted = false
+        isDataComplete = false
 
         // 先记录要关闭的任务
         let taskToClose = webSocketTask
@@ -321,7 +324,6 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
         isPlaying = false
         isReady = false
         isConnecting = false
-        isDataComplete = false
 
         // 最后关闭旧连接
         taskToClose?.cancel(with: .normalClosure, reason: nil)
@@ -483,15 +485,12 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
                 self.onComplete?(wavData)
                 print("[QwenTTS] onComplete 回调已执行")
 
-                // 标记最后一个音频块，播放完成后触发回调
+                // 标记最后一个音频块
                 self.isLastBuffer = true
 
-                // 如果没有待播放的音频块，直接触发播放完成
-                if self.pendingBufferCount == 0 && !self.hasPlaybackCompleted {
-                    self.hasPlaybackCompleted = true
-                    print("[QwenTTS] 没有待播放的音频块，直接结束播放")
-                    self.isPlaying = false
-                    self.onPlayingStateChanged?(false)
+                // 检查是否应该立即结束播放
+                DispatchQueue.main.async { [weak self] in
+                    self?.checkPlaybackCompletion()
                 }
 
             case "error":
@@ -559,14 +558,8 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 self.pendingBufferCount -= 1
-
-                // 检查是否所有块播放完成且会话已结束
-                if self.isLastBuffer && self.pendingBufferCount == 0 && !self.hasPlaybackCompleted {
-                    self.hasPlaybackCompleted = true
-                    print("[QwenTTS] 最后一个音频块播放完成")
-                    self.isPlaying = false
-                    self.onPlayingStateChanged?(false)
-                }
+                print("[QwenTTS] 音频块播放完成，待播放数: \(self.pendingBufferCount)")
+                self.checkPlaybackCompletion()
             }
         }
 
@@ -577,6 +570,20 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
                 self?.onPlayingStateChanged?(true)
             }
         }
+    }
+
+    /// 检查播放是否完成（数据接收完 + 所有音频块播放完）
+    private func checkPlaybackCompletion() {
+        // 必须满足：数据接收完成 + 没有待播放的块 + 还未触发完成回调
+        guard isDataComplete && pendingBufferCount <= 0 && !hasPlaybackCompleted else {
+            print("[QwenTTS] checkPlaybackCompletion: 不满足条件 - isDataComplete: \(isDataComplete), pendingBufferCount: \(pendingBufferCount), hasPlaybackCompleted: \(hasPlaybackCompleted)")
+            return
+        }
+
+        hasPlaybackCompleted = true
+        print("[QwenTTS] 播放真正完成")
+        isPlaying = false
+        onPlayingStateChanged?(false)
     }
 
     /// 将 PCM 数据转换为 WAV 格式
