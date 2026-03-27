@@ -530,15 +530,15 @@ class ChatViewModel {
 
     /// 使用流式 TTS
     private func addAIMessageWithStreamingTTS(_ text: String, messageId: UUID) async {
+        // 捕获当前会话 ID（在 do 外部，catch 也能访问）
+        let sessionId = currentTTSSessionId
+
         do {
             // 重置累积的音频数据
             QwenTTSRealtimeService.shared.reset()
 
             // 标记正在流式播放
             streamingPlayingMessageId = messageId
-
-            // 捕获当前会话 ID
-            let sessionId = currentTTSSessionId
 
             // 用于等待音频完成的信号
             let audioComplete = AsyncStream<Bool?> { continuation in
