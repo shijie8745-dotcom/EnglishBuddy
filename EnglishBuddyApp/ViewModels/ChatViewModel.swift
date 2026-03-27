@@ -24,7 +24,7 @@ class ChatViewModel {
     /// 会话开始时间（用于计算对话时长）
     private var sessionStartTime: Date? {
         didSet {
-            // 保存到 UserDefaults 以便崩溃恢复
+            // 实时保存到 UserDefaults 以便崩溃恢复
             if let startTime = sessionStartTime {
                 UserDefaults.standard.set(startTime, forKey: Keys.pendingSessionStartTime)
             } else {
@@ -39,7 +39,6 @@ class ChatViewModel {
     // MARK: - UserDefaults Keys
     private enum Keys {
         static let pendingSessionStartTime = "pendingSessionStartTime"
-        static let pendingAccumulatedMinutes = "pendingAccumulatedMinutes"
     }
 
     /// 打卡状态提示
@@ -72,6 +71,7 @@ class ChatViewModel {
     /// 恢复未保存的学习时长（App 崩溃后自动保存）
     private func recoverPendingStudyTime() {
         guard let pendingStart = UserDefaults.standard.object(forKey: Keys.pendingSessionStartTime) as? Date else {
+            print("[ChatViewModel] 没有待恢复的学习时长")
             return
         }
 
@@ -84,9 +84,7 @@ class ChatViewModel {
             studyMinutes += 1
         }
 
-        // 加上之前累积的分钟数
-        let accumulatedMinutes = UserDefaults.standard.integer(forKey: Keys.pendingAccumulatedMinutes)
-        studyMinutes += accumulatedMinutes
+        print("[ChatViewModel] 检测到待恢复时长: \(totalSeconds) 秒 = \(studyMinutes) 分钟")
 
         if studyMinutes > 0 {
             // 保存到用户数据
@@ -99,38 +97,7 @@ class ChatViewModel {
         }
 
         // 清除待处理数据
-        clearPendingStudyData()
-    }
-
-    /// 保存当前累积的学习时长（用于后台保存）
-    func savePendingStudyTime() {
-        guard let startTime = sessionStartTime else { return }
-
-        let totalSeconds = Date().timeIntervalSince(startTime)
-        let fullMinutes = Int(totalSeconds) / 60
-        let remainingSeconds = Int(totalSeconds) % 60
-        var studyMinutes = fullMinutes
-        if remainingSeconds >= 30 {
-            studyMinutes += 1
-        }
-
-        // 加上之前累积的分钟数
-        let accumulatedMinutes = UserDefaults.standard.integer(forKey: Keys.pendingAccumulatedMinutes)
-        let totalMinutes = studyMinutes + accumulatedMinutes
-
-        if totalMinutes > 0 {
-            UserDefaults.standard.set(totalMinutes, forKey: Keys.pendingAccumulatedMinutes)
-            print("[ChatViewModel] 保存累积学习时长: \(totalMinutes) 分钟")
-
-            // 重置 sessionStartTime 为当前时间，避免重复计算
-            sessionStartTime = Date()
-        }
-    }
-
-    /// 清除待处理的学习时长数据
-    private func clearPendingStudyData() {
         UserDefaults.standard.removeObject(forKey: Keys.pendingSessionStartTime)
-        UserDefaults.standard.removeObject(forKey: Keys.pendingAccumulatedMinutes)
     }
 
     /// 处理流式 TTS 播放状态变化
@@ -432,10 +399,7 @@ class ChatViewModel {
         DataStore.shared.saveUser(user)
 
         sessionEarnedCoins += earnedCoins
-        sessionStartTime = nil
-
-        // 清除待处理的学习时长数据（正常结束）
-        clearPendingStudyData()
+        sessionStartTime = nil  // didSet 会自动清除 UserDefaults
     }
 
     /// 获取当前对话次数
