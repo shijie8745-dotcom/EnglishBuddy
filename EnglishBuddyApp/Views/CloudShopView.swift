@@ -92,13 +92,14 @@ struct CloudShopView: View {
     // MARK: - Header
     /// Fixed header height
     private var headerHeight: CGFloat {
-        let navBarHeight: CGFloat = isCompact ? 76 : 80
+        let navBarHeight: CGFloat = isCompact ? 56 : 64
         return safeAreaTop + navBarHeight
     }
 
     /// Fixed header section (stays at top while content scrolls)
     private var fixedCloudShopHeader: some View {
-        VStack(spacing: 0) {
+        let headerButtonSize = AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact)
+        return VStack(spacing: 0) {
             // Orange gradient background
             LinearGradient(
                 colors: [
@@ -109,37 +110,35 @@ struct CloudShopView: View {
                 endPoint: .bottomTrailing
             )
             .overlay(
-                VStack(spacing: 0) {
-                    HStack {
-                        // Back button
-                        Button(action: { dismiss() }) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .frame(width: 44, height: 44)
-                                .background(
-                                    Circle()
-                                        .fill(.white.opacity(0.2))
-                                )
-                        }
-
-                        Spacer()
-
-                        // Title
-                        Text("云朵商店")
-                            .font(.system(size: 18, weight: .bold))
+                HStack {
+                    // Back button
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .semibold))
                             .foregroundStyle(.white)
-
-                        Spacer()
-
-                        // Empty spacer for balance
-                        Color.clear
-                            .frame(width: 44, height: 44)
+                            .frame(width: headerButtonSize, height: headerButtonSize)
+                            .background(
+                                Circle()
+                                    .fill(.white.opacity(0.2))
+                            )
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, safeAreaTop + 16)
-                    .padding(.bottom, 20)
+
+                    Spacer()
+
+                    // Title
+                    Text("云朵商店")
+                        .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .bold))
+                        .foregroundStyle(.white)
+
+                    Spacer()
+
+                    // Empty spacer for balance
+                    Color.clear
+                        .frame(width: headerButtonSize, height: headerButtonSize)
                 }
+                .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
+                .padding(.top, safeAreaTop + (isCompact ? 12 : 16))
+                .padding(.bottom, isCompact ? 14 : 20)
             )
         }
         .frame(height: headerHeight)

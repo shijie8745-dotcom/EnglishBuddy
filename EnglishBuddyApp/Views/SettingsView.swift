@@ -141,7 +141,7 @@ struct SettingsView: View {
     // MARK: - Settings Header
     /// Fixed header height
     private var headerHeight: CGFloat {
-        let navBarHeight: CGFloat = isCompact ? 64 : 72
+        let navBarHeight: CGFloat = isCompact ? 56 : 64
         return safeAreaTop + navBarHeight
     }
 
@@ -186,8 +186,8 @@ struct SettingsView: View {
                         .frame(width: headerButtonSize, height: headerButtonSize)
                 }
                 .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
-                .padding(.top, safeAreaTop + AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
-                .padding(.bottom, AdaptiveLayout.Dimensions.sectionSpacing(isCompact: isCompact) + 4)
+                .padding(.top, safeAreaTop + (isCompact ? 12 : 16))
+                .padding(.bottom, isCompact ? 14 : 20)
             )
         }
         .frame(height: headerHeight)
