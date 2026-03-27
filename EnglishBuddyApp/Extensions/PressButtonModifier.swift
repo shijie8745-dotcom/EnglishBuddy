@@ -9,8 +9,8 @@ struct PressButtonModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 5)
+            .gesture(
+                DragGesture(minimumDistance: 0)
                     .onChanged { _ in
                         if !isPressed {
                             isPressed = true

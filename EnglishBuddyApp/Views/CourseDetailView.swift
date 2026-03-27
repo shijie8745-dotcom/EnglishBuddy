@@ -190,37 +190,43 @@ struct GoalRow: View {
 
 struct VocabCard: View {
     let item: VocabularyItem
-    @State private var isPressed = false
 
     var body: some View {
-        VStack(spacing: 6) {
-            // Word - centered, no phonetic
-            Text(item.word)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(Color(hex: "1F2937"))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-
-            // Meaning - centered below
-            Text(item.meaning)
-                .font(.system(size: 12))
-                .foregroundStyle(Color(hex: "6B7280"))
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity, minHeight: 60)
-        .padding(.vertical, 10)
-        .padding(.horizontal, 4)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white).shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Color(hex: "FED7AA"), lineWidth: 2))
-        .scaleEffect(isPressed ? 0.95 : 1.0)
-        .onTapGesture {
+        Button(action: {
             TTSService.shared.speak(item.word)
+        }) {
+            VStack(spacing: 6) {
+                // Word - centered, no phonetic
+                Text(item.word)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Color(hex: "1F2937"))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                // Meaning - centered below
+                Text(item.meaning)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color(hex: "6B7280"))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, minHeight: 60)
+            .padding(.vertical, 10)
+            .padding(.horizontal, 4)
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(.white).shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Color(hex: "FED7AA"), lineWidth: 2))
         }
-        .pressEvents {
-            withAnimation(.easeInOut(duration: 0.1)) { isPressed = true }
-        } onRelease: {
-            withAnimation(.easeInOut(duration: 0.1)) { isPressed = false }
-        }
+        .buttonStyle(PressButtonStyle())
+    }
+}
+
+// MARK: - Press Button Style
+struct PressButtonStyle: ButtonStyle {
+    var scaleFactor: CGFloat = 0.95
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? scaleFactor : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 
@@ -248,35 +254,30 @@ struct CompleteButton: View {
 
 struct SentenceCard: View {
     let pattern: SentencePattern
-    @State private var isPressed = false
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(pattern.pattern)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Color(hex: "F97316"))
-            }
-
-            Spacer()
-
-            Text(pattern.meaning)
-                .font(.system(size: 14))
-                .foregroundStyle(Color(hex: "6B7280"))
-                .multilineTextAlignment(.trailing)
-                .lineLimit(2)
-        }
-        .padding(16)
-        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.white).shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2))
-        .scaleEffect(isPressed ? 0.98 : 1.0)
-        .onTapGesture {
+        Button(action: {
             TTSService.shared.speak(pattern.pattern)
+        }) {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(pattern.pattern)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color(hex: "F97316"))
+                }
+
+                Spacer()
+
+                Text(pattern.meaning)
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color(hex: "6B7280"))
+                    .multilineTextAlignment(.trailing)
+                    .lineLimit(2)
+            }
+            .padding(16)
+            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(.white).shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2))
         }
-        .pressEvents {
-            withAnimation(.easeInOut(duration: 0.1)) { isPressed = true }
-        } onRelease: {
-            withAnimation(.easeInOut(duration: 0.1)) { isPressed = false }
-        }
+        .buttonStyle(PressButtonStyle(scaleFactor: 0.98))
     }
 }
 
