@@ -290,9 +290,11 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
         audioEngine?.stop()
         audioEngine?.inputNode.removeTap(onBus: 0)  // 确保释放输入 tap
 
-        if isPlaying {
-            isPlaying = false
-            onPlayingStateChanged?(false)
+        // 确保状态更新和回调在主线程
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, self.isPlaying else { return }
+            self.isPlaying = false
+            self.onPlayingStateChanged?(false)
         }
         print("[QwenTTS] 播放已停止（音频会话保持 playAndRecord 模式）")
     }
@@ -570,8 +572,10 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
         if !player.isPlaying {
             player.play()
-            isPlaying = true
-            onPlayingStateChanged?(true)
+            DispatchQueue.main.async { [weak self] in
+                self?.isPlaying = true
+                self?.onPlayingStateChanged?(true)
+            }
         }
     }
 

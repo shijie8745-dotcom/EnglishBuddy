@@ -565,6 +565,28 @@ if let path = Bundle.main.path(forResource: "yinzhan", ofType: "png") { ... }
 |------|---------|--------|-------|
 | coin.png | 553KB | 9.8KB | 98% |
 | 宠物图片 (10个) | 3.0MB | 0.75MB | 75% |
+| AppIcon.png | 347KB | 722KB | PNG 1024x1024 |
+
+### 7.3 课程主题图标
+
+每个课程单元配有独特的主题图标：
+
+```swift
+var topicIcon: String {
+    switch id {
+    case 1: return "book.fill"           // Our New School - 学校用品
+    case 2: return "person.fill"         // All About Us - 身体部位
+    case 3: return "leaf.fill"           // Fun on the Farm - 农场动物
+    case 4: return "fork.knife"          // Food With Friends - 食物
+    case 5: return "gift.fill"           // Happy Birthday! - 生日派对
+    case 6: return "car.fill"            // A Day Out - 交通工具
+    case 7: return "gamecontroller.fill" // Let's Play! - 运动、游戏
+    case 8: return "house.fill"          // At Home - 家居用品
+    case 9: return "star.fill"           // Happy Holidays! - 节日
+    default: return "book.fill"
+    }
+}
+```
 
 ## 8. UI 组件设计
 
@@ -622,6 +644,49 @@ var body: some View {
     }
 }
 ```
+
+### 8.3 固定 Header 实现
+
+Header 固定在顶部，内容区域可滚动：
+
+```swift
+ZStack {
+    // Background
+    Color(hex: "FEF7ED")
+        .ignoresSafeArea()
+
+    // Scrollable content
+    ScrollView {
+        VStack(spacing: 0) {
+            // Spacer for fixed header
+            Color.clear
+                .frame(height: headerHeight)
+
+            // Content...
+        }
+    }
+
+    // Fixed header (on top of scrollable content)
+    VStack(spacing: 0) {
+        fixedHeaderSection
+            .frame(height: headerHeight)
+        Spacer()
+    }
+}
+
+/// Header height calculation
+private var headerHeight: CGFloat {
+    let navBarHeight: CGFloat = isCompact ? 56 : 64
+    return safeAreaTop + navBarHeight
+}
+```
+
+**统一配置**（适用于 CourseListView、CloudShopView、SettingsView）：
+| 参数 | iPhone (compact) | iPad (regular) |
+|------|-----------------|----------------|
+| navBarHeight | 56pt | 64pt |
+| padding.top | safeAreaTop + 12 | safeAreaTop + 16 |
+| padding.bottom | 14pt | 20pt |
 
 ## 9. 网络层设计
 
@@ -897,6 +962,7 @@ EnglishBuddyApp/
 
 | 日期 | 版本 | 变更内容 |
 |------|------|----------|
+| 2026-03-27 | 2.4 | 新增 App Icon、课程主题图标、固定 Header 实现方案 |
 | 2026-03-27 | 2.3 | 新增历史对话记录技术方案（ChatHistoryStore、时间标签、会话隔离） |
 | 2026-03-26 | 2.2 | 音频会话统一、竞态条件处理、录音优先级机制、超时回退机制 |
 | 2026-03-25 | 2.1 | 新增流式 TTS 技术方案（WebSocket 实时语音合成） |

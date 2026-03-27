@@ -111,7 +111,10 @@ class TTSService: NSObject {
 
         currentPlayingMessageId = messageId
         isSpeaking = true
-        onPlayingStateChanged?(true, messageId)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.onPlayingStateChanged?(true, messageId)
+        }
 
         do {
             audioPlayer = try AVAudioPlayer(data: audioData)
@@ -126,7 +129,9 @@ class TTSService: NSObject {
             print("[TTSService] 缓存播放错误: \(error)")
             isSpeaking = false
             currentPlayingMessageId = nil
-            onPlayingStateChanged?(false, nil)
+            DispatchQueue.main.async { [weak self] in
+                self?.onPlayingStateChanged?(false, nil)
+            }
         }
     }
 
@@ -278,7 +283,9 @@ class TTSService: NSObject {
 
         currentPlayingMessageId = messageId
         isSpeaking = true
-        onPlayingStateChanged?(true, messageId)
+        await MainActor.run {
+            onPlayingStateChanged?(true, messageId)
+        }
 
         do {
             audioPlayer = try AVAudioPlayer(data: data)
@@ -301,7 +308,9 @@ class TTSService: NSObject {
 
         isSpeaking = false
         currentPlayingMessageId = nil
-        onPlayingStateChanged?(false, nil)
+        await MainActor.run {
+            onPlayingStateChanged?(false, nil)
+        }
     }
 
     private func fallbackToSystemTTS(text: String, messageId: UUID?, speed: Float?) {
@@ -310,7 +319,9 @@ class TTSService: NSObject {
         // 设置播放状态
         currentPlayingMessageId = messageId
         isSpeaking = true
-        onPlayingStateChanged?(true, messageId)
+        DispatchQueue.main.async { [weak self] in
+            self?.onPlayingStateChanged?(true, messageId)
+        }
 
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
@@ -334,7 +345,9 @@ class TTSService: NSObject {
         isSpeaking = false
         currentPlayingMessageId = nil
         if wasSpeaking {
-            onPlayingStateChanged?(false, nil)
+            DispatchQueue.main.async { [weak self] in
+                self?.onPlayingStateChanged?(false, nil)
+            }
         }
     }
 }
@@ -345,14 +358,18 @@ extension TTSService: AVSpeechSynthesizerDelegate {
         print("[TTSService] 系统TTS播放结束")
         isSpeaking = false
         currentPlayingMessageId = nil
-        onPlayingStateChanged?(false, nil)
+        DispatchQueue.main.async { [weak self] in
+            self?.onPlayingStateChanged?(false, nil)
+        }
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
         print("[TTSService] 系统TTS播放取消")
         isSpeaking = false
         currentPlayingMessageId = nil
-        onPlayingStateChanged?(false, nil)
+        DispatchQueue.main.async { [weak self] in
+            self?.onPlayingStateChanged?(false, nil)
+        }
     }
 }
 
@@ -362,7 +379,9 @@ extension TTSService: AVAudioPlayerDelegate {
         print("[TTSService] 播放结束，成功: \(flag)")
         isSpeaking = false
         currentPlayingMessageId = nil
-        onPlayingStateChanged?(false, nil)
+        DispatchQueue.main.async { [weak self] in
+            self?.onPlayingStateChanged?(false, nil)
+        }
     }
 }
 
