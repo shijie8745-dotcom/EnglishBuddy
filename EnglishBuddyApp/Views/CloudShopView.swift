@@ -22,10 +22,12 @@ struct CloudShopView: View {
             Color(hex: "FFF7ED")
                 .ignoresSafeArea()
 
+            // Scrollable content
             ScrollView {
                 VStack(spacing: 0) {
-                    // Header with coin balance
-                    cloudShopHeader
+                    // Spacer for fixed header
+                    Color.clear
+                        .frame(height: headerHeight)
 
                     // Pet Shop Section (now called 云朵商店)
                     petShopSection
@@ -55,6 +57,12 @@ struct CloudShopView: View {
                 }
             }
 
+            // Fixed header (on top of scrollable content)
+            VStack(spacing: 0) {
+                fixedCloudShopHeader
+                Spacer()
+            }
+
             // Animation overlays
             if showCheckInAnimation {
                 checkInAnimation
@@ -82,8 +90,16 @@ struct CloudShopView: View {
     }
 
     // MARK: - Header
-    private var cloudShopHeader: some View {
-        ZStack {
+    /// Fixed header height
+    private var headerHeight: CGFloat {
+        let navBarHeight: CGFloat = isCompact ? 56 : 64
+        return safeAreaTop + navBarHeight
+    }
+
+    /// Fixed header section (stays at top while content scrolls)
+    private var fixedCloudShopHeader: some View {
+        let headerButtonSize = AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact)
+        return VStack(spacing: 0) {
             // Orange gradient background
             LinearGradient(
                 colors: [
@@ -93,15 +109,14 @@ struct CloudShopView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-
-            VStack(spacing: 0) {
+            .overlay(
                 HStack {
                     // Back button
                     Button(action: { dismiss() }) {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .semibold))
                             .foregroundStyle(.white)
-                            .frame(width: 44, height: 44)
+                            .frame(width: headerButtonSize, height: headerButtonSize)
                             .background(
                                 Circle()
                                     .fill(.white.opacity(0.2))
@@ -112,22 +127,21 @@ struct CloudShopView: View {
 
                     // Title
                     Text("云朵商店")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .bold))
                         .foregroundStyle(.white)
 
                     Spacer()
 
                     // Empty spacer for balance
                     Color.clear
-                        .frame(width: 44, height: 44)
+                        .frame(width: headerButtonSize, height: headerButtonSize)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 20)
-            }
-            // 为状态栏预留空间
-            .padding(.top, safeAreaTop)
+                .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
+                .padding(.top, safeAreaTop + (isCompact ? 12 : 16))
+                .padding(.bottom, isCompact ? 14 : 20)
+            )
         }
+        .frame(height: headerHeight)
     }
 
     // 获取顶部安全区域高度

@@ -23,10 +23,12 @@ struct SettingsView: View {
             Color(hex: "FEF7ED")
                 .ignoresSafeArea()
 
+            // Scrollable content
             ScrollView {
                 VStack(spacing: 0) {
-                    // Header
-                    settingsHeader
+                    // Spacer for fixed header
+                    Color.clear
+                        .frame(height: headerHeight)
 
                     // Settings content
                     VStack(spacing: 24) {
@@ -52,6 +54,12 @@ struct SettingsView: View {
                     .padding(.top, AdaptiveLayout.Dimensions.sectionSpacing(isCompact: isCompact) * 2)
                     .padding(.bottom, 32)
                 }
+            }
+
+            // Fixed header (on top of scrollable content)
+            VStack(spacing: 0) {
+                fixedSettingsHeader
+                Spacer()
             }
         }
         .navigationBarHidden(true)
@@ -131,9 +139,16 @@ struct SettingsView: View {
     }
 
     // MARK: - Settings Header
-    private var settingsHeader: some View {
+    /// Fixed header height
+    private var headerHeight: CGFloat {
+        let navBarHeight: CGFloat = isCompact ? 56 : 64
+        return safeAreaTop + navBarHeight
+    }
+
+    /// Fixed header section (stays at top while content scrolls)
+    private var fixedSettingsHeader: some View {
         let headerButtonSize = AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact)
-        return ZStack {
+        return VStack(spacing: 0) {
             // Orange gradient background
             LinearGradient(
                 colors: [
@@ -143,8 +158,7 @@ struct SettingsView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-
-            VStack(spacing: 0) {
+            .overlay(
                 HStack {
                     // Back button
                     Button(action: { dismiss() }) {
@@ -172,12 +186,11 @@ struct SettingsView: View {
                         .frame(width: headerButtonSize, height: headerButtonSize)
                 }
                 .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
-                .padding(.top, AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
-                .padding(.bottom, AdaptiveLayout.Dimensions.sectionSpacing(isCompact: isCompact) + 4)
-            }
-            // 为状态栏预留空间
-            .padding(.top, safeAreaTop)
+                .padding(.top, safeAreaTop + (isCompact ? 12 : 16))
+                .padding(.bottom, isCompact ? 14 : 20)
+            )
         }
+        .frame(height: headerHeight)
     }
 
     // 获取顶部安全区域高度
