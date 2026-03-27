@@ -4,6 +4,7 @@ struct ChatView: View {
     let lesson: Lesson
     var isFromPractice: Bool = false
     @State private var viewModel = ChatViewModel()
+    @State private var userAvatarImage: UIImage?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.presentationMode) private var presentationMode
 
@@ -78,6 +79,9 @@ struct ChatView: View {
             viewModel.setupTTSCallbacks()
             viewModel.loadInitialMessages(for: lesson)
             viewModel.requestSpeechAuthorization()
+            if let data = DataStore.shared.loadUserAvatar() {
+                userAvatarImage = UIImage(data: data)
+            }
         }
         .onDisappear {
             // 退出会话时统计学习时长并清理音频缓存
@@ -149,7 +153,8 @@ struct ChatView: View {
                             onTap: {
                                 viewModel.togglePlay(for: message)
                             },
-                            isCompact: isCompact
+                            isCompact: isCompact,
+                            userAvatarImage: userAvatarImage
                         )
                         .id(message.id)
                     }
@@ -267,6 +272,7 @@ struct ChatBubble: View {
     let isPlaying: Bool
     let onTap: () -> Void
     var isCompact: Bool = false
+    var userAvatarImage: UIImage? = nil
 
     var isAI: Bool { message.speaker == .ai }
     private var avatarSize: CGFloat { AdaptiveLayout.Dimensions.chatAvatarSize(isCompact: isCompact) }
@@ -327,11 +333,21 @@ struct ChatBubble: View {
             .overlay(Circle().stroke(Color(hex: "F97316").opacity(0.5), lineWidth: 2))
     }
 
+    @ViewBuilder
     private var userAvatar: some View {
-        Circle()
-            .fill(Color(hex: "DBEAFE"))
-            .frame(width: avatarSize, height: avatarSize)
-            .overlay(Image(systemName: "person.fill").font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact))).foregroundStyle(Color(hex: "3B82F6")))
+        if let avatarImage = userAvatarImage {
+            Image(uiImage: avatarImage)
+                .resizable()
+                .scaledToFill()
+                .frame(width: avatarSize, height: avatarSize)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(Color(hex: "3B82F6").opacity(0.5), lineWidth: 2))
+        } else {
+            Circle()
+                .fill(Color(hex: "DBEAFE"))
+                .frame(width: avatarSize, height: avatarSize)
+                .overlay(Image(systemName: "person.fill").font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact))).foregroundStyle(Color(hex: "3B82F6")))
+        }
     }
 }
 
