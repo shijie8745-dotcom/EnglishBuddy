@@ -62,9 +62,8 @@ class ChatViewModel {
                 }
             }
         } else {
-            // 流式播放结束
-            if let currentId = currentlyPlayingMessageId,
-               let index = messages.firstIndex(where: { $0.id == currentId }) {
+            // 流式播放结束 - 清除所有消息的播放状态（确保 UI 同步）
+            for index in messages.indices {
                 messages[index].isPlaying = false
             }
             currentlyPlayingMessageId = nil
@@ -81,9 +80,8 @@ class ChatViewModel {
                 messages[index].isPlaying = true
             }
         } else {
-            // 非流式播放结束
-            if let currentId = currentlyPlayingMessageId,
-               let index = messages.firstIndex(where: { $0.id == currentId }) {
+            // 非流式播放结束 - 清除所有消息的播放状态（确保 UI 同步）
+            for index in messages.indices {
                 messages[index].isPlaying = false
             }
             currentlyPlayingMessageId = nil

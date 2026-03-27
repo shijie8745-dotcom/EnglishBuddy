@@ -49,13 +49,69 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
     private var isLastBuffer: Bool = false
     private var hasPlaybackCompleted: Bool = false  // 防止重复触发
 
+    // 音频会话中断追踪
+    private var wasPlayingBeforeInterruption: Bool = false
+
     // MARK: - Initialization
 
     private override init() {
         super.init()
+        setupInterruptionObserver()
+    }
+
+    /// 监听音频会话中断通知
+    private func setupInterruptionObserver() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAudioSessionInterruption(_:)),
+            name: AVAudioSession.interruptionNotification,
+            object: nil
+        )
+    }
+
+    @objc private func handleAudioSessionInterruption(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
+            return
+        }
+
+        switch type {
+        case .began:
+            // 中断开始（电话、闹钟等）
+            print("[QwenTTS] 音频会话中断开始")
+            wasPlayingBeforeInterruption = isPlaying
+            if isPlaying {
+                // 停止播放，确保回调在主线程触发
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.playerNode?.stop()
+                    self.audioEngine?.pause()
+                    self.isPlaying = false
+                    self.onPlayingStateChanged?(false)
+                    print("[QwenTTS] 中断时已停止播放并通知 UI")
+                }
+            }
+
+        case .ended:
+            // 中断结束
+            print("[QwenTTS] 音频会话中断结束")
+            if let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt {
+                let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+                if options.contains(.shouldResume) && wasPlayingBeforeInterruption {
+                    // 可以恢复播放（但流式 TTS 数据已丢失，不自动恢复）
+                    print("[QwenTTS] 中断结束，可恢复播放（但不自动恢复）")
+                }
+            }
+            wasPlayingBeforeInterruption = false
+
+        @unknown default:
+            break
+        }
     }
 
     deinit {
+        NotificationCenter.default.removeObserver(self)
         if let cont = connectionContinuation {
             cont.resume(throwing: TTSSError.notConnected)
         }
