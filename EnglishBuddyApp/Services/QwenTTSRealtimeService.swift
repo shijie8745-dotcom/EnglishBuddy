@@ -289,15 +289,11 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
         // 停止音频引擎（但不释放 input tap，因为 TTS 不需要 input）
         audioEngine?.stop()
-        // 注意：不要调用 audioEngine?.inputNode.removeTap(onBus: 0)
-        // 这可能会影响 ASR 的音频引擎
 
-        // 确保状态更新和回调在主线程
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self, self.isPlaying else { return }
-            self.isPlaying = false
-            self.onPlayingStateChanged?(false)
-        }
+        isPlaying = false
+        // 不再派发 onPlayingStateChanged 回调
+        // 调用方（stopAllPlayback）直接处理状态清理
+        // 自然播放完成由 checkPlaybackCompletion() 处理
         print("[QwenTTS] 播放已停止（音频会话保持 playAndRecord 模式）")
     }
 
@@ -494,18 +490,24 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
                 checkPlaybackCompletion()
 
                 // 如果还没有完成，设置一个延迟检查作为备选
-                if !hasPlaybackCompleted {
+                if !hasPlaybackCompleted && pendingBufferCount > 0 {
                     let currentPendingCount = self.pendingBufferCount
                     print("[QwenTTS] 设置延迟检查，当前待播放数: \(currentPendingCount)")
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                    // 延迟时间根据待播放数量动态调整，每个块约 0.3 秒
+                    let delay = max(2.0, Double(currentPendingCount) * 0.4)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
                         guard let self = self else { return }
                         if !self.hasPlaybackCompleted {
                             print("[QwenTTS] 延迟检查触发，强制完成播放")
                             self.hasPlaybackCompleted = true
                             self.isPlaying = false
                             self.onPlayingStateChanged?(false)
+                        } else {
+                            print("[QwenTTS] 延迟检查跳过，hasPlaybackCompleted=\(self.hasPlaybackCompleted), pendingBufferCount=\(self.pendingBufferCount)")
                         }
                     }
+                } else {
+                    print("[QwenTTS] session.finished: 不需要延迟检查, hasPlaybackCompleted=\(self.hasPlaybackCompleted), pendingBufferCount=\(self.pendingBufferCount)")
                 }
 
             case "error":
@@ -594,7 +596,9 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
             // 只在第一次播放时触发状态变化
             if !isPlaying {
                 isPlaying = true
-                onPlayingStateChanged?(true)
+                DispatchQueue.main.async { [weak self] in
+                    self?.onPlayingStateChanged?(true)
+                }
             }
         }
     }

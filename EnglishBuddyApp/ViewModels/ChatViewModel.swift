@@ -18,8 +18,17 @@ class ChatViewModel {
     var showToast = false
     var toastMessage = ""
 
-    /// 当前正在播放的消息ID
-    var currentlyPlayingMessageId: UUID?
+    /// 空UUID表示无播放
+    static let noPlaybackId = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+
+    /// 当前正在播放的消息ID（无播放时使用 noPlaybackId）
+    var currentlyPlayingMessageId: UUID = ChatViewModel.noPlaybackId
+
+    /// 当前活跃的 TTS 会话 ID（用于区分新旧会话的回调）
+    private var currentTTSSessionId: UUID = UUID()
+
+    /// 播放状态变更计数器（用于强制触发 UI 刷新）
+    var playbackStateVersion: Int = 0
 
     /// 会话开始时间（用于计算对话时长）
     private var sessionStartTime: Date? {
@@ -54,18 +63,43 @@ class ChatViewModel {
     private var recordingStartTime: Date?
 
     init() {
+        // 恢复未保存的学习时长
+        recoverPendingStudyTime()
+    }
+
+    /// 设置 TTS 回调（在 View onAppear 时调用）
+    func setupTTSCallbacks() {
+        print("[ChatViewModel] setupTTSCallbacks - 设置回调")
+
         // 设置流式 TTS 播放状态回调
         QwenTTSRealtimeService.shared.onPlayingStateChanged = { [weak self] isPlaying in
-            self?.handleStreamingTTSStateChange(isPlaying: isPlaying)
+            guard let self = self else { return }
+            let sessionId = self.currentTTSSessionId  // 在事件发生时立即捕获
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                print("[ChatViewModel] onPlayingStateChanged 回调: isPlaying=\(isPlaying), sessionId=\(sessionId), instance=\(ObjectIdentifier(self))")
+                self.handleStreamingTTSStateChange(isPlaying: isPlaying, sessionId: sessionId)
+            }
         }
 
         // 设置非流式 TTS 播放状态回调
         TTSService.shared.onPlayingStateChanged = { [weak self] isPlaying, messageId in
-            self?.handleNonStreamingTTSStateChange(isPlaying: isPlaying, messageId: messageId)
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                print("[ChatViewModel] TTSService.onPlayingStateChanged 回调: isPlaying=\(isPlaying), instance=\(ObjectIdentifier(self))")
+                self.handleNonStreamingTTSStateChange(isPlaying: isPlaying, messageId: messageId)
+            }
         }
+    }
 
-        // 恢复未保存的学习时长
-        recoverPendingStudyTime()
+    /// 清除 TTS 回调（在 View onDisappear 时调用）
+    func clearTTSCallbacks() {
+        print("[ChatViewModel] clearTTSCallbacks - 清除回调")
+        QwenTTSRealtimeService.shared.onPlayingStateChanged = nil
+        QwenTTSRealtimeService.shared.onAudioChunk = nil
+        QwenTTSRealtimeService.shared.onComplete = nil
+        QwenTTSRealtimeService.shared.onError = nil
+        TTSService.shared.onPlayingStateChanged = nil
     }
 
     /// 恢复未保存的学习时长（App 崩溃后自动保存）
@@ -102,30 +136,44 @@ class ChatViewModel {
 
     /// 处理流式 TTS 播放状态变化
     @MainActor
-    private func handleStreamingTTSStateChange(isPlaying: Bool) {
-        print("[ChatViewModel] handleStreamingTTSStateChange: isPlaying=\(isPlaying), streamingPlayingMessageId=\(String(describing: streamingPlayingMessageId))")
+    private func handleStreamingTTSStateChange(isPlaying: Bool, sessionId: UUID) {
+        // 检查会话 ID 是否匹配（防止旧会话的回调干扰新会话）
+        guard sessionId == currentTTSSessionId else {
+            print("[ChatViewModel] handleStreamingTTSStateChange: 忽略旧会话回调，当前会话=\(currentTTSSessionId)，回调会话=\(sessionId)")
+            return
+        }
+
+        print("[ChatViewModel] handleStreamingTTSStateChange: isPlaying=\(isPlaying), streamingPlayingMessageId=\(String(describing: streamingPlayingMessageId)), currentlyPlayingMessageId=\(String(describing: currentlyPlayingMessageId))")
 
         if isPlaying {
-            // 流式播放开始，更新消息状态
+            // 流式播放开始，更新消息状态（作为 onAudioChunk 的备用）
             if let streamingId = streamingPlayingMessageId {
                 currentlyPlayingMessageId = streamingId
                 if let index = messages.firstIndex(where: { $0.id == streamingId }) {
                     messages[index].isPlaying = true
+                    print("[ChatViewModel] handleStreamingTTSStateChange: 设置 isPlaying=true, index: \(index)")
                 }
             }
         } else {
             // 流式播放结束 - 清除所有消息的播放状态（确保 UI 同步）
+            print("[ChatViewModel] handleStreamingTTSStateChange: 清除播放状态，当前 currentlyPlayingMessageId=\(String(describing: currentlyPlayingMessageId))")
             for index in messages.indices {
-                messages[index].isPlaying = false
+                if messages[index].isPlaying {
+                    messages[index].isPlaying = false
+                    print("[ChatViewModel] handleStreamingTTSStateChange: 清除 index \(index) 的 isPlaying")
+                }
             }
-            currentlyPlayingMessageId = nil
+            currentlyPlayingMessageId = Self.noPlaybackId
             streamingPlayingMessageId = nil
+            playbackStateVersion += 1  // 强制触发 UI 刷新
+            print("[ChatViewModel] handleStreamingTTSStateChange: ✅ 已清除 currentlyPlayingMessageId, playbackStateVersion=\(playbackStateVersion)")
         }
     }
 
     /// 处理非流式 TTS 播放状态变化
     @MainActor
     private func handleNonStreamingTTSStateChange(isPlaying: Bool, messageId: UUID?) {
+        print("[ChatViewModel] handleNonStreamingTTSStateChange: isPlaying=\(isPlaying), messageId=\(String(describing: messageId))")
         if isPlaying, let id = messageId {
             // 非流式播放开始
             currentlyPlayingMessageId = id
@@ -137,7 +185,9 @@ class ChatViewModel {
             for index in messages.indices {
                 messages[index].isPlaying = false
             }
-            currentlyPlayingMessageId = nil
+            currentlyPlayingMessageId = Self.noPlaybackId
+            playbackStateVersion += 1  // 强制触发 UI 刷新
+            print("[ChatViewModel] handleNonStreamingTTSStateChange: ✅ 已清除 currentlyPlayingMessageId, playbackStateVersion=\(playbackStateVersion)")
         }
     }
 
@@ -167,7 +217,7 @@ class ChatViewModel {
         for index in messages.indices {
             messages[index].isPlaying = false
         }
-        currentlyPlayingMessageId = nil
+        currentlyPlayingMessageId = Self.noPlaybackId
 
         // 用户消息：播放用户录音（如果有）
         if message.speaker == .user {
@@ -255,8 +305,11 @@ class ChatViewModel {
         // 停止非流式 TTS 播放
         TTSService.shared.stop()
 
+        // 生成新的会话 ID（使后续的旧会话回调失效）
+        currentTTSSessionId = UUID()
+
         // 清除播放状态和动画
-        currentlyPlayingMessageId = nil
+        currentlyPlayingMessageId = Self.noPlaybackId
         streamingPlayingMessageId = nil
 
         // 清除所有消息的播放状态
@@ -264,7 +317,7 @@ class ChatViewModel {
             messages[index].isPlaying = false
         }
 
-        print("[ChatViewModel] 已停止所有播放，释放音频会话")
+        print("[ChatViewModel] 已停止所有播放，释放音频会话，新 sessionId=\(currentTTSSessionId)")
     }
 
     /// 显示网络错误 Toast 通知
@@ -298,7 +351,7 @@ class ChatViewModel {
 
     func loadInitialMessages(for lesson: Lesson) {
         currentLesson = lesson
-        currentlyPlayingMessageId = nil
+        currentlyPlayingMessageId = Self.noPlaybackId
         sessionStartTime = Date()
         sessionEarnedCoins = 0
         checkInMessage = nil
@@ -484,19 +537,26 @@ class ChatViewModel {
             // 标记正在流式播放
             streamingPlayingMessageId = messageId
 
+            // 捕获当前会话 ID
+            let sessionId = currentTTSSessionId
+
             // 用于等待音频完成的信号
             let audioComplete = AsyncStream<Bool?> { continuation in
                 // 标记是否已完成
                 var isFinished = false
 
                 QwenTTSRealtimeService.shared.onAudioChunk = { [weak self] _ in
-                    Task { @MainActor in
-                        print("[ChatViewModel] onAudioChunk 回调，messageId: \(messageId), currentlyPlayingMessageId: \(String(describing: self?.currentlyPlayingMessageId))")
+                    Task { @MainActor [weak self] in
+                        guard let self = self, self.currentTTSSessionId == sessionId else {
+                            print("[ChatViewModel] onAudioChunk: 忽略旧会话回调")
+                            return
+                        }
+                        print("[ChatViewModel] onAudioChunk 回调，messageId: \(messageId), currentlyPlayingMessageId: \(String(describing: self.currentlyPlayingMessageId))")
                         // 只在第一次设置播放状态
-                        if self?.currentlyPlayingMessageId == nil {
-                            self?.currentlyPlayingMessageId = messageId
-                            if let index = self?.messages.firstIndex(where: { $0.id == messageId }) {
-                                self?.messages[index].isPlaying = true
+                        if self.currentlyPlayingMessageId == Self.noPlaybackId {
+                            self.currentlyPlayingMessageId = messageId
+                            if let index = self.messages.firstIndex(where: { $0.id == messageId }) {
+                                self.messages[index].isPlaying = true
                                 print("[ChatViewModel] ✅ 设置消息 isPlaying=true, index: \(index)")
                             }
                         }
@@ -504,23 +564,27 @@ class ChatViewModel {
                 }
 
                 QwenTTSRealtimeService.shared.onComplete = { [weak self] audioData in
-                    Task { @MainActor in
+                    Task { @MainActor [weak self] in
+                        guard let self = self, self.currentTTSSessionId == sessionId else {
+                            print("[ChatViewModel] onComplete: 忽略旧会话回调")
+                            return
+                        }
                         guard !isFinished else { return }
                         isFinished = true
                         print("[ChatViewModel] onComplete 回调，音频长度: \(audioData.count)")
                         // 只保存音频数据，动画由 updatePlayingState 控制
-                        if let index = self?.messages.firstIndex(where: { $0.id == messageId }) {
-                            self?.messages[index].audioData = audioData
+                        if let index = self.messages.firstIndex(where: { $0.id == messageId }) {
+                            self.messages[index].audioData = audioData
                             print("[ChatViewModel] 音频已缓存到消息，长度: \(audioData.count)")
                             // 清理超出限制的音频缓存
-                            self?.cleanupAudioCacheIfNeeded()
+                            self.cleanupAudioCacheIfNeeded()
                         }
                         continuation.yield(true)
                         continuation.finish()
                     }
                 }
 
-                QwenTTSRealtimeService.shared.onError = { error in
+                QwenTTSRealtimeService.shared.onError = { [weak self] error in
                     guard !isFinished else { return }
                     isFinished = true
                     print("[ChatViewModel] TTS 错误: \(error)")
@@ -662,6 +726,7 @@ class ChatViewModel {
     }
 
     func startRecording() {
+        print("[ChatViewModel] startRecording 被调用，ASR isReady: \(AliyunASRService.shared.isReady)")
         // ===== 关键步骤：先停止 TTS 播放和动画 =====
         // 用户录音优先级高于 TTS 播放
         stopAllPlayback()

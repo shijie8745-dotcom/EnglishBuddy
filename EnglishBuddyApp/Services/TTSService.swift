@@ -341,14 +341,10 @@ class TTSService: NSObject {
     func stop() {
         synthesizer.stopSpeaking(at: .immediate)
         audioPlayer?.stop()
-        let wasSpeaking = isSpeaking
         isSpeaking = false
         currentPlayingMessageId = nil
-        if wasSpeaking {
-            DispatchQueue.main.async { [weak self] in
-                self?.onPlayingStateChanged?(false, nil)
-            }
-        }
+        // 不再派发 onPlayingStateChanged 回调
+        // 调用方（stopAllPlayback）直接处理状态清理
     }
 }
 
