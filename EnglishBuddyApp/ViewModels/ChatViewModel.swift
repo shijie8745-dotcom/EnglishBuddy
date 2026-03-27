@@ -639,9 +639,17 @@ class ChatViewModel {
             }
 
         } catch {
-            print("[ChatViewModel] 流式 TTS 失败，回退到非流式: \(error)")
+            print("[ChatViewModel] 流式 TTS 失败: \(error)")
             streamingPlayingMessageId = nil
+
+            // 如果会话已被新会话取代（用户打断了播放），不回退到非流式
+            guard sessionId == currentTTSSessionId else {
+                print("[ChatViewModel] 流式 TTS 会话已被取代，跳过非流式回退")
+                return
+            }
+
             // 回退到非流式 TTS
+            print("[ChatViewModel] 回退到非流式 TTS")
             await addAIMessageWithNonStreamingTTS(text, messageId: messageId)
         }
     }
