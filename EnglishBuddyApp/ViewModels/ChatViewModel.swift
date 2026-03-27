@@ -491,11 +491,13 @@ class ChatViewModel {
 
                 QwenTTSRealtimeService.shared.onAudioChunk = { [weak self] _ in
                     Task { @MainActor in
+                        print("[ChatViewModel] onAudioChunk 回调，messageId: \(messageId), currentlyPlayingMessageId: \(String(describing: self?.currentlyPlayingMessageId))")
                         // 只在第一次设置播放状态
                         if self?.currentlyPlayingMessageId == nil {
                             self?.currentlyPlayingMessageId = messageId
                             if let index = self?.messages.firstIndex(where: { $0.id == messageId }) {
                                 self?.messages[index].isPlaying = true
+                                print("[ChatViewModel] ✅ 设置消息 isPlaying=true, index: \(index)")
                             }
                         }
                     }

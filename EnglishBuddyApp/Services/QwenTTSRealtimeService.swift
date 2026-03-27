@@ -460,7 +460,9 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
                         print("[QwenTTS] 解码成功，音频数据长度: \(audioData.count)")
                         self.accumulatedAudioData.append(audioData)
                         self.playAudioChunk(audioData)
+                        print("[QwenTTS] 准备调用 onAudioChunk 回调, 是否设置: \(self.onAudioChunk != nil)")
                         self.onAudioChunk?(audioData)
+                        print("[QwenTTS] onAudioChunk 回调已调用")
                     } else {
                         print("[QwenTTS] Base64 解码失败")
                     }
