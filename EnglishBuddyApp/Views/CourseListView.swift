@@ -128,7 +128,7 @@ struct CourseListView: View {
 
     /// Fixed header section (stays at top while content scrolls)
     private var fixedHeaderSection: some View {
-        ZStack {
+        VStack(spacing: 0) {
             // Orange gradient background
             LinearGradient(
                 colors: [
@@ -138,43 +138,45 @@ struct CourseListView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
+            .overlay(
+                // Navigation bar area
+                HStack {
+                    // Title and user avatar
+                    HStack(spacing: 12) {
+                        // User avatar (replaces pet avatar)
+                        userAvatar
 
-            // Navigation bar area
-            HStack {
-                // Title and user avatar
-                HStack(spacing: 12) {
-                    // User avatar (replaces pet avatar)
-                    userAvatar
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("EnglishBuddy")
+                                .font(.system(size: AdaptiveLayout.Fonts.titleSize(isCompact: isCompact), weight: .bold))
+                                .foregroundStyle(.white)
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("EnglishBuddy")
-                            .font(.system(size: AdaptiveLayout.Fonts.titleSize(isCompact: isCompact), weight: .bold))
-                            .foregroundStyle(.white)
+                            Text("和 Emii 一起学英语")
+                                .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
+                                .foregroundStyle(.white.opacity(0.9))
+                        }
+                    }
 
-                        Text("和 Emii 一起学英语")
-                            .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
-                            .foregroundStyle(.white.opacity(0.9))
+                    Spacer()
+
+                    // Settings button
+                    NavigationLink(destination: SettingsView(user: viewModel.user)) {
+                        Circle()
+                            .fill(.white.opacity(0.2))
+                            .frame(width: AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact), height: AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact))
+                            .overlay(
+                                Image(systemName: "gear")
+                                    .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact)))
+                                    .foregroundStyle(.white)
+                            )
                     }
                 }
-
-                Spacer()
-
-                // Settings button
-                NavigationLink(destination: SettingsView(user: viewModel.user)) {
-                    Circle()
-                        .fill(.white.opacity(0.2))
-                        .frame(width: AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact), height: AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact))
-                        .overlay(
-                            Image(systemName: "gear")
-                                .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact)))
-                                .foregroundStyle(.white)
-                        )
-                }
-            }
-            .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
-            .padding(.top, safeAreaTop + (isCompact ? 12 : 16))
-            .padding(.bottom, isCompact ? 14 : 20)
+                .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
+                .padding(.top, safeAreaTop + (isCompact ? 12 : 16))
+                .padding(.bottom, isCompact ? 14 : 20)
+            )
         }
+        .frame(height: headerHeight)
     }
 
     private func loadAvatar() {

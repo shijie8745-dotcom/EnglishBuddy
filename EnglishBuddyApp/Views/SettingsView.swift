@@ -148,7 +148,7 @@ struct SettingsView: View {
     /// Fixed header section (stays at top while content scrolls)
     private var fixedSettingsHeader: some View {
         let headerButtonSize = AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact)
-        return ZStack {
+        return VStack(spacing: 0) {
             // Orange gradient background
             LinearGradient(
                 colors: [
@@ -158,37 +158,39 @@ struct SettingsView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
+            .overlay(
+                HStack {
+                    // Back button
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: headerButtonSize, height: headerButtonSize)
+                            .background(
+                                Circle()
+                                    .fill(.white.opacity(0.2))
+                            )
+                    }
 
-            HStack {
-                // Back button
-                Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .semibold))
+                    Spacer()
+
+                    // Title
+                    Text("设置")
+                        .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .bold))
                         .foregroundStyle(.white)
+
+                    Spacer()
+
+                    // Spacer for alignment
+                    Color.clear
                         .frame(width: headerButtonSize, height: headerButtonSize)
-                        .background(
-                            Circle()
-                                .fill(.white.opacity(0.2))
-                        )
                 }
-
-                Spacer()
-
-                // Title
-                Text("设置")
-                    .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .bold))
-                    .foregroundStyle(.white)
-
-                Spacer()
-
-                // Spacer for alignment
-                Color.clear
-                    .frame(width: headerButtonSize, height: headerButtonSize)
-            }
-            .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
-            .padding(.top, safeAreaTop + AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
-            .padding(.bottom, AdaptiveLayout.Dimensions.sectionSpacing(isCompact: isCompact) + 4)
+                .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
+                .padding(.top, safeAreaTop + AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
+                .padding(.bottom, AdaptiveLayout.Dimensions.sectionSpacing(isCompact: isCompact) + 4)
+            )
         }
+        .frame(height: headerHeight)
     }
 
     // 获取顶部安全区域高度

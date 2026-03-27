@@ -98,7 +98,7 @@ struct CloudShopView: View {
 
     /// Fixed header section (stays at top while content scrolls)
     private var fixedCloudShopHeader: some View {
-        ZStack {
+        VStack(spacing: 0) {
             // Orange gradient background
             LinearGradient(
                 colors: [
@@ -108,39 +108,41 @@ struct CloudShopView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
+            .overlay(
+                VStack(spacing: 0) {
+                    HStack {
+                        // Back button
+                        Button(action: { dismiss() }) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(width: 44, height: 44)
+                                .background(
+                                    Circle()
+                                        .fill(.white.opacity(0.2))
+                                )
+                        }
 
-            VStack(spacing: 0) {
-                HStack {
-                    // Back button
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 20, weight: .semibold))
+                        Spacer()
+
+                        // Title
+                        Text("云朵商店")
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundStyle(.white)
+
+                        Spacer()
+
+                        // Empty spacer for balance
+                        Color.clear
                             .frame(width: 44, height: 44)
-                            .background(
-                                Circle()
-                                    .fill(.white.opacity(0.2))
-                            )
                     }
-
-                    Spacer()
-
-                    // Title
-                    Text("云朵商店")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(.white)
-
-                    Spacer()
-
-                    // Empty spacer for balance
-                    Color.clear
-                        .frame(width: 44, height: 44)
+                    .padding(.horizontal, 16)
+                    .padding(.top, safeAreaTop + 16)
+                    .padding(.bottom, 20)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, safeAreaTop + 16)
-                .padding(.bottom, 20)
-            }
+            )
         }
+        .frame(height: headerHeight)
     }
 
     // 获取顶部安全区域高度
