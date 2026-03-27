@@ -6,6 +6,7 @@ struct ChatView: View {
     @State private var viewModel = ChatViewModel()
     @Environment(\.dismiss) private var dismiss
     @Environment(\.presentationMode) private var presentationMode
+    @Environment(\.scenePhase) private var scenePhase
 
     // Adaptive layout
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -82,6 +83,12 @@ struct ChatView: View {
             // 退出会话时统计学习时长并清理音频缓存
             viewModel.finishSession()
             viewModel.clearAudioCache()
+        }
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            // 进入后台或非活跃状态时保存学习进度
+            if newPhase == .background || newPhase == .inactive {
+                viewModel.savePendingStudyTime()
+            }
         }
         .navigationBarHidden(true)
         .toolbar(.hidden, for: .navigationBar)
