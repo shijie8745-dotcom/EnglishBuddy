@@ -103,6 +103,8 @@ class ChatViewModel {
     /// 处理流式 TTS 播放状态变化
     @MainActor
     private func handleStreamingTTSStateChange(isPlaying: Bool) {
+        print("[ChatViewModel] handleStreamingTTSStateChange: isPlaying=\(isPlaying), streamingPlayingMessageId=\(String(describing: streamingPlayingMessageId))")
+
         if isPlaying {
             // 流式播放开始，更新消息状态
             if let streamingId = streamingPlayingMessageId {

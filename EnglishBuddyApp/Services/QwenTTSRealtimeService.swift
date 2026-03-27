@@ -489,8 +489,21 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
                 self.isLastBuffer = true
 
                 // 检查是否应该立即结束播放
-                DispatchQueue.main.async { [weak self] in
-                    self?.checkPlaybackCompletion()
+                checkPlaybackCompletion()
+
+                // 如果还没有完成，设置一个延迟检查作为备选
+                if !hasPlaybackCompleted {
+                    let currentPendingCount = self.pendingBufferCount
+                    print("[QwenTTS] 设置延迟检查，当前待播放数: \(currentPendingCount)")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                        guard let self = self else { return }
+                        if !self.hasPlaybackCompleted {
+                            print("[QwenTTS] 延迟检查触发，强制完成播放")
+                            self.hasPlaybackCompleted = true
+                            self.isPlaying = false
+                            self.onPlayingStateChanged?(false)
+                        }
+                    }
                 }
 
             case "error":
@@ -513,7 +526,10 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
     private func playAudioChunk(_ data: Data) {
         guard let format = audioFormat,
               let engine = audioEngine,
-              let player = playerNode else { return }
+              let player = playerNode else {
+            print("[QwenTTS] playAudioChunk: 音频引擎未初始化")
+            return
+        }
 
         // 确保音频引擎正在运行（可能被系统中断后停止）
         if !engine.isRunning {
@@ -532,9 +548,15 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
         }
 
         let frameCount = UInt32(data.count / 2)  // 16bit = 2 bytes per sample
-        guard frameCount > 0 else { return }
+        guard frameCount > 0 else {
+            print("[QwenTTS] playAudioChunk: frameCount 为 0")
+            return
+        }
 
-        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else { return }
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else {
+            print("[QwenTTS] playAudioChunk: 无法创建 buffer")
+            return
+        }
 
         buffer.frameLength = frameCount
 
@@ -552,36 +574,40 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
         // 增加待播放计数
         pendingBufferCount += 1
+        print("[QwenTTS] 调度音频块，待播放数: \(pendingBufferCount)")
 
-        player.scheduleBuffer(buffer, at: nil, options: []) {
-            // 音频块播放完成
-            DispatchQueue.main.async { [weak self] in
+        player.scheduleBuffer(buffer, at: nil, options: []) { [weak self] in
+            // 音频块播放完成 - 注意：这个回调可能在后台线程
+            DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.pendingBufferCount -= 1
-                print("[QwenTTS] 音频块播放完成，待播放数: \(self.pendingBufferCount)")
+                print("[QwenTTS] 音频块播放完成回调，待播放数: \(self.pendingBufferCount)")
                 self.checkPlaybackCompletion()
             }
         }
 
         if !player.isPlaying {
             player.play()
-            DispatchQueue.main.async { [weak self] in
-                self?.isPlaying = true
-                self?.onPlayingStateChanged?(true)
+            print("[QwenTTS] 开始播放")
+            // 只在第一次播放时触发状态变化
+            if !isPlaying {
+                isPlaying = true
+                onPlayingStateChanged?(true)
             }
         }
     }
 
     /// 检查播放是否完成（数据接收完 + 所有音频块播放完）
     private func checkPlaybackCompletion() {
+        print("[QwenTTS] checkPlaybackCompletion: isDataComplete=\(isDataComplete), pendingBufferCount=\(pendingBufferCount), hasPlaybackCompleted=\(hasPlaybackCompleted)")
+
         // 必须满足：数据接收完成 + 没有待播放的块 + 还未触发完成回调
         guard isDataComplete && pendingBufferCount <= 0 && !hasPlaybackCompleted else {
-            print("[QwenTTS] checkPlaybackCompletion: 不满足条件 - isDataComplete: \(isDataComplete), pendingBufferCount: \(pendingBufferCount), hasPlaybackCompleted: \(hasPlaybackCompleted)")
             return
         }
 
         hasPlaybackCompleted = true
-        print("[QwenTTS] 播放真正完成")
+        print("[QwenTTS] ✅ 播放真正完成，触发 onPlayingStateChanged(false)")
         isPlaying = false
         onPlayingStateChanged?(false)
     }
