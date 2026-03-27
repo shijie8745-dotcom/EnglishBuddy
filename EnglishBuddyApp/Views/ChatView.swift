@@ -75,6 +75,7 @@ struct ChatView: View {
             }
         }
         .onAppear {
+            viewModel.setupTTSCallbacks()
             viewModel.loadInitialMessages(for: lesson)
             viewModel.requestSpeechAuthorization()
         }
@@ -82,6 +83,7 @@ struct ChatView: View {
             // 退出会话时统计学习时长并清理音频缓存
             viewModel.finishSession()
             viewModel.clearAudioCache()
+            viewModel.clearTTSCallbacks()
         }
         .navigationBarHidden(true)
         .toolbar(.hidden, for: .navigationBar)
@@ -354,7 +356,12 @@ struct PlayingIndicator: View {
         }
         .frame(width: 24, height: 24)
         .onAppear {
+            print("[PlayingIndicator] onAppear")
             animate = true
+        }
+        .onDisappear {
+            print("[PlayingIndicator] onDisappear")
+            animate = false
         }
     }
 }
@@ -453,6 +460,8 @@ struct VoiceInputContainer: View {
     private var inputHeight: CGFloat { AdaptiveLayout.Dimensions.voiceInputHeight(isCompact: isCompact) }
     private var buttonHeight: CGFloat { AdaptiveLayout.Dimensions.bottomButtonHeight(isCompact: isCompact) }
 
+    private let cancelButtonCoordinateSpace = "cancelButtonArea"
+
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -471,15 +480,15 @@ struct VoiceInputContainer: View {
 
                     // Cancel button - positioned 24px above voice button
                     CancelButton(isVisible: viewModel.isRecording, isHighlighted: isInCancelZone, isCompact: isCompact)
-                        // Get the frame of cancel button in global coordinates
+                        // Get the frame of cancel button using named coordinate space
                         .background(
                             GeometryReader { cancelGeometry in
                                 Color.clear
-                                    .onChange(of: cancelGeometry.frame(in: .global)) { oldFrame, newFrame in
+                                    .onChange(of: cancelGeometry.frame(in: .named(cancelButtonCoordinateSpace))) { oldFrame, newFrame in
                                         cancelButtonFrame = newFrame
                                     }
                                     .onAppear {
-                                        cancelButtonFrame = cancelGeometry.frame(in: .global)
+                                        cancelButtonFrame = cancelGeometry.frame(in: .named(cancelButtonCoordinateSpace))
                                     }
                             }
                         )
@@ -504,10 +513,8 @@ struct VoiceInputContainer: View {
                     y: geometry.size.height / 2 - 8 // Vertically centered in container, moved up more
                 )
                 .gesture(
-                    DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                    DragGesture(minimumDistance: 0, coordinateSpace: .named(cancelButtonCoordinateSpace))
                         .onChanged { value in
-                            print("[ChatView] DragGesture onChanged, isPressed: \(isPressed), isConnecting: \(isConnecting), isPreparing: \(viewModel.isPreparing)")
-
                             // 正在准备时不允许录音
                             guard !viewModel.isPreparing else { return }
 
@@ -519,7 +526,6 @@ struct VoiceInputContainer: View {
 
                                 isPressed = true
                                 isConnecting = true
-                                print("[ChatView] 开始连接并录音...")
 
                                 // 启动录音（内部会处理连接）
                                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -529,7 +535,7 @@ struct VoiceInputContainer: View {
 
                             // 只有在录音真正开始后才检查取消区域
                             if viewModel.isRecording {
-                                // Check if finger is over cancel button frame
+                                // Check if finger is over cancel button frame (same coordinate space)
                                 let fingerLocation = value.location
                                 // 使用屏幕宽度的 8% 作为扩展区域，适配不同屏幕
                                 let expandMargin = UIScreen.main.bounds.width * 0.08
@@ -545,7 +551,6 @@ struct VoiceInputContainer: View {
                             }
                         }
                         .onEnded { _ in
-                            print("[ChatView] DragGesture onEnded, isInCancelZone: \(isInCancelZone), isRecording: \(viewModel.isRecording), isConnecting: \(isConnecting)")
                             isPressed = false
                             isConnecting = false
 
@@ -562,6 +567,7 @@ struct VoiceInputContainer: View {
                         }
                 )
             }
+            .coordinateSpace(name: cancelButtonCoordinateSpace)
         }
         .frame(height: inputHeight) // Match the input area background height
     }
