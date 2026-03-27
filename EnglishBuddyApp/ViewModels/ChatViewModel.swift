@@ -613,8 +613,13 @@ class ChatViewModel {
         isLoading = true
 
         do {
-            // Get current messages as history (excluding the last user message we just added)
-            let historyMessages = messages.dropLast()
+            // 只发送当前会话的消息作为历史（不包含历史会话消息）
+            let currentSessionMessages = messages.filter { message in
+                guard let sessionStart = sessionStartTime else { return true }
+                return message.timestamp >= sessionStart
+            }
+            // 排除最后一条（刚刚添加的用户消息）
+            let historyMessages = currentSessionMessages.dropLast()
             let response = try await AIChatService.shared.sendMessage(text, lessonId: currentLesson?.id ?? 1, historyMessages: Array(historyMessages))
             print("=== AI原始响应 ===")
             print(response)
