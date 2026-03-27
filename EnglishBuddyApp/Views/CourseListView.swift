@@ -51,10 +51,12 @@ struct CourseListView: View {
                     Color(hex: "FEF7ED")
                         .ignoresSafeArea()
 
+                    // Scrollable content
                     ScrollView {
                         VStack(spacing: 0) {
-                            // Orange gradient header with pet
-                            headerSection
+                            // Spacer for fixed header
+                            Color.clear
+                                .frame(height: headerHeight)
 
                             // Practice & Cloud Shop Row
                             practiceAndCloudShopSection
@@ -72,6 +74,12 @@ struct CourseListView: View {
                                 .padding(.top, 24)
                                 .padding(.bottom, 140)
                         }
+                    }
+
+                    // Fixed header (on top of scrollable content)
+                    VStack(spacing: 0) {
+                        fixedHeaderSection
+                        Spacer()
                     }
 
                     // Floating draggable pet image - bottom right
@@ -112,67 +120,67 @@ struct CourseListView: View {
         }
     }
 
+    /// Fixed header height
+    private var headerHeight: CGFloat {
+        let navBarHeight: CGFloat = isCompact ? 56 : 64
+        return safeAreaTop + navBarHeight
+    }
+
+    /// Fixed header section (stays at top while content scrolls)
+    private var fixedHeaderSection: some View {
+        ZStack {
+            // Orange gradient background
+            LinearGradient(
+                colors: [
+                    Color(hex: "F97316"),
+                    Color(hex: "FB923C")
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            // Navigation bar area
+            HStack {
+                // Title and user avatar
+                HStack(spacing: 12) {
+                    // User avatar (replaces pet avatar)
+                    userAvatar
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("EnglishBuddy")
+                            .font(.system(size: AdaptiveLayout.Fonts.titleSize(isCompact: isCompact), weight: .bold))
+                            .foregroundStyle(.white)
+
+                        Text("和 Emii 一起学英语")
+                            .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
+                            .foregroundStyle(.white.opacity(0.9))
+                    }
+                }
+
+                Spacer()
+
+                // Settings button
+                NavigationLink(destination: SettingsView(user: viewModel.user)) {
+                    Circle()
+                        .fill(.white.opacity(0.2))
+                        .frame(width: AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact), height: AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact))
+                        .overlay(
+                            Image(systemName: "gear")
+                                .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact)))
+                                .foregroundStyle(.white)
+                        )
+                }
+            }
+            .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
+            .padding(.top, safeAreaTop + (isCompact ? 12 : 16))
+            .padding(.bottom, isCompact ? 14 : 20)
+        }
+    }
+
     private func loadAvatar() {
         if let data = DataStore.loadUserAvatar(),
            let image = UIImage(data: data) {
             avatarImage = image
-        }
-    }
-
-    // MARK: - Header Section
-    private var headerSection: some View {
-        VStack(spacing: 0) {
-            ZStack {
-                // Orange gradient background
-                LinearGradient(
-                    colors: [
-                        Color(hex: "F97316"),
-                        Color(hex: "FB923C")
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                VStack(spacing: 0) {
-                    // Navigation bar area
-                    HStack {
-                        // Title and user avatar
-                        HStack(spacing: 12) {
-                            // User avatar (replaces pet avatar)
-                            userAvatar
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("EnglishBuddy")
-                                    .font(.system(size: AdaptiveLayout.Fonts.titleSize(isCompact: isCompact), weight: .bold))
-                                    .foregroundStyle(.white)
-
-                                Text("和 Emii 一起学英语")
-                                    .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact)))
-                                    .foregroundStyle(.white.opacity(0.9))
-                            }
-                        }
-
-                        Spacer()
-
-                        // Settings button
-                        NavigationLink(destination: SettingsView(user: viewModel.user)) {
-                            Circle()
-                                .fill(.white.opacity(0.2))
-                                .frame(width: AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact), height: AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact))
-                                .overlay(
-                                    Image(systemName: "gear")
-                                        .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact)))
-                                        .foregroundStyle(.white)
-                                )
-                        }
-                    }
-                    .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
-                    .padding(.top, isCompact ? 12 : 16)
-                    .padding(.bottom, isCompact ? 14 : 20)
-                }
-                // 为状态栏预留空间
-                .padding(.top, safeAreaTop)
-            }
         }
     }
 
@@ -479,15 +487,28 @@ struct LessonRow: View {
     var body: some View {
         let iconSize = AdaptiveLayout.Dimensions.statIconSize(isCompact: isCompact)
         HStack(spacing: 16) {
-            // Status icon
+            // Topic icon with completion indicator
             ZStack {
                 Circle()
-                    .fill(statusBackgroundColor)
+                    .fill(Color(hex: lesson.topicIconColor).opacity(0.1))
                     .frame(width: iconSize, height: iconSize)
 
-                Image(systemName: statusIcon)
+                Image(systemName: lesson.topicIcon)
                     .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact)))
-                    .foregroundStyle(statusForegroundColor)
+                    .foregroundStyle(Color(hex: lesson.topicIconColor))
+
+                // Completion checkmark overlay
+                if status == .completed {
+                    Circle()
+                        .fill(Color(hex: "10B981"))
+                        .frame(width: 16, height: 16)
+                        .overlay(
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundStyle(.white)
+                        )
+                        .offset(x: iconSize/2 - 8, y: iconSize/2 - 8)
+                }
             }
 
             // Lesson info
@@ -504,7 +525,7 @@ struct LessonRow: View {
 
             Spacer()
 
-            // Lock icon if locked
+            // Lock icon if locked, otherwise chevron
             if status == .locked {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 14))
@@ -522,39 +543,6 @@ struct LessonRow: View {
                 .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
         )
         .opacity(status == .locked ? 0.7 : 1.0)
-    }
-
-    private var statusIcon: String {
-        switch status {
-        case .completed:
-            return "checkmark.circle.fill"
-        case .inProgress:
-            return "play.circle.fill"
-        case .locked:
-            return "lock.circle.fill"
-        }
-    }
-
-    private var statusBackgroundColor: Color {
-        switch status {
-        case .completed:
-            return Color(hex: "10B981").opacity(0.1)
-        case .inProgress:
-            return Color(hex: "F97316").opacity(0.1)
-        case .locked:
-            return Color(hex: "E5E7EB")
-        }
-    }
-
-    private var statusForegroundColor: Color {
-        switch status {
-        case .completed:
-            return Color(hex: "10B981")
-        case .inProgress:
-            return Color(hex: "F97316")
-        case .locked:
-            return Color(hex: "9CA3AF")
-        }
     }
 }
 

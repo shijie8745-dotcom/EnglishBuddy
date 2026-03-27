@@ -22,10 +22,12 @@ struct CloudShopView: View {
             Color(hex: "FFF7ED")
                 .ignoresSafeArea()
 
+            // Scrollable content
             ScrollView {
                 VStack(spacing: 0) {
-                    // Header with coin balance
-                    cloudShopHeader
+                    // Spacer for fixed header
+                    Color.clear
+                        .frame(height: headerHeight)
 
                     // Pet Shop Section (now called 云朵商店)
                     petShopSection
@@ -55,6 +57,12 @@ struct CloudShopView: View {
                 }
             }
 
+            // Fixed header (on top of scrollable content)
+            VStack(spacing: 0) {
+                fixedCloudShopHeader
+                Spacer()
+            }
+
             // Animation overlays
             if showCheckInAnimation {
                 checkInAnimation
@@ -82,7 +90,14 @@ struct CloudShopView: View {
     }
 
     // MARK: - Header
-    private var cloudShopHeader: some View {
+    /// Fixed header height
+    private var headerHeight: CGFloat {
+        let navBarHeight: CGFloat = isCompact ? 76 : 80
+        return safeAreaTop + navBarHeight
+    }
+
+    /// Fixed header section (stays at top while content scrolls)
+    private var fixedCloudShopHeader: some View {
         ZStack {
             // Orange gradient background
             LinearGradient(
@@ -122,11 +137,9 @@ struct CloudShopView: View {
                         .frame(width: 44, height: 44)
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 16)
+                .padding(.top, safeAreaTop + 16)
                 .padding(.bottom, 20)
             }
-            // 为状态栏预留空间
-            .padding(.top, safeAreaTop)
         }
     }
 

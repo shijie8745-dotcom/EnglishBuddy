@@ -23,10 +23,12 @@ struct SettingsView: View {
             Color(hex: "FEF7ED")
                 .ignoresSafeArea()
 
+            // Scrollable content
             ScrollView {
                 VStack(spacing: 0) {
-                    // Header
-                    settingsHeader
+                    // Spacer for fixed header
+                    Color.clear
+                        .frame(height: headerHeight)
 
                     // Settings content
                     VStack(spacing: 24) {
@@ -52,6 +54,12 @@ struct SettingsView: View {
                     .padding(.top, AdaptiveLayout.Dimensions.sectionSpacing(isCompact: isCompact) * 2)
                     .padding(.bottom, 32)
                 }
+            }
+
+            // Fixed header (on top of scrollable content)
+            VStack(spacing: 0) {
+                fixedSettingsHeader
+                Spacer()
             }
         }
         .navigationBarHidden(true)
@@ -131,7 +139,14 @@ struct SettingsView: View {
     }
 
     // MARK: - Settings Header
-    private var settingsHeader: some View {
+    /// Fixed header height
+    private var headerHeight: CGFloat {
+        let navBarHeight: CGFloat = isCompact ? 64 : 72
+        return safeAreaTop + navBarHeight
+    }
+
+    /// Fixed header section (stays at top while content scrolls)
+    private var fixedSettingsHeader: some View {
         let headerButtonSize = AdaptiveLayout.Dimensions.headerButtonSize(isCompact: isCompact)
         return ZStack {
             // Orange gradient background
@@ -144,39 +159,35 @@ struct SettingsView: View {
                 endPoint: .bottomTrailing
             )
 
-            VStack(spacing: 0) {
-                HStack {
-                    // Back button
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: headerButtonSize, height: headerButtonSize)
-                            .background(
-                                Circle()
-                                    .fill(.white.opacity(0.2))
-                            )
-                    }
-
-                    Spacer()
-
-                    // Title
-                    Text("设置")
-                        .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .bold))
+            HStack {
+                // Back button
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .semibold))
                         .foregroundStyle(.white)
-
-                    Spacer()
-
-                    // Spacer for alignment
-                    Color.clear
                         .frame(width: headerButtonSize, height: headerButtonSize)
+                        .background(
+                            Circle()
+                                .fill(.white.opacity(0.2))
+                        )
                 }
-                .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
-                .padding(.top, AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
-                .padding(.bottom, AdaptiveLayout.Dimensions.sectionSpacing(isCompact: isCompact) + 4)
+
+                Spacer()
+
+                // Title
+                Text("设置")
+                    .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .bold))
+                    .foregroundStyle(.white)
+
+                Spacer()
+
+                // Spacer for alignment
+                Color.clear
+                    .frame(width: headerButtonSize, height: headerButtonSize)
             }
-            // 为状态栏预留空间
-            .padding(.top, safeAreaTop)
+            .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
+            .padding(.top, safeAreaTop + AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact))
+            .padding(.bottom, AdaptiveLayout.Dimensions.sectionSpacing(isCompact: isCompact) + 4)
         }
     }
 
