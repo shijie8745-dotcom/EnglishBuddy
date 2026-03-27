@@ -46,6 +46,7 @@ class AIChatService {
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.timeoutInterval = 60  // 设置 60 秒超时
         // 阿里云 DashScope 使用 Authorization: Bearer <api-key> 格式
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -140,6 +141,7 @@ class AIChatService {
 
                     var request = URLRequest(url: url)
                     request.httpMethod = "POST"
+                    request.timeoutInterval = 60  // 设置 60 秒超时
                     request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                     request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)

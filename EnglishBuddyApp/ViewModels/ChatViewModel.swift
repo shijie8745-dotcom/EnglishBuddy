@@ -797,18 +797,6 @@ class ChatViewModel {
         // Transcript is now updated via Combine publisher
     }
 
-    private func isMostlyChinese(_ text: String) -> Bool {
-        let chineseCharacters = text.filter { char in
-            let scalar = char.unicodeScalars.first!
-            // CJK Unified Ideographs range
-            return scalar.value >= 0x4E00 && scalar.value <= 0x9FFF
-        }
-        // If more than 30% of characters are Chinese, consider it mostly Chinese
-        guard !text.isEmpty else { return false }
-        return Double(chineseCharacters.count) / Double(text.count) > 0.3
-    }
-}
-
 // MARK: - String Extension for Emoji Removal
 extension String {
     var removingEmoji: String {

@@ -468,7 +468,9 @@ struct VoiceInputContainer: View {
                             if viewModel.isRecording {
                                 // Check if finger is over cancel button frame
                                 let fingerLocation = value.location
-                                let expandedFrame = cancelButtonFrame.insetBy(dx: -30, dy: -30)
+                                // 使用屏幕宽度的 8% 作为扩展区域，适配不同屏幕
+                                let expandMargin = UIScreen.main.bounds.width * 0.08
+                                let expandedFrame = cancelButtonFrame.insetBy(dx: -expandMargin, dy: -expandMargin)
                                 let shouldCancel = expandedFrame.contains(fingerLocation)
 
                                 if shouldCancel != isInCancelZone {
