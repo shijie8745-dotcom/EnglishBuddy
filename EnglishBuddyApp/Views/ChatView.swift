@@ -134,7 +134,13 @@ struct ChatView: View {
         return ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 20) {
-                    ForEach(viewModel.messages) { message in
+                    ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
+                        // 时间标签（第一条消息或与上一条消息不在同一分钟时显示）
+                        if shouldShowTimeLabel(at: index) {
+                            timeLabel(for: message.timestamp)
+                                .id("time-\(message.id)")
+                        }
+
                         ChatBubble(
                             message: message,
                             isPlaying: viewModel.currentlyPlayingMessageId == message.id,
@@ -162,6 +168,63 @@ struct ChatView: View {
             .onChange(of: viewModel.isLoading) { _, _ in
                 scrollToBottom(proxy: proxy)
             }
+        }
+    }
+
+    /// 判断是否需要显示时间标签（第一条消息或与上一条消息不在同一分钟）
+    private func shouldShowTimeLabel(at index: Int) -> Bool {
+        guard index < viewModel.messages.count else { return false }
+
+        // 第一条消息总是显示时间
+        if index == 0 { return true }
+
+        let currentMessage = viewModel.messages[index]
+        let previousMessage = viewModel.messages[index - 1]
+
+        // 检查是否在同一分钟
+        let calendar = Calendar.current
+        let currentMinute = calendar.component(.minute, from: currentMessage.timestamp)
+        let previousMinute = calendar.component(.minute, from: previousMessage.timestamp)
+
+        return !calendar.isDate(currentMessage.timestamp, equalTo: previousMessage.timestamp, toGranularity: .minute)
+    }
+
+    /// 时间标签视图
+    private func timeLabel(for date: Date) -> some View {
+        Text(formatTimeLabel(date))
+            .font(.system(size: 13))
+            .foregroundColor(Color(hex: "9CA3AF"))  // 浅灰色
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+    }
+
+    /// 格式化时间标签
+    private func formatTimeLabel(_ date: Date) -> String {
+        let calendar = Calendar.current
+        let now = Date()
+
+        if calendar.isDateInToday(date) {
+            // 今天：只显示时间
+            let formatter = DateFormatter()
+            formatter.dateFormat = "HH:mm"
+            return formatter.string(from: date)
+        } else if calendar.isDateInYesterday(date) {
+            // 昨天
+            let formatter = DateFormatter()
+            formatter.dateFormat = "昨天 HH:mm"
+            return formatter.string(from: date)
+        } else if calendar.isDate(date, equalTo: now, toGranularity: .weekOfYear) {
+            // 本周：星期x HH:mm
+            let formatter = DateFormatter()
+            formatter.dateFormat = "EEEE HH:mm"
+            formatter.locale = Locale(identifier: "zh_CN")
+            let weekday = formatter.string(from: date)
+            return weekday
+        } else {
+            // 其他：x月x日 HH:mm
+            let formatter = DateFormatter()
+            formatter.dateFormat = "M月d日 HH:mm"
+            return formatter.string(from: date)
         }
     }
 

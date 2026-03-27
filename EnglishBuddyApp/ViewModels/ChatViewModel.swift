@@ -294,11 +294,15 @@ class ChatViewModel {
 
     func loadInitialMessages(for lesson: Lesson) {
         currentLesson = lesson
-        messages = []
         currentlyPlayingMessageId = nil
         sessionStartTime = Date()
         sessionEarnedCoins = 0
         checkInMessage = nil
+
+        // 加载历史记录
+        let unitId = lesson.id
+        messages = ChatHistoryStore.shared.loadHistory(for: unitId)
+        print("[ChatViewModel] 加载历史消息: \(messages.count) 条")
 
         // 显示加载状态
         isLoading = true
@@ -400,6 +404,12 @@ class ChatViewModel {
 
         sessionEarnedCoins += earnedCoins
         sessionStartTime = nil  // didSet 会自动清除 UserDefaults
+
+        // 保存对话历史
+        if let lesson = currentLesson {
+            ChatHistoryStore.shared.saveHistory(for: lesson.id, messages: messages)
+            print("[ChatViewModel] 保存对话历史: \(messages.count) 条")
+        }
     }
 
     /// 获取当前对话次数
