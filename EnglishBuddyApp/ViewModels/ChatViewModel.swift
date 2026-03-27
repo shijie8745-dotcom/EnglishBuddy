@@ -806,6 +806,7 @@ class ChatViewModel {
     func updateRecognizedText() {
         // Transcript is now updated via Combine publisher
     }
+}
 
 // MARK: - String Extension for Emoji Removal
 extension String {
