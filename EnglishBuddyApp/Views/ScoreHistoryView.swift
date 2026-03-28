@@ -130,7 +130,7 @@ struct ScoreHistoryView: View {
                     // Dimension scores summary
                     HStack(spacing: 8) {
                         miniScore("词汇", score.vocabularyScore)
-                        miniScore("句型", score.sentencePatternScore)
+                        miniScore("语法", score.grammarScore)
                         miniScore("发音", score.pronunciationScore)
                         miniScore("流利", score.fluencyScore)
                     }

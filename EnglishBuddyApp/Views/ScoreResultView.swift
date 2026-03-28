@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 struct ScoreResultView: View {
     let score: ScoreResult
@@ -9,6 +10,7 @@ struct ScoreResultView: View {
     @State private var animatedScore: Int = 0
     @State private var showBars = false
     @State private var showConfetti = false
+    @State private var audioPlayer: AVAudioPlayer?
 
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     private var isCompact: Bool { horizontalSizeClass == .compact }
@@ -61,9 +63,9 @@ struct ScoreResultView: View {
                             vocabularyDetailsSection
                         }
 
-                        // Sentence details
-                        if !score.sentenceDetails.isEmpty {
-                            sentenceDetailsSection
+                        // Grammar details
+                        if !score.grammarDetails.isEmpty {
+                            grammarDetailsSection
                         }
 
                         // Teacher feedback
@@ -178,7 +180,7 @@ struct ScoreResultView: View {
     private var dimensionScoresSection: some View {
         VStack(spacing: 12) {
             DimensionBar(label: "词汇", score: score.vocabularyScore, color: Color(hex: "3B82F6"), animate: showBars)
-            DimensionBar(label: "句型", score: score.sentencePatternScore, color: Color(hex: "8B5CF6"), animate: showBars)
+            DimensionBar(label: "语法", score: score.grammarScore, color: Color(hex: "8B5CF6"), animate: showBars)
             DimensionBar(label: "发音", score: score.pronunciationScore, color: Color(hex: "10B981"), animate: showBars)
             DimensionBar(label: "流利", score: score.fluencyScore, color: Color(hex: "F59E0B"), animate: showBars)
         }
@@ -233,6 +235,15 @@ struct ScoreResultView: View {
                         Text(detail.word)
                             .font(.system(size: 13))
                             .foregroundStyle(Color(hex: "1F2937"))
+
+                        // 播放按钮（有音频且发音有问题时显示）
+                        if detail.audioData != nil && !detail.correct {
+                            Button(action: { playAudio(detail.audioData) }) {
+                                Image(systemName: "speaker.wave.2.fill")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(Color(hex: "3B82F6"))
+                            }
+                        }
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
@@ -266,43 +277,58 @@ struct ScoreResultView: View {
         )
     }
 
-    // MARK: - Sentence Details
+    // MARK: - Grammar Details
 
-    private var sentenceDetailsSection: some View {
+    private var grammarDetailsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("句型详情", systemImage: "bubble.left.and.bubble.right.fill")
+            Label("语法详情", systemImage: "text.badge.checkmark")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color(hex: "1F2937"))
 
-            ForEach(Array(score.sentenceDetails.enumerated()), id: \.offset) { _, detail in
+            ForEach(Array(score.grammarDetails.enumerated()), id: \.offset) { _, detail in
                 HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: detail.practiced ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    Image(systemName: detail.corrected != nil ? "xmark.circle.fill" : "checkmark.circle.fill")
                         .font(.system(size: 14))
-                        .foregroundStyle(detail.practiced ? Color(hex: "10B981") : Color(hex: "F59E0B"))
+                        .foregroundStyle(detail.corrected != nil ? Color(hex: "EF4444") : Color(hex: "10B981"))
                         .padding(.top, 2)
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(detail.pattern)
+                        // 学生原句
+                        Text(detail.original)
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(Color(hex: "1F2937"))
+                            .strikethrough(detail.corrected != nil, color: Color(hex: "EF4444").opacity(0.5))
 
-                        if let example = detail.exampleUsed {
-                            Text("\"\(example)\"")
-                                .font(.system(size: 12))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                                .italic()
+                        // 正确表达
+                        if let corrected = detail.corrected {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.right")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(Color(hex: "10B981"))
+                                Text(corrected)
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(Color(hex: "10B981"))
+                            }
                         }
 
-                        if let feedback = detail.feedback {
-                            Text(feedback)
+                        // 说明
+                        if let explanation = detail.explanation {
+                            Text(explanation)
                                 .font(.system(size: 12))
                                 .foregroundStyle(Color(hex: "6B7280"))
                         }
+                    }
 
-                        if !detail.practiced {
-                            Text("未练习")
-                                .font(.system(size: 12))
-                                .foregroundStyle(Color(hex: "F59E0B"))
+                    Spacer()
+
+                    // 播放按钮
+                    if detail.audioData != nil {
+                        Button(action: { playAudio(detail.audioData) }) {
+                            Image(systemName: "speaker.wave.2.fill")
+                                .font(.system(size: 14))
+                                .foregroundStyle(Color(hex: "3B82F6"))
+                                .frame(width: 32, height: 32)
+                                .background(Circle().fill(Color(hex: "EFF6FF")))
                         }
                     }
                 }
@@ -314,6 +340,18 @@ struct ScoreResultView: View {
                 .fill(.white)
                 .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
         )
+    }
+
+    // MARK: - Audio Playback
+
+    private func playAudio(_ data: Data?) {
+        guard let data = data else { return }
+        do {
+            audioPlayer = try AVAudioPlayer(data: data)
+            audioPlayer?.play()
+        } catch {
+            print("[ScoreResultView] 播放音频失败: \(error)")
+        }
     }
 
     // MARK: - Feedback

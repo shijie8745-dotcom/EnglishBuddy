@@ -17,7 +17,7 @@ class ScoringService {
         messages: [ChatMessage],
         lessonId: Int,
         lessonTitle: String,
-        sessionStartTime: Date?
+        sessionStartTime: Date? = nil
     ) async throws -> ScoreResult {
         print("[ScoringService] 开始评分: \(messages.count) 条消息, lessonId=\(lessonId)")
 
@@ -25,9 +25,9 @@ class ScoringService {
         let transcript = buildConversationTranscript(from: messages)
         print("[ScoringService] 对话记录:\n\(transcript)")
 
-        // 2. 拼接所有音频
-        let audioData = concatenateAllAudio(from: messages)
-        print("[ScoringService] 音频数据: \(audioData?.count ?? 0) bytes")
+        // 2. 只拼接学生音频（不包含 AI 音频）
+        let audioData = concatenateStudentAudio(from: messages)
+        print("[ScoringService] 学生音频数据: \(audioData?.count ?? 0) bytes")
 
         // 3. 构建评分 Prompt
         let scoringPrompt = ScoringPromptConfig.scoringPrompt(
@@ -46,35 +46,29 @@ class ScoringService {
         // 5. 发送请求
         let responseJSON = try await sendRequest(body: requestBody)
 
-        // 6. 解析响应
-        let stats = computeSessionStats(messages: messages, sessionStartTime: sessionStartTime)
-        let result = try parseScoreResponse(responseJSON, lessonId: lessonId, lessonTitle: lessonTitle, stats: stats)
+        // 6. 解析响应（学习时长基于消息时间戳，不再使用 sessionStartTime）
+        let stats = computeSessionStats(messages: messages)
+        let result = try parseScoreResponse(responseJSON, lessonId: lessonId, lessonTitle: lessonTitle, stats: stats, messages: messages)
 
         return result
     }
 
     // MARK: - Audio Processing
 
-    /// 按对话顺序拼接所有音频（AI audioData + 用户 userVoiceData）
-    private func concatenateAllAudio(from messages: [ChatMessage]) -> Data? {
+    /// 只拼接学生语音（不包含 AI 音频）
+    private func concatenateStudentAudio(from messages: [ChatMessage]) -> Data? {
         var pcmChunks: [Data] = []
         let silenceDuration = 0.3 // 秒
         let targetSampleRate = 16000
-        let silenceSamples = Int(Double(targetSampleRate) * silenceDuration) // 4800 samples
+        let silenceSamples = Int(Double(targetSampleRate) * silenceDuration)
         let silenceData = Data(count: silenceSamples * 2) // 16-bit = 2 bytes per sample
 
         for message in messages {
-            var audioPCM: Data?
+            // 只处理学生消息
+            guard message.speaker == .user, let data = message.userVoiceData else { continue }
 
-            if message.speaker == .ai, let data = message.audioData {
-                // AI 音频是 24kHz WAV（TTS 输出），需要提取 PCM 并降采样到 16kHz
-                audioPCM = extractAndResampleAudio(from: data, sourceSampleRate: 24000, targetSampleRate: targetSampleRate)
-            } else if message.speaker == .user, let data = message.userVoiceData {
-                // 用户音频是 16kHz WAV，提取 PCM
-                audioPCM = extractPCMFromWAV(data)
-            }
-
-            if let pcm = audioPCM, !pcm.isEmpty {
+            // 用户音频是 16kHz WAV，提取 PCM
+            if let pcm = extractPCMFromWAV(data), !pcm.isEmpty {
                 if !pcmChunks.isEmpty {
                     pcmChunks.append(silenceData) // 插入静音分隔
                 }
@@ -106,37 +100,6 @@ class ScoringService {
         return wavData[44...]
     }
 
-    /// 提取音频并降采样
-    private func extractAndResampleAudio(from data: Data, sourceSampleRate: Int, targetSampleRate: Int) -> Data? {
-        guard let pcmData = extractPCMFromWAV(data) else { return nil }
-
-        if sourceSampleRate == targetSampleRate {
-            return pcmData
-        }
-
-        return resamplePCM(from: pcmData, sourceSampleRate: sourceSampleRate, targetSampleRate: targetSampleRate)
-    }
-
-    /// 简单线性降采样（16-bit mono PCM）
-    private func resamplePCM(from data: Data, sourceSampleRate: Int, targetSampleRate: Int) -> Data {
-        let ratio = Double(sourceSampleRate) / Double(targetSampleRate)
-        let sourceCount = data.count / 2 // 16-bit samples
-        let targetCount = Int(Double(sourceCount) / ratio)
-
-        var result = Data(capacity: targetCount * 2)
-
-        data.withUnsafeBytes { rawBuffer in
-            let sourceBuffer = rawBuffer.bindMemory(to: Int16.self)
-            for i in 0..<targetCount {
-                let sourceIndex = min(Int(Double(i) * ratio), sourceCount - 1)
-                var sample = sourceBuffer[sourceIndex]
-                result.append(Data(bytes: &sample, count: 2))
-            }
-        }
-
-        return result
-    }
-
     // MARK: - Transcript Building
 
     private func buildConversationTranscript(from messages: [ChatMessage]) -> String {
@@ -159,7 +122,7 @@ class ScoringService {
         // 文字记录
         userContent.append([
             "type": "text",
-            "text": "请根据以下对话记录和语音录音进行评分。\n\n对话记录：\n\(transcript)"
+            "text": "请根据以下对话记录和学生语音录音进行评分。\n\n说明：语音录音仅包含学生的语音，请据此评价发音准确度和流利度。对话记录包含 AI 教师和学生双方的文字，请据此评价词汇掌握、语法正确性和回答正确性。\n\n对话记录：\n\(transcript)"
         ])
 
         // 音频（如果有）- 使用 WAV 封装后的 data URL 格式
@@ -173,7 +136,7 @@ class ScoringService {
                     "format": "wav"
                 ]
             ])
-            print("[ScoringService] 音频大小: PCM=\(audio.count) WAV=\(wavData.count) base64=\(base64Audio.count)")
+            print("[ScoringService] 学生音频大小: PCM=\(audio.count) WAV=\(wavData.count) base64=\(base64Audio.count)")
         }
 
         // qwen3-omni-flash 需要 stream=true，且不支持 temperature
@@ -289,7 +252,7 @@ class ScoringService {
 
     // MARK: - Response Parsing
 
-    private func parseScoreResponse(_ json: [String: Any], lessonId: Int, lessonTitle: String, stats: SessionStats) throws -> ScoreResult {
+    private func parseScoreResponse(_ json: [String: Any], lessonId: Int, lessonTitle: String, stats: SessionStats, messages: [ChatMessage]) throws -> ScoreResult {
         // 提取 content
         guard let choices = json["choices"] as? [[String: Any]],
               let firstChoice = choices.first,
@@ -311,7 +274,7 @@ class ScoringService {
         // 解析各字段
         let overallScore = scoreJSON["overall_score"] as? Int ?? 75
         let vocabularyScore = scoreJSON["vocabulary_score"] as? Int ?? 75
-        let sentencePatternScore = scoreJSON["sentence_pattern_score"] as? Int ?? 75
+        let grammarScore = scoreJSON["grammar_score"] as? Int ?? 75
         let pronunciationScore = scoreJSON["pronunciation_score"] as? Int ?? 75
         let fluencyScore = scoreJSON["fluency_score"] as? Int ?? 75
         let feedback = scoreJSON["feedback"] as? String ?? "表现不错，继续加油！"
@@ -319,28 +282,44 @@ class ScoringService {
         let correctCount = scoreJSON["correct_count"] as? Int ?? stats.correctCount
         let correctedCount = scoreJSON["corrected_count"] as? Int ?? stats.correctedCount
 
+        // 构建可评分消息列表（学生消息），用于根据 message_index 查找音频
+        let scorableMessages = messages.filter { $0.speaker == .user }
+
         // 解析词汇详情
         var vocabularyDetails: [VocabularyScoreDetail] = []
         if let vocabArray = scoreJSON["vocabulary_details"] as? [[String: Any]] {
             for item in vocabArray {
+                let msgIndex = item["message_index"] as? Int
+                var audioData: Data? = nil
+                if let idx = msgIndex, idx >= 0, idx < scorableMessages.count {
+                    audioData = scorableMessages[idx].userVoiceData
+                }
                 vocabularyDetails.append(VocabularyScoreDetail(
                     word: item["word"] as? String ?? "",
                     practiced: item["practiced"] as? Bool ?? false,
                     correct: item["correct"] as? Bool ?? false,
-                    pronunciationNote: item["pronunciation_note"] as? String
+                    pronunciationNote: item["pronunciation_note"] as? String,
+                    messageIndex: msgIndex,
+                    audioData: audioData
                 ))
             }
         }
 
-        // 解析句型详情
-        var sentenceDetails: [SentenceScoreDetail] = []
-        if let sentArray = scoreJSON["sentence_details"] as? [[String: Any]] {
-            for item in sentArray {
-                sentenceDetails.append(SentenceScoreDetail(
-                    pattern: item["pattern"] as? String ?? "",
-                    practiced: item["practiced"] as? Bool ?? false,
-                    exampleUsed: item["example_used"] as? String,
-                    feedback: item["feedback"] as? String
+        // 解析语法详情
+        var grammarDetails: [GrammarDetail] = []
+        if let grammarArray = scoreJSON["grammar_details"] as? [[String: Any]] {
+            for item in grammarArray {
+                let msgIndex = item["message_index"] as? Int
+                var audioData: Data? = nil
+                if let idx = msgIndex, idx >= 0, idx < scorableMessages.count {
+                    audioData = scorableMessages[idx].userVoiceData
+                }
+                grammarDetails.append(GrammarDetail(
+                    original: item["original"] as? String ?? "",
+                    corrected: item["corrected"] as? String,
+                    explanation: item["explanation"] as? String,
+                    messageIndex: msgIndex,
+                    audioData: audioData
                 ))
             }
         }
@@ -348,7 +327,6 @@ class ScoringService {
         // 使用 API 返回的 correctCount/correctedCount 更新 stats
         let updatedStats = SessionStats(
             totalTurns: stats.totalTurns,
-            userTurns: stats.userTurns,
             sessionDuration: stats.sessionDuration,
             vocabularyPracticed: vocabularyDetails.filter { $0.practiced }.count,
             vocabularyTotal: vocabularyDetails.count,
@@ -363,13 +341,13 @@ class ScoringService {
             timestamp: Date(),
             overallScore: overallScore,
             vocabularyScore: vocabularyScore,
-            sentencePatternScore: sentencePatternScore,
+            grammarScore: grammarScore,
             pronunciationScore: pronunciationScore,
             fluencyScore: fluencyScore,
             feedback: feedback,
             encouragement: encouragement,
             vocabularyDetails: vocabularyDetails,
-            sentenceDetails: sentenceDetails,
+            grammarDetails: grammarDetails,
             stats: updatedStats
         )
     }
@@ -399,21 +377,20 @@ class ScoringService {
 
     // MARK: - Stats Computation
 
-    private func computeSessionStats(messages: [ChatMessage], sessionStartTime: Date?) -> SessionStats {
-        let totalTurns = messages.count
-        let userTurns = messages.filter { $0.speaker == .user }.count
+    private func computeSessionStats(messages: [ChatMessage]) -> SessionStats {
+        // 对话轮数 = 学生发言次数
+        let totalTurns = messages.filter { $0.speaker == .user }.count
+
+        // 学习时长 = 第一条消息到最后一条消息的时间差
         let sessionDuration: Int
-        if let start = sessionStartTime {
-            sessionDuration = Int(Date().timeIntervalSince(start))
-        } else if let first = messages.first {
-            sessionDuration = Int(Date().timeIntervalSince(first.timestamp))
+        if let first = messages.first, let last = messages.last {
+            sessionDuration = Int(last.timestamp.timeIntervalSince(first.timestamp))
         } else {
             sessionDuration = 0
         }
 
         return SessionStats(
             totalTurns: totalTurns,
-            userTurns: userTurns,
             sessionDuration: sessionDuration,
             vocabularyPracticed: 0,
             vocabularyTotal: 0,

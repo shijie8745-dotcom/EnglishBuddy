@@ -9,7 +9,7 @@ struct ScoreResult: Codable, Identifiable {
     // 四维评分（0-100）
     let overallScore: Int
     let vocabularyScore: Int
-    let sentencePatternScore: Int
+    let grammarScore: Int
     let pronunciationScore: Int
     let fluencyScore: Int
 
@@ -17,7 +17,7 @@ struct ScoreResult: Codable, Identifiable {
     let feedback: String
     let encouragement: String
     let vocabularyDetails: [VocabularyScoreDetail]
-    let sentenceDetails: [SentenceScoreDetail]
+    let grammarDetails: [GrammarDetail]
 
     // 统计信息
     let stats: SessionStats
@@ -44,18 +44,28 @@ struct VocabularyScoreDetail: Codable {
     let practiced: Bool
     let correct: Bool
     let pronunciationNote: String?
+    let messageIndex: Int?
+    var audioData: Data?
+
+    enum CodingKeys: String, CodingKey {
+        case word, practiced, correct, pronunciationNote, messageIndex
+    }
 }
 
-struct SentenceScoreDetail: Codable {
-    let pattern: String
-    let practiced: Bool
-    let exampleUsed: String?
-    let feedback: String?
+struct GrammarDetail: Codable {
+    let original: String
+    let corrected: String?
+    let explanation: String?
+    let messageIndex: Int?
+    var audioData: Data?
+
+    enum CodingKeys: String, CodingKey {
+        case original, corrected, explanation, messageIndex
+    }
 }
 
 struct SessionStats: Codable {
     let totalTurns: Int
-    let userTurns: Int
     let sessionDuration: Int
     let vocabularyPracticed: Int
     let vocabularyTotal: Int

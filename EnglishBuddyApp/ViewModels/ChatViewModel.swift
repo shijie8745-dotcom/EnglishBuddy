@@ -674,16 +674,17 @@ class ChatViewModel {
 
         // 检测评分关键词（ASR 是英语模式，中文会被音译）
         let lowerText = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        let scoringKeywords = [
-            // 英文关键词
+        // 中文模糊匹配：包含 (打+分) 或 (评+分)，支持"打个分"、"帮我评个分"等变体
+        let chineseScoring = (lowerText.contains("打") && lowerText.contains("分")) ||
+                             (lowerText.contains("评") && lowerText.contains("分"))
+        // 英文/拼音精确匹配（删掉过短的 "score" 避免误触发）
+        let englishKeywords = [
             "score me", "give me a score", "grade me", "rate me",
-            "score", "my score", "check my score",
-            // 中文关键词（用户可能切到中文输入）
-            "打分", "评分", "给我打分", "帮我打分",
-            // ASR 可能的音译变体
+            "my score", "check my score",
             "da fen", "dafen", "ping fen", "pingfen"
         ]
-        if scoringKeywords.contains(where: { lowerText.contains($0) }) {
+        let englishScoring = englishKeywords.contains(where: { lowerText.contains($0) })
+        if chineseScoring || englishScoring {
             print("[ChatViewModel] 检测到评分关键词: \(text)")
             await MainActor.run {
                 onScoringTriggered?()
