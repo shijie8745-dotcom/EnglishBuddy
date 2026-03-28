@@ -62,6 +62,9 @@ class ChatViewModel {
     /// 录音开始时间（用于检查录音时长）
     private var recordingStartTime: Date?
 
+    // MARK: - 点击说话模式
+    var isTapToTalkActive = false   // 点击说话录音中
+
     init() {
         // 恢复未保存的学习时长
         recoverPendingStudyTime()
@@ -719,6 +722,26 @@ class ChatViewModel {
             isLoading = false
             await addAIMessage(randomResponse)
         }
+    }
+
+    // MARK: - 点击说话模式
+
+    /// 点击"点击说话"按钮，开始录音
+    func startTapToTalk() {
+        isTapToTalkActive = true
+        startRecording()
+    }
+
+    /// 点击"发送"按钮（点击说话模式）
+    func sendTapToTalk() {
+        isTapToTalkActive = false
+        stopRecording()
+    }
+
+    /// 点击"取消"按钮（点击说话模式）
+    func cancelTapToTalk() {
+        isTapToTalkActive = false
+        cancelRecording()
     }
 
     // MARK: - Voice Recording
