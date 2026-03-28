@@ -180,351 +180,148 @@ struct Unit5CourseDetailView: View {
             }
 
             VStack(spacing: 12) {
-                sentenceGroup(title: "询问物品归属") {
+                // 句型组1：用Whose询问物品归属
+                sentenceGroup(title: "用Whose询问物品归属") {
                     VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "8B5CF6")))
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.bold("Whose"), .normal(" bike is this?")],
+                            translation: "这是谁的自行车？",
+                            speakText: "Whose bike is this?",
+                            isQuestion: true
+                        )
 
-                            Text("Whose")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "8B5CF6")) +
-                            Text(" ball is this?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "8B5CF6"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("It's "), .bold("Jim's"), .normal(" bike. "), .bold("His"), .normal(" bike's orange.")],
+                            translation: "这是Jim的自行车。他的自行车是橙色的。",
+                            speakText: "It's Jim's bike. His bike's orange."
+                        )
 
-                            speakerButton(text: "Whose ball is this?")
+                        Divider().padding(.vertical, 2)
 
-                            Spacer()
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.bold("Whose"), .normal(" car is this?")],
+                            translation: "这是谁的车？",
+                            speakText: "Whose car is this?",
+                            isQuestion: true
+                        )
 
-                            Text("这是谁的球？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("It's "), .bold("Jenny's"), .normal(" car. "), .bold("Her"), .normal(" car's red.")],
+                            translation: "这是Jenny的车。她的车是红色的。",
+                            speakText: "It's Jenny's car. Her car's red."
+                        )
 
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "8B5CF6"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "F5F3FF")).overlay(Circle().stroke(Color(hex: "8B5CF6"))))
+                        Divider().padding(.vertical, 2)
 
-                            Text("It's")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" my ball.")
-                                .font(.system(size: 16))
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.bold("Whose"), .normal(" house is this?")],
+                            translation: "这是谁的房子？",
+                            speakText: "Whose house is this?",
+                            isQuestion: true
+                        )
 
-                            speakerButton(text: "It's my ball.")
-
-                            Spacer()
-
-                            Text("这是我的球。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "8B5CF6")))
-
-                            Text("Whose")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "8B5CF6")) +
-                            Text(" doll is that?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "8B5CF6"))
-
-                            speakerButton(text: "Whose doll is that?")
-
-                            Spacer()
-
-                            Text("那是谁的玩偶？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "8B5CF6"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "F5F3FF")).overlay(Circle().stroke(Color(hex: "8B5CF6"))))
-
-                            Text("It's")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" her doll.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "It's her doll.")
-
-                            Spacer()
-
-                            Text("那是她的玩偶。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("It's "), .bold("Jim and Jenny's"), .normal(" house. "), .bold("Their"), .normal(" house is yellow.")],
+                            translation: "这是Jim和Jenny的房子。他们的房子是黄色的。",
+                            speakText: "It's Jim and Jenny's house. Their house is yellow."
+                        )
                     }
                 }
 
-                sentenceGroup(title: "询问想要什么") {
+                // 句型组2：用want询问想要什么
+                sentenceGroup(title: "用want询问想要什么") {
                     VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "8B5CF6")))
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.bold("Does"), .normal(" he "), .bold("want"), .normal(" a teddy?")],
+                            translation: "他想要一个泰迪熊吗？",
+                            speakText: "Does he want a teddy?",
+                            isQuestion: true
+                        )
 
-                            Text("What do you want?")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "8B5CF6"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.bold("Yes"), .normal(", he "), .bold("does"), .normal(". / "), .bold("No"), .normal(", he "), .bold("doesn't"), .normal(".")],
+                            translation: "是的，他想要。/ 不，他不想要。",
+                            speakText: "Yes, he does. No, he doesn't."
+                        )
 
-                            speakerButton(text: "What do you want?")
+                        Divider().padding(.vertical, 2)
 
-                            Spacer()
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.normal("What "), .bold("does"), .normal(" he "), .bold("want"), .normal("?")],
+                            translation: "他想要什么？",
+                            speakText: "What does he want?",
+                            isQuestion: true
+                        )
 
-                            Text("你想要什么？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "8B5CF6"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "F5F3FF")).overlay(Circle().stroke(Color(hex: "8B5CF6"))))
-
-                            Text("I want")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" a toy car.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "I want a toy car.")
-
-                            Spacer()
-
-                            Text("我想要一辆玩具车。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-                    }
-                }
-
-                sentenceGroup(title: "询问是否想要某物") {
-                    VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "8B5CF6")))
-
-                            Text("Do you want")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "8B5CF6")) +
-                            Text(" a scooter?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "8B5CF6"))
-
-                            speakerButton(text: "Do you want a scooter?")
-
-                            Spacer()
-
-                            Text("你想要滑板车吗？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "8B5CF6"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "F5F3FF")).overlay(Circle().stroke(Color(hex: "8B5CF6"))))
-
-                            Text("Yes")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(", please. / ")
-                                .font(.system(size: 16)) +
-                            Text("No")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(", thank you.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "Yes, please.")
-
-                            Spacer()
-
-                            Text("好的。/ 不用了，谢谢。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "8B5CF6")))
-
-                            Text("Do you want")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "8B5CF6")) +
-                            Text(" a robot?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "8B5CF6"))
-
-                            speakerButton(text: "Do you want a robot?")
-
-                            Spacer()
-
-                            Text("你想要机器人吗？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "8B5CF6"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "F5F3FF")).overlay(Circle().stroke(Color(hex: "8B5CF6"))))
-
-                            Text("Yes")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(", please. / ")
-                                .font(.system(size: 16)) +
-                            Text("No")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(", thank you.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "Yes, please.")
-
-                            Spacer()
-
-                            Text("好的。/ 不用了，谢谢。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-                    }
-                }
-
-                sentenceGroup(title: "询问生日") {
-                    VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "8B5CF6")))
-
-                            Text("When's")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "8B5CF6")) +
-                            Text(" your birthday?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "8B5CF6"))
-
-                            speakerButton(text: "When's your birthday?")
-
-                            Spacer()
-
-                            Text("你的生日是什么时候？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "8B5CF6"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "F5F3FF")).overlay(Circle().stroke(Color(hex: "8B5CF6"))))
-
-                            Text("It's")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" in March.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "It's in March.")
-
-                            Spacer()
-
-                            Text("在三月。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "8B5CF6")))
-
-                            Text("How old")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "8B5CF6")) +
-                            Text(" are you?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "8B5CF6"))
-
-                            speakerButton(text: "How old are you?")
-
-                            Spacer()
-
-                            Text("你几岁了？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "8B5CF6"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "F5F3FF")).overlay(Circle().stroke(Color(hex: "8B5CF6"))))
-
-                            Text("I'm")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" eight.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "I'm eight.")
-
-                            Spacer()
-
-                            Text("我八岁了。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("He "), .bold("wants"), .normal(" a helicopter.")],
+                            translation: "他想要一架直升机。",
+                            speakText: "He wants a helicopter."
+                        )
                     }
                 }
             }
         }
     }
 
+    // MARK: - Sentence Row Helper
+    private enum TextPart {
+        case normal(String)
+        case bold(String)
+    }
+
+    private func sentenceRow(tag: String, parts: [TextPart], translation: String, speakText: String, isQuestion: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Text(tag)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(isQuestion ? .white : Color(hex: "8B5CF6"))
+                    .frame(width: 22, height: 22)
+                    .background(
+                        Circle().fill(isQuestion ? Color(hex: "8B5CF6") : Color(hex: "F5F3FF"))
+                            .overlay(isQuestion ? nil : Circle().stroke(Color(hex: "8B5CF6")))
+                    )
+
+                buildText(parts: parts, isQuestion: isQuestion)
+
+                speakerButton(text: speakText)
+
+                Spacer()
+            }
+
+            Text(translation)
+                .font(.system(size: 13))
+                .foregroundStyle(Color(hex: "9CA3AF"))
+                .padding(.leading, 30)
+        }
+    }
+
+    private func buildText(parts: [TextPart], isQuestion: Bool) -> Text {
+        var result = Text("")
+        for part in parts {
+            switch part {
+            case .normal(let str):
+                result = result + Text(str)
+                    .font(.system(size: 16))
+            case .bold(let str):
+                result = result + Text(str)
+                    .font(.system(size: 16, weight: .bold))
+            }
+        }
+        return result.foregroundColor(isQuestion ? Color(hex: "8B5CF6") : Color(hex: "1F2937"))
+    }
+
+    // MARK: - Speaker Button
     private func speakerButton(text: String, size: CGFloat = 16) -> some View {
         let buttonSize = AdaptiveLayout.Dimensions.speakerButtonSize(isCompact: isCompact)
         return Button(action: {
@@ -540,7 +337,7 @@ struct Unit5CourseDetailView: View {
     }
 
     private func sentenceGroup<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact)) {
             Text(title)
                 .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact), weight: .semibold))
                 .foregroundStyle(Color(hex: "4B5563"))

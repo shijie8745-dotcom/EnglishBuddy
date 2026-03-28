@@ -195,258 +195,143 @@ struct Unit6CourseDetailView: View {
             }
 
             VStack(spacing: 12) {
-                sentenceGroup(title: "询问某地有什么") {
+                // 句型组1：用There is/are描述存在
+                sentenceGroup(title: "用There is/are描述存在") {
                     VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "06B6D4")))
+                        sentenceRow(
+                            tag: "✓",
+                            parts: [.bold("There's"), .normal(" a car.")],
+                            translation: "有一辆车。",
+                            speakText: "There's a car."
+                        )
 
-                            Text("What's")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "06B6D4")) +
-                            Text(" at the zoo?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "06B6D4"))
+                        sentenceRow(
+                            tag: "✗",
+                            parts: [.normal("There "), .bold("isn't"), .normal(" a train.")],
+                            translation: "没有火车。",
+                            speakText: "There isn't a train."
+                        )
 
-                            speakerButton(text: "What's at the zoo?")
+                        Divider().padding(.vertical, 2)
 
-                            Spacer()
+                        sentenceRow(
+                            tag: "✓",
+                            parts: [.normal("There "), .bold("are"), .normal(" two lorries.")],
+                            translation: "有两辆卡车。",
+                            speakText: "There are two lorries."
+                        )
 
-                            Text("动物园里有什么？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
+                        sentenceRow(
+                            tag: "✗",
+                            parts: [.normal("There "), .bold("aren't"), .normal(" any shops.")],
+                            translation: "没有任何商店。",
+                            speakText: "There aren't any shops."
+                        )
 
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "06B6D4"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "ECFEFF")).overlay(Circle().stroke(Color(hex: "06B6D4"))))
+                        Divider().padding(.vertical, 2)
 
-                            Text("There are")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" many animals.")
-                                .font(.system(size: 16))
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.bold("Are there"), .normal(" any animals?")],
+                            translation: "有动物吗？",
+                            speakText: "Are there any animals?",
+                            isQuestion: true
+                        )
 
-                            speakerButton(text: "There are many animals.")
-
-                            Spacer()
-
-                            Text("有很多动物。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "06B6D4")))
-
-                            Text("What's")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "06B6D4")) +
-                            Text(" in the park?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "06B6D4"))
-
-                            speakerButton(text: "What's in the park?")
-
-                            Spacer()
-
-                            Text("公园里有什么？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "06B6D4"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "ECFEFF")).overlay(Circle().stroke(Color(hex: "06B6D4"))))
-
-                            Text("There's")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" a lake.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "There's a lake.")
-
-                            Spacer()
-
-                            Text("有一个湖。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("Yes, "), .bold("there are"), .normal(". / No, "), .bold("there aren't"), .normal(".")],
+                            translation: "有。/ 没有。",
+                            speakText: "Yes, there are. No, there aren't."
+                        )
                     }
                 }
 
-                sentenceGroup(title: "提议一起行动") {
+                // 句型组2：用Let's提议一起行动
+                sentenceGroup(title: "用Let's提议一起行动") {
                     VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Let's")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "06B6D4")) +
-                            Text(" go to the zoo!")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "06B6D4"))
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.bold("Let's play"), .normal(" a game.")],
+                            translation: "我们来玩个游戏吧。",
+                            speakText: "Let's play a game.",
+                            isQuestion: true
+                        )
 
-                            speakerButton(text: "Let's go to the zoo!")
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("That's a good idea.")],
+                            translation: "好主意。",
+                            speakText: "That's a good idea."
+                        )
 
-                            Spacer()
+                        Divider().padding(.vertical, 2)
 
-                            Text("我们去动物园吧！")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.bold("Let's make"), .normal(" our game.")],
+                            translation: "我们来做我们的游戏吧。",
+                            speakText: "Let's make our game.",
+                            isQuestion: true
+                        )
 
-                        HStack(spacing: 8) {
-                            Text("Let's")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "06B6D4")) +
-                            Text(" go by bus.")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "06B6D4"))
-
-                            speakerButton(text: "Let's go by bus.")
-
-                            Spacer()
-
-                            Text("我们坐公交车去吧。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("Let's")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "06B6D4")) +
-                            Text(" go by bike.")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "06B6D4"))
-
-                            speakerButton(text: "Let's go by bike.")
-
-                            Spacer()
-
-                            Text("我们骑自行车去吧。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                    }
-                }
-
-                sentenceGroup(title: "询问某地是否有某物") {
-                    VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "06B6D4")))
-
-                            Text("Is there")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "06B6D4")) +
-                            Text(" a lake?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "06B6D4"))
-
-                            speakerButton(text: "Is there a lake?")
-
-                            Spacer()
-
-                            Text("有湖吗？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "06B6D4"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "ECFEFF")).overlay(Circle().stroke(Color(hex: "06B6D4"))))
-
-                            Text("Yes, ") +
-                            Text("there is").font(.system(size: 16, weight: .bold)) +
-                            Text(". / No, ") +
-                            Text("there isn't").font(.system(size: 16, weight: .bold)) +
-                            Text(".")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "Yes, there is.")
-
-                            Spacer()
-
-                            Text("有。/ 没有。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "06B6D4")))
-
-                            Text("Are there")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "06B6D4")) +
-                            Text(" any tigers?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "06B6D4"))
-
-                            speakerButton(text: "Are there any tigers?")
-
-                            Spacer()
-
-                            Text("有老虎吗？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "06B6D4"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "ECFEFF")).overlay(Circle().stroke(Color(hex: "06B6D4"))))
-
-                            Text("Yes, ") +
-                            Text("there are").font(.system(size: 16, weight: .bold)) +
-                            Text(". / No, ") +
-                            Text("there aren't").font(.system(size: 16, weight: .bold)) +
-                            Text(".")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "Yes, there are.")
-
-                            Spacer()
-
-                            Text("有。/ 没有。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("OK.")],
+                            translation: "好的。",
+                            speakText: "OK."
+                        )
                     }
                 }
             }
         }
+    }
+
+    // MARK: - Sentence Row Helper
+    private enum TextPart {
+        case normal(String)
+        case bold(String)
+    }
+
+    private func sentenceRow(tag: String, parts: [TextPart], translation: String, speakText: String, isQuestion: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Text(tag)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(isQuestion ? .white : Color(hex: "06B6D4"))
+                    .frame(width: 22, height: 22)
+                    .background(
+                        Circle().fill(isQuestion ? Color(hex: "06B6D4") : Color(hex: "ECFEFF"))
+                            .overlay(isQuestion ? nil : Circle().stroke(Color(hex: "06B6D4")))
+                    )
+
+                buildText(parts: parts, isQuestion: isQuestion)
+
+                speakerButton(text: speakText)
+
+                Spacer()
+            }
+
+            Text(translation)
+                .font(.system(size: 13))
+                .foregroundStyle(Color(hex: "9CA3AF"))
+                .padding(.leading, 30)
+        }
+    }
+
+    private func buildText(parts: [TextPart], isQuestion: Bool) -> Text {
+        var result = Text("")
+        for part in parts {
+            switch part {
+            case .normal(let str):
+                result = result + Text(str)
+                    .font(.system(size: 16))
+            case .bold(let str):
+                result = result + Text(str)
+                    .font(.system(size: 16, weight: .bold))
+            }
+        }
+        return result.foregroundColor(isQuestion ? Color(hex: "06B6D4") : Color(hex: "1F2937"))
     }
 
     // MARK: - Speaker Button

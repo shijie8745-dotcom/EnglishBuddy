@@ -181,202 +181,146 @@ struct Unit4CourseDetailView: View {
             }
 
             VStack(spacing: 12) {
-                sentenceGroup(title: "询问喜好") {
+                // 句型组1：用like表达喜好
+                sentenceGroup(title: "用like表达喜好") {
                     VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EAB308")))
+                        sentenceRow(
+                            tag: "✓",
+                            parts: [.normal("I "), .bold("like"), .normal(" chocolate.")],
+                            translation: "我喜欢巧克力。",
+                            speakText: "I like chocolate."
+                        )
 
-                            Text("Do you like")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "EAB308")) +
-                            Text(" apples?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "EAB308"))
+                        sentenceRow(
+                            tag: "✗",
+                            parts: [.normal("I "), .bold("don't like"), .normal(" books.")],
+                            translation: "我不喜欢书。",
+                            speakText: "I don't like books."
+                        )
 
-                            speakerButton(text: "Do you like apples?")
+                        Divider().padding(.vertical, 2)
 
-                            Spacer()
+                        sentenceRow(
+                            tag: "✓",
+                            parts: [.normal("Harry "), .bold("likes"), .normal(" mangoes.")],
+                            translation: "Harry喜欢芒果。",
+                            speakText: "Harry likes mangoes."
+                        )
 
-                            Text("你喜欢苹果吗？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
+                        sentenceRow(
+                            tag: "✗",
+                            parts: [.normal("Harry "), .bold("doesn't like"), .normal(" chocolate.")],
+                            translation: "Harry不喜欢巧克力。",
+                            speakText: "Harry doesn't like chocolate."
+                        )
 
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "EAB308"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "FEF9C3")).overlay(Circle().stroke(Color(hex: "EAB308"))))
+                        Divider().padding(.vertical, 2)
 
-                            Text("Yes, I ")
-                                .font(.system(size: 16)) +
-                            Text("do")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(". / No, I ")
-                                .font(.system(size: 16)) +
-                            Text("don't")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(".")
-                                .font(.system(size: 16))
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.bold("Do"), .normal(" you "), .bold("like"), .normal(" chocolate?")],
+                            translation: "你喜欢巧克力吗？",
+                            speakText: "Do you like chocolate?",
+                            isQuestion: true
+                        )
 
-                            speakerButton(text: "Yes, I do.")
-
-                            Spacer()
-
-                            Text("是的，我喜欢。/ 不，我不喜欢。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("Yes, I "), .bold("do"), .normal(". / No, I "), .bold("don't"), .normal(".")],
+                            translation: "是的，我喜欢。/ 不，我不喜欢。",
+                            speakText: "Yes, I do. No, I don't."
+                        )
                     }
                 }
 
-                sentenceGroup(title: "询问喜欢什么") {
+                // 句型组2：礼貌请求和询问意愿
+                sentenceGroup(title: "礼貌请求和询问意愿") {
                     VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EAB308")))
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.bold("Can I have"), .normal(" some chocolate, "), .bold("please"), .normal("?")],
+                            translation: "我可以要一些巧克力吗？",
+                            speakText: "Can I have some chocolate, please?",
+                            isQuestion: true
+                        )
 
-                            Text("What do you like?")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "EAB308"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("Here you are.")],
+                            translation: "给你。",
+                            speakText: "Here you are."
+                        )
 
-                            speakerButton(text: "What do you like?")
+                        Divider().padding(.vertical, 2)
 
-                            Spacer()
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.bold("Would you like"), .normal(" some ice cream?")],
+                            translation: "你想要一些冰淇淋吗？",
+                            speakText: "Would you like some ice cream?",
+                            isQuestion: true
+                        )
 
-                            Text("你喜欢什么？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "EAB308"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "FEF9C3")).overlay(Circle().stroke(Color(hex: "EAB308"))))
-
-                            Text("I like ")
-                                .font(.system(size: 16)) +
-                            Text("noodles.")
-                                .font(.system(size: 16, weight: .bold))
-
-                            speakerButton(text: "I like noodles.")
-
-                            Spacer()
-
-                            Text("我喜欢面条。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-                    }
-                }
-
-                sentenceGroup(title: "礼貌询问意愿") {
-                    VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EAB308")))
-
-                            Text("Would you like")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "EAB308")) +
-                            Text(" an apple?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "EAB308"))
-
-                            speakerButton(text: "Would you like an apple?")
-
-                            Spacer()
-
-                            Text("你想要一个苹果吗？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "EAB308"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "FEF9C3")).overlay(Circle().stroke(Color(hex: "EAB308"))))
-
-                            Text("Yes, please. / No, thank you.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "Yes, please.")
-
-                            Spacer()
-
-                            Text("好的，谢谢。/ 不用了，谢谢。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EAB308")))
-
-                            Text("Would you like")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "EAB308")) +
-                            Text(" some rice?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "EAB308"))
-
-                            speakerButton(text: "Would you like some rice?")
-
-                            Spacer()
-
-                            Text("你想要一些米饭吗？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "EAB308"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "FEF9C3")).overlay(Circle().stroke(Color(hex: "EAB308"))))
-
-                            Text("Yes, please. / No, thank you.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "Yes, please.")
-
-                            Spacer()
-
-                            Text("好的，谢谢。/ 不用了，谢谢。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("Yes, "), .bold("please"), .normal(". / No, "), .bold("thank you"), .normal(".")],
+                            translation: "好的，谢谢。/ 不用了，谢谢。",
+                            speakText: "Yes, please. No, thank you."
+                        )
                     }
                 }
             }
         }
     }
 
+    // MARK: - Sentence Row Helper
+    private enum TextPart {
+        case normal(String)
+        case bold(String)
+    }
+
+    private func sentenceRow(tag: String, parts: [TextPart], translation: String, speakText: String, isQuestion: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Text(tag)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(isQuestion ? .white : Color(hex: "EAB308"))
+                    .frame(width: 22, height: 22)
+                    .background(
+                        Circle().fill(isQuestion ? Color(hex: "EAB308") : Color(hex: "FEF9C3"))
+                            .overlay(isQuestion ? nil : Circle().stroke(Color(hex: "EAB308")))
+                    )
+
+                buildText(parts: parts, isQuestion: isQuestion)
+
+                speakerButton(text: speakText)
+
+                Spacer()
+            }
+
+            Text(translation)
+                .font(.system(size: 13))
+                .foregroundStyle(Color(hex: "9CA3AF"))
+                .padding(.leading, 30)
+        }
+    }
+
+    private func buildText(parts: [TextPart], isQuestion: Bool) -> Text {
+        var result = Text("")
+        for part in parts {
+            switch part {
+            case .normal(let str):
+                result = result + Text(str)
+                    .font(.system(size: 16))
+            case .bold(let str):
+                result = result + Text(str)
+                    .font(.system(size: 16, weight: .bold))
+            }
+        }
+        return result.foregroundColor(isQuestion ? Color(hex: "EAB308") : Color(hex: "1F2937"))
+    }
+
+    // MARK: - Speaker Button
     private func speakerButton(text: String, size: CGFloat = 16) -> some View {
         let buttonSize = AdaptiveLayout.Dimensions.speakerButtonSize(isCompact: isCompact)
         return Button(action: {
@@ -392,7 +336,7 @@ struct Unit4CourseDetailView: View {
     }
 
     private func sentenceGroup<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact)) {
             Text(title)
                 .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact), weight: .semibold))
                 .foregroundStyle(Color(hex: "4B5563"))

@@ -194,405 +194,147 @@ struct Unit2CourseDetailView: View {
             }
 
             VStack(spacing: 12) {
-                // 句型组1：Who is she/he?
+                // 句型组1：询问人物身份 Who is she/he?
                 sentenceGroup(title: "询问人物身份") {
                     VStack(spacing: 10) {
-                        // 女性
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EC4899")))
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.normal("Who "), .bold("is"), .normal(" she?")],
+                            translation: "她是谁？",
+                            speakText: "Who is she?",
+                            isQuestion: true
+                        )
 
-                            Text("Who's")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "EC4899")) +
-                            Text(" she?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "EC4899"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.bold("She's"), .normal(" Jenny. "), .bold("She's"), .normal(" a girl.")],
+                            translation: "她是Jenny。她是个女孩。",
+                            speakText: "She's Jenny. She's a girl."
+                        )
 
-                            speakerButton(text: "Who's she?")
+                        Divider().padding(.vertical, 2)
 
-                            Spacer()
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.normal("Who "), .bold("is"), .normal(" he?")],
+                            translation: "他是谁？",
+                            speakText: "Who is he?",
+                            isQuestion: true
+                        )
 
-                            Text("她是谁？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "EC4899"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "FDF2F8")).overlay(Circle().stroke(Color(hex: "EC4899"))))
-
-                            Text("She's")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" my mum.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "She's my mum.")
-
-                            Spacer()
-
-                            Text("她是我妈妈。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        // 男性
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EC4899")))
-
-                            Text("Who's")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "EC4899")) +
-                            Text(" he?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "EC4899"))
-
-                            speakerButton(text: "Who's he?")
-
-                            Spacer()
-
-                            Text("他是谁？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "EC4899"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "FDF2F8")).overlay(Circle().stroke(Color(hex: "EC4899"))))
-
-                            Text("He's")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" my dad.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "He's my dad.")
-
-                            Spacer()
-
-                            Text("他是我爸爸。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.bold("He's"), .normal(" Jim. "), .bold("He's"), .normal(" a boy.")],
+                            translation: "他是Jim。他是个男孩。",
+                            speakText: "He's Jim. He's a boy."
+                        )
                     }
                 }
 
-                // 句型组2：Is he/she your...?
-                sentenceGroup(title: "确认人物关系") {
+                // 句型组2：用have got表达拥有
+                sentenceGroup(title: "用have got表达拥有") {
                     VStack(spacing: 10) {
-                        // 一般疑问句
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EC4899")))
+                        sentenceRow(
+                            tag: "✓",
+                            parts: [.normal("I"), .bold("'ve got"), .normal(" brown hair.")],
+                            translation: "我有棕色头发。",
+                            speakText: "I've got brown hair."
+                        )
 
-                            Text("Is she")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "EC4899")) +
-                            Text(" your sister?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "EC4899"))
+                        sentenceRow(
+                            tag: "✗",
+                            parts: [.normal("I "), .bold("haven't got"), .normal(" black hair.")],
+                            translation: "我没有黑色头发。",
+                            speakText: "I haven't got black hair."
+                        )
 
-                            speakerButton(text: "Is she your sister?")
+                        Divider().padding(.vertical, 2)
 
-                            Spacer()
+                        sentenceRow(
+                            tag: "✓",
+                            parts: [.normal("They"), .bold("'ve got"), .normal(" blue eyes.")],
+                            translation: "他们有蓝色眼睛。",
+                            speakText: "They've got blue eyes."
+                        )
 
-                            Text("她是你姐妹吗？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
+                        sentenceRow(
+                            tag: "✗",
+                            parts: [.normal("They "), .bold("haven't got"), .normal(" green eyes.")],
+                            translation: "他们没有绿色眼睛。",
+                            speakText: "They haven't got green eyes."
+                        )
 
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "EC4899"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "FDF2F8")).overlay(Circle().stroke(Color(hex: "EC4899"))))
+                        Divider().padding(.vertical, 2)
 
-                            Text("Yes, she ").font(.system(size: 16)) +
-                            Text("is").font(.system(size: 16, weight: .bold)) +
-                            Text(". / No, she ").font(.system(size: 16)) +
-                            Text("isn't").font(.system(size: 16, weight: .bold)) +
-                            Text(".").font(.system(size: 16))
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.bold("Have"), .normal(" you "), .bold("got"), .normal(" red hair?")],
+                            translation: "你有红色头发吗？",
+                            speakText: "Have you got red hair?",
+                            isQuestion: true
+                        )
 
-                            speakerButton(text: "Yes, she is.")
-
-                            Spacer()
-
-                            Text("是的。/ 不是。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        // 复数形式
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EC4899")))
-
-                            Text("Are they")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "EC4899")) +
-                            Text(" your friends?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "EC4899"))
-
-                            speakerButton(text: "Are they your friends?")
-
-                            Spacer()
-
-                            Text("他们是你的朋友吗？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "EC4899"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "FDF2F8")).overlay(Circle().stroke(Color(hex: "EC4899"))))
-
-                            Text("Yes, they ").font(.system(size: 16)) +
-                            Text("are").font(.system(size: 16, weight: .bold)) +
-                            Text(". / No, they ").font(.system(size: 16)) +
-                            Text("aren't").font(.system(size: 16, weight: .bold)) +
-                            Text(".").font(.system(size: 16))
-
-                            speakerButton(text: "Yes, they are.")
-
-                            Spacer()
-
-                            Text("是的。/ 不是。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-                    }
-                }
-
-                // 句型组3：Have you got...?
-                sentenceGroup(title: "询问拥有") {
-                    VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EC4899")))
-
-                            Text("Have you got")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "EC4899")) +
-                            Text(" a brother?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "EC4899"))
-
-                            speakerButton(text: "Have you got a brother?")
-
-                            Spacer()
-
-                            Text("你有兄弟吗？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "EC4899"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "FDF2F8")).overlay(Circle().stroke(Color(hex: "EC4899"))))
-
-                            Text("Yes, I ").font(.system(size: 16)) +
-                            Text("have").font(.system(size: 16, weight: .bold)) +
-                            Text(". / No, I ").font(.system(size: 16)) +
-                            Text("haven't").font(.system(size: 16, weight: .bold)) +
-                            Text(".").font(.system(size: 16))
-
-                            speakerButton(text: "Yes, I have.")
-
-                            Spacer()
-
-                            Text("是的，我有。/ 不，我没有。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        // 复数形式
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EC4899")))
-
-                            Text("Have you got")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "EC4899")) +
-                            Text(" big eyes?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "EC4899"))
-
-                            speakerButton(text: "Have you got big eyes?")
-
-                            Spacer()
-
-                            Text("你有大眼睛吗？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "EC4899"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "FDF2F8")).overlay(Circle().stroke(Color(hex: "EC4899"))))
-
-                            Text("Yes, I ").font(.system(size: 16)) +
-                            Text("have").font(.system(size: 16, weight: .bold)) +
-                            Text(". / No, I ").font(.system(size: 16)) +
-                            Text("haven't").font(.system(size: 16, weight: .bold)) +
-                            Text(".").font(.system(size: 16))
-
-                            speakerButton(text: "Yes, I have.")
-
-                            Spacer()
-
-                            Text("是的，我有。/ 不，我没有。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-                    }
-                }
-
-                // 句型组4：What colour...have you got?
-                sentenceGroup(title: "询问颜色属性") {
-                    VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EC4899")))
-
-                            Text("What colour")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "EC4899")) +
-                            Text(" eyes have you got?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "EC4899"))
-
-                            speakerButton(text: "What colour eyes have you got?")
-
-                            Spacer()
-
-                            Text("你眼睛是什么颜色的？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "EC4899"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "FDF2F8")).overlay(Circle().stroke(Color(hex: "EC4899"))))
-
-                            Text("I've got")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" brown eyes.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "I've got brown eyes.")
-
-                            Spacer()
-
-                            Text("我有棕色眼睛。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        // 头发
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EC4899")))
-
-                            Text("What colour")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "EC4899")) +
-                            Text(" hair have you got?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "EC4899"))
-
-                            speakerButton(text: "What colour hair have you got?")
-
-                            Spacer()
-
-                            Text("你头发是什么颜色的？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "EC4899"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "FDF2F8")).overlay(Circle().stroke(Color(hex: "EC4899"))))
-
-                            Text("I've got")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" black hair.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "I've got black hair.")
-
-                            Spacer()
-
-                            Text("我有黑色头发。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("Yes, I "), .bold("have"), .normal(". / No, I "), .bold("haven't"), .normal(".")],
+                            translation: "是的，我有。/ 不，我没有。",
+                            speakText: "Yes, I have. No, I haven't."
+                        )
                     }
                 }
             }
         }
+    }
+
+    // MARK: - Sentence Row Helper
+    private enum TextPart {
+        case normal(String)
+        case bold(String)
+    }
+
+    private func sentenceRow(tag: String, parts: [TextPart], translation: String, speakText: String, isQuestion: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                // Q/A 标签
+                Text(tag)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(isQuestion ? .white : Color(hex: "EC4899"))
+                    .frame(width: 22, height: 22)
+                    .background(
+                        Circle().fill(isQuestion ? Color(hex: "EC4899") : Color(hex: "FDF2F8"))
+                            .overlay(isQuestion ? nil : Circle().stroke(Color(hex: "EC4899")))
+                    )
+
+                // 英文内容
+                buildText(parts: parts, isQuestion: isQuestion)
+
+                // 朗读按钮
+                speakerButton(text: speakText)
+
+                Spacer()
+            }
+
+            // 中文翻译
+            Text(translation)
+                .font(.system(size: 13))
+                .foregroundStyle(Color(hex: "9CA3AF"))
+                .padding(.leading, 30)
+        }
+    }
+
+    private func buildText(parts: [TextPart], isQuestion: Bool) -> Text {
+        var result = Text("")
+        for part in parts {
+            switch part {
+            case .normal(let str):
+                result = result + Text(str)
+                    .font(.system(size: 16))
+            case .bold(let str):
+                result = result + Text(str)
+                    .font(.system(size: 16, weight: .bold))
+            }
+        }
+        return result.foregroundColor(isQuestion ? Color(hex: "EC4899") : Color(hex: "1F2937"))
     }
 
     // MARK: - Speaker Button

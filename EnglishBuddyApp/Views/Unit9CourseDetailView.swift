@@ -191,330 +191,124 @@ struct Unit9CourseDetailView: View {
             }
 
             VStack(spacing: 12) {
-                sentenceGroup(title: "询问天气") {
+                // 句型组1：祈使句指令
+                sentenceGroup(title: "祈使句指令") {
                     VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "3B82F6")))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.bold("Look at"), .normal(" this T-shirt.")],
+                            translation: "看这件T恤。",
+                            speakText: "Look at this T-shirt."
+                        )
 
-                            Text("What's the weather like?")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "3B82F6"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.bold("Point to"), .normal(" that dress there.")],
+                            translation: "指向那边那条裙子。",
+                            speakText: "Point to that dress there."
+                        )
 
-                            speakerButton(text: "What's the weather like?")
+                        Divider().padding(.vertical, 2)
 
-                            Spacer()
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.bold("Pick up"), .normal(" these socks.")],
+                            translation: "捡起这些袜子。",
+                            speakText: "Pick up these socks."
+                        )
 
-                            Text("天气怎么样？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "3B82F6"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EFF6FF")).overlay(Circle().stroke(Color(hex: "3B82F6"))))
-
-                            Text("It's")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" sunny.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "It's sunny.")
-
-                            Spacer()
-
-                            Text("晴天。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "3B82F6")))
-
-                            Text("What's the weather like today?")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "3B82F6"))
-
-                            speakerButton(text: "What's the weather like today?")
-
-                            Spacer()
-
-                            Text("今天天气怎么样？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "3B82F6"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EFF6FF")).overlay(Circle().stroke(Color(hex: "3B82F6"))))
-
-                            Text("It's")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" rainy.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "It's rainy.")
-
-                            Spacer()
-
-                            Text("下雨。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.bold("Clean"), .normal(" those shoes.")],
+                            translation: "擦干净那些鞋子。",
+                            speakText: "Clean those shoes."
+                        )
                     }
                 }
 
-                sentenceGroup(title: "询问季节") {
+                // 句型组2：表达喜好和附和
+                sentenceGroup(title: "表达喜好和附和") {
                     VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "3B82F6")))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("I "), .bold("like"), .normal(" flying my kite.")],
+                            translation: "我喜欢放风筝。",
+                            speakText: "I like flying my kite."
+                        )
 
-                            Text("What season")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "3B82F6")) +
-                            Text(" is it?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "3B82F6"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.bold("So do I"), .normal(".")],
+                            translation: "我也是。",
+                            speakText: "So do I."
+                        )
 
-                            speakerButton(text: "What season is it?")
+                        Divider().padding(.vertical, 2)
 
-                            Spacer()
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("I "), .bold("enjoy"), .normal(" taking photos.")],
+                            translation: "我喜欢拍照。",
+                            speakText: "I enjoy taking photos."
+                        )
 
-                            Text("现在是什么季节？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "3B82F6"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EFF6FF")).overlay(Circle().stroke(Color(hex: "3B82F6"))))
-
-                            Text("It's")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" summer.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "It's summer.")
-
-                            Spacer()
-
-                            Text("是夏天。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "3B82F6")))
-
-                            Text("What season")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "3B82F6")) +
-                            Text(" do you like?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "3B82F6"))
-
-                            speakerButton(text: "What season do you like?")
-
-                            Spacer()
-
-                            Text("你喜欢什么季节？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "3B82F6"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EFF6FF")).overlay(Circle().stroke(Color(hex: "3B82F6"))))
-
-                            Text("I like")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" spring.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "I like spring.")
-
-                            Spacer()
-
-                            Text("我喜欢春天。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-                    }
-                }
-
-                sentenceGroup(title: "询问感受") {
-                    VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "3B82F6")))
-
-                            Text("How are you feeling?")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "3B82F6"))
-
-                            speakerButton(text: "How are you feeling?")
-
-                            Spacer()
-
-                            Text("你感觉怎么样？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "3B82F6"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EFF6FF")).overlay(Circle().stroke(Color(hex: "3B82F6"))))
-
-                            Text("I'm")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" happy.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "I'm happy.")
-
-                            Spacer()
-
-                            Text("我很开心。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "3B82F6")))
-
-                            Text("Are you")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "3B82F6")) +
-                            Text(" tired?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "3B82F6"))
-
-                            speakerButton(text: "Are you tired?")
-
-                            Spacer()
-
-                            Text("你累吗？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "3B82F6"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "EFF6FF")).overlay(Circle().stroke(Color(hex: "3B82F6"))))
-
-                            Text("Yes, I ") +
-                            Text("am")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(". / No, I") +
-                            Text("'m")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" ") +
-                            Text("not")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(".")
-
-                            speakerButton(text: "Yes, I am.")
-
-                            Spacer()
-
-                            Text("是的。/ 不是。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-                    }
-                }
-
-                sentenceGroup(title: "表达喜好") {
-                    VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("I like")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "3B82F6")) +
-                            Text(" swimming.")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "3B82F6"))
-
-                            speakerButton(text: "I like swimming.")
-
-                            Spacer()
-
-                            Text("我喜欢游泳。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("I enjoy")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "3B82F6")) +
-                            Text(" hiking.")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "3B82F6"))
-
-                            speakerButton(text: "I enjoy hiking.")
-
-                            Spacer()
-
-                            Text("我喜欢远足。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.bold("Me too"), .normal(".")],
+                            translation: "我也是。",
+                            speakText: "Me too."
+                        )
                     }
                 }
             }
         }
+    }
+
+    // MARK: - Sentence Row Helper
+    private enum TextPart {
+        case normal(String)
+        case bold(String)
+    }
+
+    private func sentenceRow(tag: String, parts: [TextPart], translation: String, speakText: String, isQuestion: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Text(tag)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(isQuestion ? .white : Color(hex: "3B82F6"))
+                    .frame(width: 22, height: 22)
+                    .background(
+                        Circle().fill(isQuestion ? Color(hex: "3B82F6") : Color(hex: "EFF6FF"))
+                            .overlay(isQuestion ? nil : Circle().stroke(Color(hex: "3B82F6")))
+                    )
+
+                buildText(parts: parts, isQuestion: isQuestion)
+
+                speakerButton(text: speakText)
+
+                Spacer()
+            }
+
+            Text(translation)
+                .font(.system(size: 13))
+                .foregroundStyle(Color(hex: "9CA3AF"))
+                .padding(.leading, 30)
+        }
+    }
+
+    private func buildText(parts: [TextPart], isQuestion: Bool) -> Text {
+        var result = Text("")
+        for part in parts {
+            switch part {
+            case .normal(let str):
+                result = result + Text(str)
+                    .font(.system(size: 16))
+            case .bold(let str):
+                result = result + Text(str)
+                    .font(.system(size: 16, weight: .bold))
+            }
+        }
+        return result.foregroundColor(isQuestion ? Color(hex: "3B82F6") : Color(hex: "1F2937"))
     }
 
     // MARK: - Speaker Button

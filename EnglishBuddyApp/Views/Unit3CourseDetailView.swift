@@ -187,365 +187,128 @@ struct Unit3CourseDetailView: View {
             }
 
             VStack(spacing: 12) {
-                sentenceGroup(title: "描述动物特征") {
+                // 句型组1：用形容词描述事物
+                sentenceGroup(title: "用形容词描述事物") {
                     VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "84CC16")))
+                        sentenceRow(
+                            tag: "✓",
+                            parts: [.normal("He's a "), .bold("nice"), .normal(" cat.")],
+                            translation: "他是一只可爱的猫。",
+                            speakText: "He's a nice cat."
+                        )
 
-                            Text("What's")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "84CC16")) +
-                            Text(" this?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "84CC16"))
+                        sentenceRow(
+                            tag: "✗",
+                            parts: [.normal("It isn't a "), .bold("big"), .normal(" spider.")],
+                            translation: "它不是一只大蜘蛛。",
+                            speakText: "It isn't a big spider."
+                        )
 
-                            speakerButton(text: "What's this?")
+                        Divider().padding(.vertical, 2)
 
-                            Spacer()
+                        sentenceRow(
+                            tag: "✓",
+                            parts: [.normal("We're "), .bold("young"), .normal(" boys and girls.")],
+                            translation: "我们是年轻的男孩和女孩。",
+                            speakText: "We're young boys and girls."
+                        )
 
-                            Text("这是什么？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "84CC16"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "F0FDF4")).overlay(Circle().stroke(Color(hex: "84CC16"))))
-
-                            Text("It's")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" a ") +
-                            Text("big")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" horse.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "It's a big horse.")
-
-                            Spacer()
-
-                            Text("它是一匹大马。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "84CC16")))
-
-                            Text("What's")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "84CC16")) +
-                            Text(" this?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "84CC16"))
-
-                            speakerButton(text: "What's this?")
-
-                            Spacer()
-
-                            Text("这是什么？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "84CC16"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "F0FDF4")).overlay(Circle().stroke(Color(hex: "84CC16"))))
-
-                            Text("It's")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" a ") +
-                            Text("small")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" pig.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "It's a small pig.")
-
-                            Spacer()
-
-                            Text("它是一头小猪。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
+                        sentenceRow(
+                            tag: "✗",
+                            parts: [.normal("They aren't "), .bold("old"), .normal(" chickens.")],
+                            translation: "它们不是老鸡。",
+                            speakText: "They aren't old chickens."
+                        )
                     }
                 }
 
-                sentenceGroup(title: "确认动物特征") {
+                // 句型组2：用has got / hasn't got描述特征
+                sentenceGroup(title: "用has got描述特征") {
                     VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "84CC16")))
+                        sentenceRow(
+                            tag: "✓",
+                            parts: [.normal("It's "), .bold("got"), .normal(" long ears.")],
+                            translation: "它有长耳朵。",
+                            speakText: "It's got long ears."
+                        )
 
-                            Text("Is it")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "84CC16")) +
-                            Text(" big?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "84CC16"))
+                        sentenceRow(
+                            tag: "✗",
+                            parts: [.normal("It "), .bold("hasn't got"), .normal(" small feet.")],
+                            translation: "它没有小脚。",
+                            speakText: "It hasn't got small feet."
+                        )
 
-                            speakerButton(text: "Is it big?")
+                        Divider().padding(.vertical, 2)
 
-                            Spacer()
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.bold("Has"), .normal(" it "), .bold("got"), .normal(" a long face?")],
+                            translation: "它有长脸吗？",
+                            speakText: "Has it got a long face?",
+                            isQuestion: true
+                        )
 
-                            Text("它大吗？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "84CC16"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "F0FDF4")).overlay(Circle().stroke(Color(hex: "84CC16"))))
-
-                            Text("Yes, it ") +
-                            Text("is")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(". / No, it ") +
-                            Text("isn't")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(".")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "Yes, it is.")
-
-                            Spacer()
-
-                            Text("是的。/ 不是。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "84CC16")))
-
-                            Text("Is it")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "84CC16")) +
-                            Text(" fat?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "84CC16"))
-
-                            speakerButton(text: "Is it fat?")
-
-                            Spacer()
-
-                            Text("它胖吗？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "84CC16"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "F0FDF4")).overlay(Circle().stroke(Color(hex: "84CC16"))))
-
-                            Text("Yes, it ") +
-                            Text("is")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(". / No, it ") +
-                            Text("isn't")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(".")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "Yes, it is.")
-
-                            Spacer()
-
-                            Text("是的。/ 不是。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-                    }
-                }
-
-                sentenceGroup(title: "询问是否有某种特征") {
-                    VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "84CC16")))
-
-                            Text("Has it got")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "84CC16")) +
-                            Text(" a long tail?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "84CC16"))
-
-                            speakerButton(text: "Has it got a long tail?")
-
-                            Spacer()
-
-                            Text("它有长尾巴吗？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "84CC16"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "F0FDF4")).overlay(Circle().stroke(Color(hex: "84CC16"))))
-
-                            Text("Yes, it ") +
-                            Text("has")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(". / No, it ") +
-                            Text("hasn't")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(".")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "Yes, it has.")
-
-                            Spacer()
-
-                            Text("是的。/ 不是。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "84CC16")))
-
-                            Text("Has it got")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "84CC16")) +
-                            Text(" two legs?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "84CC16"))
-
-                            speakerButton(text: "Has it got two legs?")
-
-                            Spacer()
-
-                            Text("它有两条腿吗？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "84CC16"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "F0FDF4")).overlay(Circle().stroke(Color(hex: "84CC16"))))
-
-                            Text("Yes, it ") +
-                            Text("has")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(". / No, it ") +
-                            Text("hasn't")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(".")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "Yes, it has.")
-
-                            Spacer()
-
-                            Text("是的。/ 不是。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-                    }
-                }
-
-                sentenceGroup(title: "询问动物有什么特征") {
-                    VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "84CC16")))
-
-                            Text("What has it got?")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "84CC16"))
-
-                            speakerButton(text: "What has it got?")
-
-                            Spacer()
-
-                            Text("它有什么特征？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "84CC16"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "F0FDF4")).overlay(Circle().stroke(Color(hex: "84CC16"))))
-
-                            Text("It has got")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" four legs and a short tail.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "It has got four legs and a short tail.")
-
-                            Spacer()
-
-                            Text("它有四条腿和一条短尾巴。")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.bold("Yes"), .normal(", it "), .bold("has"), .normal(". / "), .bold("No"), .normal(", it "), .bold("hasn't"), .normal(".")],
+                            translation: "是的，它有。/ 不，它没有。",
+                            speakText: "Yes, it has. No, it hasn't."
+                        )
                     }
                 }
             }
         }
     }
 
+    // MARK: - Sentence Row Helper
+    private enum TextPart {
+        case normal(String)
+        case bold(String)
+    }
+
+    private func sentenceRow(tag: String, parts: [TextPart], translation: String, speakText: String, isQuestion: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Text(tag)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(isQuestion ? .white : Color(hex: "84CC16"))
+                    .frame(width: 22, height: 22)
+                    .background(
+                        Circle().fill(isQuestion ? Color(hex: "84CC16") : Color(hex: "F0FDF4"))
+                            .overlay(isQuestion ? nil : Circle().stroke(Color(hex: "84CC16")))
+                    )
+
+                buildText(parts: parts, isQuestion: isQuestion)
+
+                speakerButton(text: speakText)
+
+                Spacer()
+            }
+
+            Text(translation)
+                .font(.system(size: 13))
+                .foregroundStyle(Color(hex: "9CA3AF"))
+                .padding(.leading, 30)
+        }
+    }
+
+    private func buildText(parts: [TextPart], isQuestion: Bool) -> Text {
+        var result = Text("")
+        for part in parts {
+            switch part {
+            case .normal(let str):
+                result = result + Text(str)
+                    .font(.system(size: 16))
+            case .bold(let str):
+                result = result + Text(str)
+                    .font(.system(size: 16, weight: .bold))
+            }
+        }
+        return result.foregroundColor(isQuestion ? Color(hex: "84CC16") : Color(hex: "1F2937"))
+    }
+
+    // MARK: - Speaker Button
     private func speakerButton(text: String, size: CGFloat = 16) -> some View {
         let buttonSize = AdaptiveLayout.Dimensions.speakerButtonSize(isCompact: isCompact)
         return Button(action: {
@@ -561,7 +324,7 @@ struct Unit3CourseDetailView: View {
     }
 
     private func sentenceGroup<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AdaptiveLayout.Dimensions.cardPadding(isCompact: isCompact)) {
             Text(title)
                 .font(.system(size: AdaptiveLayout.Fonts.captionSize(isCompact: isCompact), weight: .semibold))
                 .foregroundStyle(Color(hex: "4B5563"))

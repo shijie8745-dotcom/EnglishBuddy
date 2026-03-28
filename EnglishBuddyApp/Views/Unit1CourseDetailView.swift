@@ -197,214 +197,136 @@ struct Unit1CourseDetailView: View {
             }
 
             VStack(spacing: 12) {
-                // 句型组1：Where's...? It's...（不在此教授单复数，It's不加粗）
-                sentenceGroup(title: "询问物品位置") {
+                // 句型组1：用介词描述物品位置
+                sentenceGroup(title: "用介词描述物品位置") {
                     VStack(spacing: 10) {
-                        // 问句
-                        HStack(spacing: 8) {
-                            Text("Q")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "F97316")))
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.bold("Where's"), .normal(" the crayon?")],
+                            translation: "蜡笔在哪里？",
+                            speakText: "Where's the crayon?",
+                            isQuestion: true
+                        )
 
-                            Text("Where's")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(hex: "F97316")) +
-                            Text(" the pencil?")
-                                .font(.system(size: 16))
-                                .foregroundStyle(Color(hex: "F97316"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("It's "), .bold("on"), .normal(" the desk.")],
+                            translation: "在书桌上。",
+                            speakText: "It's on the desk."
+                        )
 
-                            speakerButton(text: "Where's the pencil?")
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("It's "), .bold("in"), .normal(" the pencil case.")],
+                            translation: "在文具盒里。",
+                            speakText: "It's in the pencil case."
+                        )
 
-                            Spacer()
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("It's "), .bold("under"), .normal(" the book.")],
+                            translation: "在书下面。",
+                            speakText: "It's under the book."
+                        )
 
-                            Text("铅笔在哪里？")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-
-                        // 答句
-                        HStack(spacing: 8) {
-                            Text("A")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "F97316"))
-                                .frame(width: 22, height: 22)
-                                .background(Circle().fill(Color(hex: "FFF7ED")).overlay(Circle().stroke(Color(hex: "F97316"))))
-
-                            Text("It's ")
-                                .font(.system(size: 16)) +
-                            Text("on")
-                                .font(.system(size: 16, weight: .bold)) +
-                            Text(" the desk.")
-                                .font(.system(size: 16))
-
-                            speakerButton(text: "It's on the desk.")
-
-                            Spacer()
-
-                            Text("在书桌上")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                        .foregroundStyle(Color(hex: "1F2937"))
-
-                        Divider().padding(.vertical, 4)
-
-                        // 其他介词变体
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("其他位置表达：")
-                                .font(.system(size: 13))
-                                .foregroundStyle(Color(hex: "9CA3AF"))
-
-                            HStack(spacing: 4) {
-                                Text("It's ")
-                                    .font(.system(size: 14)) +
-                                Text("in")
-                                    .font(.system(size: 14, weight: .bold)) +
-                                Text(" the bag.")
-                                    .font(.system(size: 14))
-
-                                speakerButton(text: "It's in the bag.", size: 14)
-
-                                Spacer()
-
-                                Text("在书包里")
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(Color(hex: "6B7280"))
-                            }
-                            .foregroundStyle(Color(hex: "4B5563"))
-
-                            HStack(spacing: 4) {
-                                Text("It's ")
-                                    .font(.system(size: 14)) +
-                                Text("under")
-                                    .font(.system(size: 14, weight: .bold)) +
-                                Text(" the book.")
-                                    .font(.system(size: 14))
-
-                                speakerButton(text: "It's under the book.", size: 14)
-
-                                Spacer()
-
-                                Text("在书下面")
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(Color(hex: "6B7280"))
-                            }
-                            .foregroundStyle(Color(hex: "4B5563"))
-
-                            HStack(spacing: 4) {
-                                Text("It's ")
-                                    .font(.system(size: 14)) +
-                                Text("next to")
-                                    .font(.system(size: 14, weight: .bold)) +
-                                Text(" the chair.")
-                                    .font(.system(size: 14))
-
-                                speakerButton(text: "It's next to the chair.", size: 14)
-
-                                Spacer()
-
-                                Text("在椅子旁边")
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(Color(hex: "6B7280"))
-                            }
-                            .foregroundStyle(Color(hex: "4B5563"))
-                        }
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.normal("It's "), .bold("next to"), .normal(" the rubber.")],
+                            translation: "在橡皮旁边。",
+                            speakText: "It's next to the rubber."
+                        )
                     }
                 }
 
-                // 句型组2：What's this?（不在此教授单复数，It's不加粗）
-                sentenceGroup(title: "询问这是什么（单数）") {
-                    HStack(spacing: 8) {
-                        Text("Q")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 22, height: 22)
-                            .background(Circle().fill(Color(hex: "F97316")))
+                // 句型组2：询问单数和复数物品
+                sentenceGroup(title: "询问单数和复数物品") {
+                    VStack(spacing: 10) {
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.normal("What's "), .bold("this"), .normal("?")],
+                            translation: "这是什么？",
+                            speakText: "What's this?",
+                            isQuestion: true
+                        )
 
-                        Text("What's this?")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(Color(hex: "F97316"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.bold("It's"), .normal(" a window.")],
+                            translation: "它是一扇窗户。",
+                            speakText: "It's a window."
+                        )
 
-                        speakerButton(text: "What's this?")
+                        Divider().padding(.vertical, 2)
 
-                        Spacer()
+                        sentenceRow(
+                            tag: "Q",
+                            parts: [.normal("What "), .bold("are these"), .normal("?")],
+                            translation: "这些是什么？",
+                            speakText: "What are these?",
+                            isQuestion: true
+                        )
 
-                        Text("这是什么？")
-                            .font(.system(size: 14))
-                            .foregroundStyle(Color(hex: "6B7280"))
+                        sentenceRow(
+                            tag: "A",
+                            parts: [.bold("They're"), .normal(" windows.")],
+                            translation: "它们是窗户。",
+                            speakText: "They're windows."
+                        )
                     }
-
-                    HStack(spacing: 8) {
-                        Text("A")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Color(hex: "F97316"))
-                            .frame(width: 22, height: 22)
-                            .background(Circle().fill(Color(hex: "FFF7ED")).overlay(Circle().stroke(Color(hex: "F97316"))))
-
-                        Text("It's ")
-                            .font(.system(size: 16, weight: .bold)) +
-                        Text("a pencil case.")
-                            .font(.system(size: 16))
-
-                        speakerButton(text: "It's a pencil case.")
-
-                        Spacer()
-
-                        Text("这是一个铅笔盒。")
-                            .font(.system(size: 14))
-                            .foregroundStyle(Color(hex: "6B7280"))
-                    }
-                    .foregroundStyle(Color(hex: "1F2937"))
-                }
-
-                // 句型组3：What are these?（在此教授复数，They're要加粗）
-                sentenceGroup(title: "询问这些是什么（复数）") {
-                    HStack(spacing: 8) {
-                        Text("Q")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 22, height: 22)
-                            .background(Circle().fill(Color(hex: "F97316")))
-
-                        Text("What are these?")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(Color(hex: "F97316"))
-
-                        speakerButton(text: "What are these?")
-
-                        Spacer()
-
-                        Text("这些是什么？")
-                            .font(.system(size: 14))
-                            .foregroundStyle(Color(hex: "6B7280"))
-                    }
-
-                    HStack(spacing: 8) {
-                        Text("A")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Color(hex: "F97316"))
-                            .frame(width: 22, height: 22)
-                            .background(Circle().fill(Color(hex: "FFF7ED")).overlay(Circle().stroke(Color(hex: "F97316"))))
-
-                        Text("They're ")
-                            .font(.system(size: 16, weight: .bold)) +
-                        Text("books.")
-                            .font(.system(size: 16))
-
-                        speakerButton(text: "They're books.")
-
-                        Spacer()
-
-                        Text("这些是书。")
-                            .font(.system(size: 14))
-                            .foregroundStyle(Color(hex: "6B7280"))
-                    }
-                    .foregroundStyle(Color(hex: "1F2937"))
                 }
             }
         }
+    }
+
+    // MARK: - Sentence Row Helper
+    private enum TextPart {
+        case normal(String)
+        case bold(String)
+    }
+
+    private func sentenceRow(tag: String, parts: [TextPart], translation: String, speakText: String, isQuestion: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                // Q/A 标签
+                Text(tag)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(isQuestion ? .white : Color(hex: "F97316"))
+                    .frame(width: 22, height: 22)
+                    .background(
+                        Circle().fill(isQuestion ? Color(hex: "F97316") : Color(hex: "FFF7ED"))
+                            .overlay(isQuestion ? nil : Circle().stroke(Color(hex: "F97316")))
+                    )
+
+                // 英文内容
+                buildText(parts: parts, isQuestion: isQuestion)
+
+                // 朗读按钮
+                speakerButton(text: speakText)
+
+                Spacer()
+            }
+
+            // 中文翻译（紧跟英文下方，左侧对齐到英文位置）
+            Text(translation)
+                .font(.system(size: 13))
+                .foregroundStyle(Color(hex: "9CA3AF"))
+                .padding(.leading, 30) // 22(标签) + 8(间距)
+        }
+    }
+
+    private func buildText(parts: [TextPart], isQuestion: Bool) -> Text {
+        var result = Text("")
+        for part in parts {
+            switch part {
+            case .normal(let str):
+                result = result + Text(str)
+                    .font(.system(size: 16))
+            case .bold(let str):
+                result = result + Text(str)
+                    .font(.system(size: 16, weight: .bold))
+            }
+        }
+        return result.foregroundColor(isQuestion ? Color(hex: "F97316") : Color(hex: "1F2937"))
     }
 
     // MARK: - Speaker Button
