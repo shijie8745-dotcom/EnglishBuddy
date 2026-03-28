@@ -261,6 +261,10 @@ struct ChatView: View {
             Color.white
                 .frame(height: AdaptiveLayout.Dimensions.voiceInputHeight(isCompact: isCompact))
         }
+        .background(
+            // 白色背景延伸到底部安全区域，防止滚动时消息透出
+            Color.white.ignoresSafeArea(.container, edges: .bottom)
+        )
         .safeAreaPadding(.bottom)
     }
 
