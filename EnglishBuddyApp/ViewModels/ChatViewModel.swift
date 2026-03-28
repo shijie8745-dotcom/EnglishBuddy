@@ -735,7 +735,74 @@ class ChatViewModel {
     /// 点击"发送"按钮（点击说话模式）
     func sendTapToTalk() {
         isTapToTalkActive = false
-        stopRecording()
+
+        guard speechRecognizer != nil else {
+            isRecording = false
+            return
+        }
+
+        // 计算录音时长
+        let recordingDuration: TimeInterval
+        if let startTime = recordingStartTime {
+            recordingDuration = Date().timeIntervalSince(startTime)
+        } else {
+            recordingDuration = 0
+        }
+
+        // 立即更新 UI
+        isRecording = false
+        recognizedText = ""
+        cancellables.removeAll()
+        speechRecognizer = nil
+        recordingStartTime = nil
+
+        // 检查录音时长
+        if recordingDuration < 0.5 {
+            print("[ChatViewModel] 点击说话录音时长 \(recordingDuration)s 太短")
+            showNetworkErrorToast("录音时间太短")
+            AliyunASRService.shared.cancelRecording()
+            AliyunASRService.shared.resetRecordingState()
+            return
+        }
+
+        // 停止 ASR 录音
+        _ = AliyunASRService.shared.stopRecording()
+        let hasValidAudio = AliyunASRService.shared.hasDetectedValidAudio()
+
+        // 等待 ASR 处理最终结果
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self = self else { return }
+
+            guard hasValidAudio else {
+                print("[ChatViewModel] 点击说话未检测到有效音频")
+                self.showNetworkErrorToast("没听清，请重新说")
+                AliyunASRService.shared.resetRecordingState()
+                return
+            }
+
+            let finalText = AliyunASRService.shared.transcript
+            let voiceData = AliyunASRService.shared.getRecordedAudioData()
+            AliyunASRService.shared.resetRecordingState()
+
+            let trimmedText = finalText.trimmingCharacters(in: .whitespacesAndNewlines)
+            print("[ChatViewModel] 点击说话识别文本: '\(trimmedText)'")
+
+            if trimmedText.count < 2 {
+                self.showNetworkErrorToast("没听清，请重新说")
+                return
+            }
+
+            Task { [voiceData] in
+                let ttsConnected = await self.ensureTTSConnection()
+                if !ttsConnected {
+                    await MainActor.run {
+                        self.showNetworkErrorToast()
+                    }
+                    return
+                }
+                await self.sendMessage(trimmedText, voiceData: voiceData)
+            }
+        }
     }
 
     /// 点击"取消"按钮（点击说话模式）
