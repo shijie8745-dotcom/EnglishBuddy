@@ -472,7 +472,7 @@ struct VoiceInputContainer: View {
     @Bindable var viewModel: ChatViewModel
     @State private var isPressed = false
     @State private var isInCancelZone = false
-    @State private var cancelButtonFrame: CGRect = .zero
+    @State private var holdButtonFrame: CGRect = .zero
     @State private var isConnecting = false
     @State private var lastTapTime: Date = Date.distantPast  // 防抖
     var isCompact: Bool = false
@@ -480,48 +480,29 @@ struct VoiceInputContainer: View {
     private var inputHeight: CGFloat { AdaptiveLayout.Dimensions.voiceInputHeight(isCompact: isCompact) }
     private var buttonHeight: CGFloat { AdaptiveLayout.Dimensions.bottomButtonHeight(isCompact: isCompact) }
 
-    private let cancelButtonCoordinateSpace = "cancelButtonArea"
+    private let buttonCoordinateSpace = "buttonArea"
 
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Cancel hint text + Cancel button — 仅长按模式显示
+                // "松开取消" 提示文字 — 手指离开按钮区域时显示
                 if !viewModel.isTapToTalkActive {
-                    VStack(spacing: 0) {
-                        Text("松开取消")
-                            .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact), weight: .medium))
-                            .foregroundStyle(.white)
-                            .opacity(viewModel.isRecording && isInCancelZone ? 1 : 0)
-                            .offset(y: viewModel.isRecording && isInCancelZone ? 0 : 10)
-                            .animation(.easeInOut(duration: 0.2), value: isInCancelZone)
-
-                        Spacer().frame(height: 8)
-
-                        CancelButton(isVisible: viewModel.isRecording, isHighlighted: isInCancelZone, isCompact: isCompact)
-                            .background(
-                                GeometryReader { cancelGeometry in
-                                    Color.clear
-                                        .onChange(of: cancelGeometry.frame(in: .named(cancelButtonCoordinateSpace))) { oldFrame, newFrame in
-                                            cancelButtonFrame = newFrame
-                                        }
-                                        .onAppear {
-                                            cancelButtonFrame = cancelGeometry.frame(in: .named(cancelButtonCoordinateSpace))
-                                        }
-                                }
-                            )
-                    }
-                    .frame(width: geometry.size.width - 32, height: buttonHeight + 8 + 20)
-                    .position(
-                        x: geometry.size.width / 2,
-                        y: geometry.size.height - buttonHeight - 16 - 36 - 26 - 8
-                    )
+                    Text("松开取消")
+                        .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact), weight: .medium))
+                        .foregroundStyle(.white)
+                        .opacity(viewModel.isRecording && isInCancelZone ? 1 : 0)
+                        .offset(y: viewModel.isRecording && isInCancelZone ? 0 : 10)
+                        .animation(.easeInOut(duration: 0.2), value: isInCancelZone)
+                        .position(
+                            x: geometry.size.width / 2,
+                            y: geometry.size.height / 2 - 8 - buttonHeight / 2 - 24
+                        )
                 }
 
                 // 底部按钮区域
                 HStack(spacing: 10) {
                     if viewModel.isTapToTalkActive {
                         // === 点击说话录音中：发送 + 取消 ===
-                        // 发送按钮
                         VoiceButton(
                             isRecording: true,
                             isDimmed: false,
@@ -537,7 +518,6 @@ struct VoiceInputContainer: View {
                             }
                         }
 
-                        // 取消按钮
                         TapToTalkCancelButton(isCompact: isCompact)
                             .onTapGesture {
                                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -546,7 +526,6 @@ struct VoiceInputContainer: View {
                             }
                     } else {
                         // === 默认状态：按住说话 + 点击说话 ===
-                        // 按住说话
                         VoiceButton(
                             isRecording: viewModel.isRecording,
                             isDimmed: isInCancelZone,
@@ -555,8 +534,19 @@ struct VoiceInputContainer: View {
                             isCompact: isCompact
                         )
                         .frame(maxWidth: .infinity)
+                        .background(
+                            GeometryReader { btnGeometry in
+                                Color.clear
+                                    .onChange(of: btnGeometry.frame(in: .named(buttonCoordinateSpace))) { _, newFrame in
+                                        holdButtonFrame = newFrame
+                                    }
+                                    .onAppear {
+                                        holdButtonFrame = btnGeometry.frame(in: .named(buttonCoordinateSpace))
+                                    }
+                            }
+                        )
                         .gesture(
-                            DragGesture(minimumDistance: 0, coordinateSpace: .named(cancelButtonCoordinateSpace))
+                            DragGesture(minimumDistance: 0, coordinateSpace: .named(buttonCoordinateSpace))
                                 .onChanged { value in
                                     guard !viewModel.isPreparing else { return }
 
@@ -573,11 +563,14 @@ struct VoiceInputContainer: View {
                                         }
                                     }
 
+                                    // 判断手指是否在按钮区域内（加一点容差）
                                     if viewModel.isRecording {
                                         let fingerLocation = value.location
-                                        let expandedFrame = cancelButtonFrame.insetBy(dx: -12, dy: 0)
-                                        let shouldCancel = expandedFrame.contains(fingerLocation)
+                                        let expandedFrame = holdButtonFrame.insetBy(dx: -16, dy: -12)
+                                        let isInsideButton = expandedFrame.contains(fingerLocation)
 
+                                        // 在按钮外 = 取消区域
+                                        let shouldCancel = !isInsideButton
                                         if shouldCancel != isInCancelZone {
                                             withAnimation(.easeInOut(duration: 0.15)) {
                                                 isInCancelZone = shouldCancel
@@ -619,7 +612,7 @@ struct VoiceInputContainer: View {
                     y: geometry.size.height / 2 - 8
                 )
             }
-            .coordinateSpace(name: cancelButtonCoordinateSpace)
+            .coordinateSpace(name: buttonCoordinateSpace)
         }
         .frame(height: inputHeight)
     }
@@ -630,7 +623,7 @@ struct VoiceInputContainer: View {
         } else if isConnecting && !viewModel.isRecording {
             return "连接中..."
         } else if viewModel.isRecording {
-            return "松开发送"
+            return isInCancelZone ? "松开取消" : "松开发送"
         } else {
             return "按住说话"
         }
@@ -757,44 +750,6 @@ struct VoiceButton: View {
 
     private var normalColors: [Color] {
         [Color(hex: "F97316"), Color(hex: "EA580C")]
-    }
-}
-
-// MARK: - Cancel Button (Same width as voice button, rounded rectangle)
-struct CancelButton: View {
-    let isVisible: Bool
-    let isHighlighted: Bool
-    var isCompact: Bool = false
-
-    private var buttonHeight: CGFloat { AdaptiveLayout.Dimensions.bottomButtonHeight(isCompact: isCompact) }
-
-    // 默认状态：浅灰色背景，白色文字
-    // 高亮状态：白色背景，黑色文字
-    var body: some View {
-        Text("取消")
-            .font(.system(size: AdaptiveLayout.Fonts.bodySize(isCompact: isCompact), weight: .medium))
-            .foregroundStyle(isHighlighted ? Color.black : Color.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: buttonHeight)
-            .background(
-                RoundedRectangle(cornerRadius: 26)
-                    .fill(isHighlighted ? Color.white : Color(hex: "9CA3AF"))
-                    .shadow(
-                        color: isHighlighted ? Color.black.opacity(0.15) : Color.black.opacity(0.2),
-                        radius: isHighlighted ? 6 : 4,
-                        x: 0,
-                        y: 2
-                    )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 26)
-                    .stroke(isHighlighted ? Color.gray.opacity(0.3) : Color.clear, lineWidth: 1)
-            )
-            .scaleEffect(isHighlighted ? 1.05 : 1.0)
-            .opacity(isVisible ? 1 : 0)
-            .offset(y: isVisible ? 0 : 10)
-            .animation(.easeInOut(duration: 0.2), value: isVisible)
-            .animation(.easeInOut(duration: 0.15), value: isHighlighted)
     }
 }
 
