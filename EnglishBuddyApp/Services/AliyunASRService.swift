@@ -12,11 +12,25 @@ final class AliyunASRService: NSObject, ObservableObject {
     /// 标记当前会话是否已被取消（用于忽略取消后仍到达的异步消息）
     private var isSessionCancelled = false
 
-    /// 标记是否检测到有效音频（音量超过阈值）
+    /// 标记是否检测到有效音频（音量超过阈值且持续足够帧数）
     private var hasValidAudio = false
 
+    /// 音量超过阈值的帧数计数
+    private var validAudioFrameCount: Int = 0
+
     /// 音量阈值（低于此值视为静音）
-    private let volumeThreshold: Float = 0.03
+    private let volumeThreshold: Float = 0.05
+
+    /// 需要连续超过阈值的最少帧数（约 0.3 秒，取决于音频回调频率）
+    private let minValidFrameCount: Int = 3
+
+    /// ASR 常见噪音幻觉短语（环境噪音容易被误识别为这些内容）
+    private let hallucinationPhrases: Set<String> = [
+        "thank you", "thank you.", "thanks.", "thanks",
+        "you", "you.", "bye.", "bye", "yeah.", "yeah",
+        "the", "the.", "a", "i", "hmm", "hmm.",
+        "uh", "uh.", "um", "um.", "oh", "oh.",
+    ]
     @Published var isRecording = false
     @Published var isConnecting = false
     @Published var isReady = false  // WebSocket 已连接并准备好录音
@@ -165,12 +179,22 @@ final class AliyunASRService: NSObject, ObservableObject {
         transcript = ""
         isSessionCancelled = false
         hasValidAudio = false
+        validAudioFrameCount = 0
         recordedAudioData = Data()  // 清空录音数据
     }
 
     /// 检查是否检测到有效音频
     func hasDetectedValidAudio() -> Bool {
-        return hasValidAudio
+        guard hasValidAudio else { return false }
+
+        // 过滤已知的噪音幻觉短语
+        let trimmed = transcript.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if hallucinationPhrases.contains(trimmed) {
+            print("[AliyunASR] 过滤噪音幻觉: '\(transcript)'")
+            return false
+        }
+
+        return true
     }
 
     /// 获取录音数据（WAV 格式，可用于播放）
@@ -228,6 +252,7 @@ final class AliyunASRService: NSObject, ObservableObject {
 
         // 重置音量检测状态
         hasValidAudio = false
+        validAudioFrameCount = 0
 
         // 清空录音数据缓冲区
         recordedAudioData = Data()
@@ -436,9 +461,12 @@ final class AliyunASRService: NSObject, ObservableObject {
             }
             rms = sqrt(rms / Float(frameLength))
 
-            // 如果音量超过阈值，标记为有效音频
+            // 需要多帧持续超过阈值才标记为有效（过滤瞬时噪音）
             if rms > volumeThreshold {
-                hasValidAudio = true
+                validAudioFrameCount += 1
+                if validAudioFrameCount >= minValidFrameCount {
+                    hasValidAudio = true
+                }
             }
         }
 
