@@ -42,7 +42,7 @@ final class AliyunASRService: NSObject, ObservableObject {
     // MARK: - Configuration
     private let apiKey: String = APIConfig.dashScopeAPIKey
     private let baseURL = "wss://dashscope.aliyuncs.com/api-ws/v1/realtime"
-    private let model = "qwen3-asr-flash-realtime"
+    private let model = APIConfig.asrModel
 
     // 音频配置
     private let sampleRate: Double = 16000
