@@ -351,7 +351,7 @@ final class AliyunASRService: NSObject, ObservableObject {
                 "input_audio_format": "pcm",
                 "sample_rate": Int(sampleRate),
                 "input_audio_transcription": [
-                    "language": "auto"  // 自动语言识别（支持中英文混合）
+                    "language": "en"  // 英语优先（模型本身支持多语言，中文也可识别）
                 ],
                 "turn_detection": NSNull()  // 手动模式，不由服务器 VAD 控制
             ]
