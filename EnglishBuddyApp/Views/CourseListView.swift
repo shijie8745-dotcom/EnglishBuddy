@@ -342,14 +342,19 @@ struct CourseListView: View {
     }
 
     // MARK: - Stats Section
+    @State private var latestScoreText: String = "--"
+
     private var statsSection: some View {
         HStack(spacing: 12) {
-            StatCard(
-                icon: "calendar.badge.checkmark",
-                iconColor: Color(hex: "8B5CF6"),
-                value: "\(viewModel.totalCheckIns)",
-                label: "累计打卡"
-            )
+            NavigationLink(destination: ScoreHistoryView()) {
+                StatCard(
+                    icon: "star.bubble.fill",
+                    iconColor: Color(hex: "F97316"),
+                    value: latestScoreText,
+                    label: "评分记录"
+                )
+            }
+            .buttonStyle(.plain)
 
             StatCard(
                 icon: "clock.fill",
@@ -365,6 +370,13 @@ struct CourseListView: View {
                 value: "\(viewModel.totalChatCount)",
                 label: "累计对话"
             )
+        }
+        .onAppear {
+            if let latest = ScoreHistoryStore.shared.loadLatestScore() {
+                latestScoreText = "\(latest.overallScore)分"
+            } else {
+                latestScoreText = "--"
+            }
         }
     }
 

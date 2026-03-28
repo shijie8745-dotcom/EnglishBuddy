@@ -12,6 +12,7 @@ Build/
 # Config files with sensitive data
 EnglishBuddyApp/Config/APIConfig.swift
 EnglishBuddyApp/Config/PromptConfig.swift
+EnglishBuddyApp/Config/ScoringPromptConfig.swift
 
 # macOS
 .DS_Store

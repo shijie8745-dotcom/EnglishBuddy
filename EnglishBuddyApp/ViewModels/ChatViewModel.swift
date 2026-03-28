@@ -53,6 +53,12 @@ class ChatViewModel {
     /// 打卡状态提示
     var checkInMessage: String? = nil
 
+    /// 评分 ViewModel
+    var scoringViewModel = ScoringViewModel()
+
+    /// 评分触发回调（由 ChatView 设置）
+    var onScoringTriggered: (() -> Void)?
+
     private var speechRecognizer: SpeechRecognizer?
     private var cancellables = Set<AnyCancellable>()
 
@@ -281,23 +287,11 @@ class ChatViewModel {
     private let maxCachedAudioCount = 20
 
     /// 清理超出限制的音频缓存（保留最近的 N 条）
+    /// 评分功能需要完整音频，会话期间不清理
+    /// 音频在 clearAudioCache()（onDisappear）时统一释放
     private func cleanupAudioCacheIfNeeded() {
-        // 获取所有有音频的消息索引（AI 音频或用户录音）
-        let messagesWithAudio = messages.enumerated().filter {
-            $0.element.audioData != nil || $0.element.userVoiceData != nil
-        }
-        let count = messagesWithAudio.count
-
-        // 如果超过限制，清理最旧的
-        if count >= maxCachedAudioCount {
-            let toRemove = count - maxCachedAudioCount + 1
-            for i in 0..<toRemove {
-                let index = messagesWithAudio[i].offset
-                messages[index].audioData = nil
-                messages[index].userVoiceData = nil
-                print("[ChatViewModel] 清理旧音频缓存，索引: \(index)")
-            }
-        }
+        // 评分功能需要完整音频，会话期间不清理
+        return
     }
 
     /// 停止所有播放（用户录音时调用，优先级最高）
@@ -678,6 +672,15 @@ class ChatViewModel {
     func sendMessage(_ text: String, voiceData: Data? = nil) async {
         guard !text.isEmpty else { return }
 
+        // 检测评分关键词
+        let scoringKeywords = ["打分", "评分", "给我打分", "帮我打分"]
+        if scoringKeywords.contains(where: { text.contains($0) }) {
+            await MainActor.run {
+                onScoringTriggered?()
+            }
+            return
+        }
+
         // Add user message（同时保存录音数据）
         messages.append(ChatMessage(text: text, speaker: .user, userVoiceData: voiceData))
 
@@ -979,6 +982,13 @@ class ChatViewModel {
 
     func updateRecognizedText() {
         // Transcript is now updated via Combine publisher
+    }
+
+    // MARK: - Scoring Support
+
+    /// 获取会话开始时间（供评分使用）
+    var currentSessionStartTime: Date? {
+        sessionStartTime
     }
 }
 

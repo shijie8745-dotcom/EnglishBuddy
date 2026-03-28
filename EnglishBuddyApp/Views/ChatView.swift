@@ -58,7 +58,35 @@ struct ChatView: View {
             }
             .ignoresSafeArea(.container, edges: .bottom)
 
-            // Layer 5: Toast 通知
+            // Layer 5: Scoring Loading Overlay
+            if viewModel.scoringViewModel.isScoring {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .overlay(
+                        VStack(spacing: 16) {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 36))
+                                .foregroundStyle(Color(hex: "F59E0B"))
+                                .rotationEffect(.degrees(viewModel.scoringViewModel.isScoring ? 360 : 0))
+                                .animation(
+                                    .linear(duration: 2).repeatForever(autoreverses: false),
+                                    value: viewModel.scoringViewModel.isScoring
+                                )
+
+                            Text("评分中...")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(.white)
+                        }
+                        .padding(32)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(Color.black.opacity(0.7))
+                        )
+                    )
+                    .allowsHitTesting(true)
+            }
+
+            // Layer 6: Toast 通知
             if viewModel.showToast {
                 VStack {
                     Spacer()
@@ -82,12 +110,39 @@ struct ChatView: View {
             if let data = DataStore.loadUserAvatar() {
                 userAvatarImage = UIImage(data: data)
             }
+            // 设置语音触发评分回调
+            viewModel.onScoringTriggered = {
+                triggerScoring()
+            }
         }
         .onDisappear {
             // 退出会话时统计学习时长并清理音频缓存
             viewModel.finishSession()
             viewModel.clearAudioCache()
             viewModel.clearTTSCallbacks()
+        }
+        .fullScreenCover(isPresented: $viewModel.scoringViewModel.showScoreResult) {
+            if let result = viewModel.scoringViewModel.scoreResult {
+                ScoreResultView(
+                    score: result,
+                    onDismiss: {
+                        viewModel.scoringViewModel.dismissResult()
+                    },
+                    onContinue: {
+                        // 关闭结果页后继续对话
+                    }
+                )
+            }
+        }
+        .onChange(of: viewModel.scoringViewModel.scoringError) { _, newError in
+            if let error = newError {
+                viewModel.toastMessage = error
+                viewModel.showToast = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    viewModel.showToast = false
+                    viewModel.scoringViewModel.resetError()
+                }
+            }
         }
         .navigationBarHidden(true)
         .toolbar(.hidden, for: .navigationBar)
@@ -125,8 +180,14 @@ struct ChatView: View {
 
             Spacer()
 
-            // Spacer for alignment
-            Color.clear.frame(width: headerButtonSize, height: headerButtonSize)
+            // Scoring button
+            Button(action: { triggerScoring() }) {
+                Image(systemName: "star.fill")
+                    .font(.system(size: AdaptiveLayout.Fonts.headingSize(isCompact: isCompact), weight: .semibold))
+                    .foregroundStyle(Color(hex: "F97316"))
+                    .frame(width: headerButtonSize, height: headerButtonSize)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: "FFF7ED")))
+            }
         }
         .frame(height: AdaptiveLayout.Dimensions.headerHeight(isCompact: isCompact))
         .padding(.horizontal, AdaptiveLayout.Dimensions.horizontalPadding(isCompact: isCompact))
@@ -246,6 +307,33 @@ struct ChatView: View {
             withAnimation {
                 proxy.scrollTo("typing", anchor: .top)
             }
+        }
+    }
+
+    // MARK: - Scoring
+
+    private func triggerScoring() {
+        let (canScore, reason) = viewModel.scoringViewModel.canScore(
+            allMessages: viewModel.messages,
+            sessionStartTime: viewModel.currentSessionStartTime
+        )
+
+        guard canScore else {
+            viewModel.toastMessage = reason ?? "无法评分"
+            viewModel.showToast = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                viewModel.showToast = false
+            }
+            return
+        }
+
+        Task {
+            await viewModel.scoringViewModel.startScoring(
+                messages: viewModel.messages,
+                sessionStartTime: viewModel.currentSessionStartTime,
+                lessonId: lesson.id,
+                lessonTitle: lesson.title
+            )
         }
     }
 

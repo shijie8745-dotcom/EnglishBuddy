@@ -151,6 +151,8 @@ enum CloudCoinReward {
     static let consecutive7Days = 10 // 连续7天额外奖励
     static let studyPerMinute = 1    // 学习每分钟
     static let petPrice = 200        // 宠物价格
+    static let scoringHigh = 5      // 评分 ≥95 奖励
+    static let scoringGood = 3      // 评分 ≥80 奖励
 }
 
 // MARK: - Updated CheckInRecord

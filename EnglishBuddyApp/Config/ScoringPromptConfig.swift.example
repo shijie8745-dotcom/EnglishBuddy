@@ -1,0 +1,13 @@
+import Foundation
+
+/// 评分 Prompt 配置（示例文件）
+/// 复制此文件为 ScoringPromptConfig.swift 并填入实际内容
+/// ScoringPromptConfig.swift 已在 .gitignore 中，不会被提交到 GitHub
+enum ScoringPromptConfig {
+
+    /// 生成评分 Prompt
+    static func scoringPrompt(lessonId: Int, lessonTitle: String, conversationTranscript: String) -> String {
+        // 参考 ScoringPromptConfig.swift 的实际实现
+        return "YOUR_SCORING_PROMPT_HERE"
+    }
+}
