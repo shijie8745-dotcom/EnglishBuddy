@@ -19,11 +19,15 @@ class ScoringService {
         lessonTitle: String,
         sessionStartTime: Date?
     ) async throws -> ScoreResult {
+        print("[ScoringService] 开始评分: \(messages.count) 条消息, lessonId=\(lessonId)")
+
         // 1. 构建对话文字记录
         let transcript = buildConversationTranscript(from: messages)
+        print("[ScoringService] 对话记录:\n\(transcript)")
 
         // 2. 拼接所有音频
         let audioData = concatenateAllAudio(from: messages)
+        print("[ScoringService] 音频数据: \(audioData?.count ?? 0) bytes")
 
         // 3. 构建评分 Prompt
         let scoringPrompt = ScoringPromptConfig.scoringPrompt(
@@ -158,29 +162,67 @@ class ScoringService {
             "text": "请根据以下对话记录和语音录音进行评分。\n\n对话记录：\n\(transcript)"
         ])
 
-        // 音频（如果有）
+        // 音频（如果有）- 使用 WAV 封装后的 data URL 格式
         if let audio = audioData {
-            let base64Audio = audio.base64EncodedString()
+            let wavData = wrapPCMAsWAV(audio, sampleRate: 16000)
+            let base64Audio = wavData.base64EncodedString()
             userContent.append([
                 "type": "input_audio",
                 "input_audio": [
-                    "data": "audio/pcm;rate=16000,\(base64Audio)",
-                    "format": "pcm"
+                    "data": "data:audio/wav;base64,\(base64Audio)",
+                    "format": "wav"
                 ]
             ])
+            print("[ScoringService] 音频大小: PCM=\(audio.count) WAV=\(wavData.count) base64=\(base64Audio.count)")
         }
 
+        // qwen3-omni-flash 需要 stream=true，且不支持 temperature
         let body: [String: Any] = [
             "model": model,
             "messages": [
                 ["role": "system", "content": systemPrompt],
                 ["role": "user", "content": userContent]
             ],
-            "temperature": 0.3,
+            "stream": true,
+            "stream_options": ["include_usage": true],
             "max_tokens": 2000
         ]
 
         return body
+    }
+
+    /// 将 PCM 数据封装为 WAV 格式（16-bit mono）
+    private func wrapPCMAsWAV(_ pcmData: Data, sampleRate: Int) -> Data {
+        let channels: Int = 1
+        let bitsPerSample: Int = 16
+        let byteRate = sampleRate * channels * bitsPerSample / 8
+        let blockAlign = channels * bitsPerSample / 8
+        let dataSize = pcmData.count
+        let fileSize = 36 + dataSize
+
+        var header = Data()
+
+        // RIFF header
+        header.append(contentsOf: "RIFF".utf8)
+        header.append(contentsOf: withUnsafeBytes(of: UInt32(fileSize).littleEndian) { Array($0) })
+        header.append(contentsOf: "WAVE".utf8)
+
+        // fmt chunk
+        header.append(contentsOf: "fmt ".utf8)
+        header.append(contentsOf: withUnsafeBytes(of: UInt32(16).littleEndian) { Array($0) }) // chunk size
+        header.append(contentsOf: withUnsafeBytes(of: UInt16(1).littleEndian) { Array($0) })  // PCM format
+        header.append(contentsOf: withUnsafeBytes(of: UInt16(channels).littleEndian) { Array($0) })
+        header.append(contentsOf: withUnsafeBytes(of: UInt32(sampleRate).littleEndian) { Array($0) })
+        header.append(contentsOf: withUnsafeBytes(of: UInt32(byteRate).littleEndian) { Array($0) })
+        header.append(contentsOf: withUnsafeBytes(of: UInt16(blockAlign).littleEndian) { Array($0) })
+        header.append(contentsOf: withUnsafeBytes(of: UInt16(bitsPerSample).littleEndian) { Array($0) })
+
+        // data chunk
+        header.append(contentsOf: "data".utf8)
+        header.append(contentsOf: withUnsafeBytes(of: UInt32(dataSize).littleEndian) { Array($0) })
+
+        header.append(pcmData)
+        return header
     }
 
     // MARK: - Network
@@ -201,23 +243,48 @@ class ScoringService {
 
         print("[ScoringService] 发送评分请求，数据大小: \(jsonData.count) bytes")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (bytes, response) = try await URLSession.shared.bytes(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ScoringError.networkError("无效的服务器响应")
         }
 
         guard httpResponse.statusCode == 200 else {
-            let errorBody = String(data: data, encoding: .utf8) ?? "未知错误"
+            var errorData = Data()
+            for try await byte in bytes {
+                errorData.append(byte)
+            }
+            let errorBody = String(data: errorData, encoding: .utf8) ?? "未知错误"
             print("[ScoringService] API 错误 \(httpResponse.statusCode): \(errorBody)")
             throw ScoringError.apiError("服务器错误 (\(httpResponse.statusCode))")
         }
 
-        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw ScoringError.parseError("无法解析响应 JSON")
+        // 收集流式响应，拼接所有 delta content
+        var fullContent = ""
+        for try await line in bytes.lines {
+            guard line.hasPrefix("data: ") else { continue }
+            let jsonStr = String(line.dropFirst(6))
+            if jsonStr == "[DONE]" { break }
+
+            guard let chunkData = jsonStr.data(using: .utf8),
+                  let chunk = try? JSONSerialization.jsonObject(with: chunkData) as? [String: Any],
+                  let choices = chunk["choices"] as? [[String: Any]],
+                  let delta = choices.first?["delta"] as? [String: Any],
+                  let content = delta["content"] as? String else {
+                continue
+            }
+            fullContent += content
         }
 
-        return json
+        print("[ScoringService] 流式响应收集完成，内容长度: \(fullContent.count)")
+
+        // 构造统一格式返回
+        let result: [String: Any] = [
+            "choices": [
+                ["message": ["content": fullContent]]
+            ]
+        ]
+        return result
     }
 
     // MARK: - Response Parsing

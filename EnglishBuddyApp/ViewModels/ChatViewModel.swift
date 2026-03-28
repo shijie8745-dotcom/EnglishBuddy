@@ -672,9 +672,19 @@ class ChatViewModel {
     func sendMessage(_ text: String, voiceData: Data? = nil) async {
         guard !text.isEmpty else { return }
 
-        // 检测评分关键词
-        let scoringKeywords = ["打分", "评分", "给我打分", "帮我打分"]
-        if scoringKeywords.contains(where: { text.contains($0) }) {
+        // 检测评分关键词（ASR 是英语模式，中文会被音译）
+        let lowerText = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let scoringKeywords = [
+            // 英文关键词
+            "score me", "give me a score", "grade me", "rate me",
+            "score", "my score", "check my score",
+            // 中文关键词（用户可能切到中文输入）
+            "打分", "评分", "给我打分", "帮我打分",
+            // ASR 可能的音译变体
+            "da fen", "dafen", "ping fen", "pingfen"
+        ]
+        if scoringKeywords.contains(where: { lowerText.contains($0) }) {
+            print("[ChatViewModel] 检测到评分关键词: \(text)")
             await MainActor.run {
                 onScoringTriggered?()
             }
