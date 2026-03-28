@@ -104,12 +104,19 @@ class ScoringService {
 
     private func buildConversationTranscript(from messages: [ChatMessage]) -> String {
         var lines: [String] = []
+        var studentIndex = 0
         for (index, message) in messages.enumerated() {
-            let speaker = message.speaker == .ai ? "AI (Emii)" : "Student (kiki)"
             let hasAudio = (message.speaker == .ai && message.audioData != nil) ||
                            (message.speaker == .user && message.userVoiceData != nil)
             let audioTag = hasAudio ? " [has audio]" : " [text only]"
-            lines.append("[\(index + 1)] \(speaker)\(audioTag): \(message.text)")
+
+            if message.speaker == .user {
+                // 学生消息额外标注 student_index，供评分模型引用
+                lines.append("[\(index + 1)] Student (kiki) [student_index=\(studentIndex)]\(audioTag): \(message.text)")
+                studentIndex += 1
+            } else {
+                lines.append("[\(index + 1)] AI (Emii)\(audioTag): \(message.text)")
+            }
         }
         return lines.joined(separator: "\n")
     }
