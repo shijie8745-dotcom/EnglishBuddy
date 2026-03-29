@@ -59,7 +59,12 @@ struct ScoreResultView: View {
                 }
             }
         }
-        .onAppear { startAnimations() }
+        .onAppear {
+            startAnimations()
+            if !isFromHistory {
+                speakText(score.feedback)
+            }
+        }
     }
 
     // MARK: - Header
@@ -149,8 +154,8 @@ struct ScoreResultView: View {
     }
 
     private var overallScoreCard: some View {
-        VStack(spacing: 8) {
-            Spacer().frame(height: 6)
+        VStack(spacing: 10) {
+            Spacer()
             // Stars
             HStack(spacing: 5) {
                 ForEach(0..<5, id: \.self) { index in
@@ -171,7 +176,7 @@ struct ScoreResultView: View {
             // Big score with 分
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text("\(animatedScore)")
-                    .font(.system(size: 64, weight: .heavy, design: .rounded))
+                    .font(.system(size: 72, weight: .heavy, design: .rounded))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [Color(hex: "F97316"), Color(hex: "EA580C")],
@@ -180,18 +185,10 @@ struct ScoreResultView: View {
                         )
                     )
                 Text("分")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(Color(hex: "F97316"))
             }
-
-            // Encouragement
-            Text(score.encouragement)
-                .font(.system(size: 14))
-                .foregroundStyle(Color(hex: "666666"))
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .padding(.horizontal, 24)
-            Spacer().frame(height: 6)
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
