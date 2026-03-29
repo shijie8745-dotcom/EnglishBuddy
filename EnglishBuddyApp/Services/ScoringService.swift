@@ -336,6 +336,7 @@ class ScoringService {
         let updatedStats = SessionStats(
             totalTurns: stats.totalTurns,
             sessionDuration: stats.sessionDuration,
+            vocabularyPracticed: stats.vocabularyPracticed,
             correctCount: correctCount,
             correctedCount: correctedCount
         )
@@ -387,19 +388,52 @@ class ScoringService {
         // 对话轮数 = 学生发言次数
         let totalTurns = messages.filter { $0.speaker == .user }.count
 
-        // 学习时长 = 第一条消息到最后一条消息的时间差
-        let sessionDuration: Int
-        if let first = messages.first, let last = messages.last {
-            sessionDuration = Int(last.timestamp.timeIntervalSince(first.timestamp))
-        } else {
-            sessionDuration = 0
+        // 学习时长 = 消息之间的活跃时间之和（超过60秒的空闲间隔不计入）
+        let idleThreshold: TimeInterval = 60
+        var sessionDuration: Int = 0
+        if messages.count >= 2 {
+            var activeSeconds: TimeInterval = 0
+            for i in 1..<messages.count {
+                let gap = messages[i].timestamp.timeIntervalSince(messages[i-1].timestamp)
+                if gap > 0 && gap <= idleThreshold {
+                    activeSeconds += gap
+                }
+            }
+            sessionDuration = Int(activeSeconds)
         }
+
+        // 练习词汇 = 学生消息中去重的英文实义词数（排除常见功能词）
+        let stopWords: Set<String> = [
+            "i", "me", "my", "you", "your", "he", "she", "it", "we", "they",
+            "a", "an", "the", "is", "am", "are", "was", "were", "be", "been",
+            "do", "does", "did", "have", "has", "had", "will", "would", "can",
+            "could", "should", "shall", "may", "might", "must",
+            "to", "of", "in", "on", "at", "for", "with", "and", "or", "but",
+            "not", "no", "yes", "ok", "okay", "so", "very", "too", "just",
+            "this", "that", "there", "here", "what", "how", "who", "when",
+            "where", "why", "which", "if", "then", "than", "up", "down",
+            "don't", "doesn't", "didn't", "isn't", "aren't", "wasn't",
+            "won't", "can't", "couldn't", "shouldn't", "wouldn't"
+        ]
+        let studentTexts = messages.filter { $0.speaker == .user }.map { $0.text }
+        let allWords = studentTexts.joined(separator: " ")
+            .lowercased()
+            .components(separatedBy: .whitespacesAndNewlines)
+            .map { $0.trimmingCharacters(in: .punctuationCharacters) }
+            .filter { word in
+                !word.isEmpty
+                && word.count >= 2
+                && word.rangeOfCharacter(from: .letters) != nil
+                && !stopWords.contains(word)
+                && word.allSatisfy { $0.isASCII } // 排除中文
+            }
+        let uniqueWords = Set(allWords)
+        let vocabularyPracticed = uniqueWords.count
 
         return SessionStats(
             totalTurns: totalTurns,
             sessionDuration: sessionDuration,
-            vocabularyPracticed: 0,
-            vocabularyTotal: 0,
+            vocabularyPracticed: vocabularyPracticed,
             correctCount: 0,
             correctedCount: 0
         )

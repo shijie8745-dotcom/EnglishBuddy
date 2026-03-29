@@ -37,6 +37,13 @@ class ScoreHistoryStore {
         loadAllScores().first
     }
 
+    func averageScore() -> Int? {
+        let scores = loadAllScores()
+        guard !scores.isEmpty else { return nil }
+        let sum = scores.reduce(0) { $0 + $1.overallScore }
+        return sum / scores.count
+    }
+
     func deleteScore(id: UUID) {
         var scores = loadAllScores()
         scores.removeAll { $0.id == id }

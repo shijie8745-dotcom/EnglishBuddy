@@ -372,8 +372,8 @@ struct CourseListView: View {
             )
         }
         .onAppear {
-            if let latest = ScoreHistoryStore.shared.loadLatestScore() {
-                latestScoreText = "\(latest.overallScore)分"
+            if let avg = ScoreHistoryStore.shared.averageScore() {
+                latestScoreText = "\(avg)分"
             } else {
                 latestScoreText = "--"
             }

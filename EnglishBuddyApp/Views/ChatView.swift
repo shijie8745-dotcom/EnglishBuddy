@@ -128,6 +128,12 @@ struct ChatView: View {
                     onDismiss: {
                         viewModel.scoringViewModel.dismissResult()
                     },
+                    onReturnHome: {
+                        viewModel.scoringViewModel.dismissResult()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            dismiss()
+                        }
+                    },
                     onContinue: {
                         // 关闭结果页后继续对话
                     }
