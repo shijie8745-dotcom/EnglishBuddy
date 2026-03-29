@@ -45,10 +45,6 @@ struct GrammarDetail: Codable {
     let explanation: String?
     let messageIndex: Int?
     var audioData: Data?
-
-    enum CodingKeys: String, CodingKey {
-        case original, corrected, explanation, messageIndex
-    }
 }
 
 struct PronunciationDetail: Codable {
@@ -58,15 +54,12 @@ struct PronunciationDetail: Codable {
     let correction: String
     let messageIndex: Int?
     var audioData: Data?
-
-    enum CodingKeys: String, CodingKey {
-        case sentence, errorWords, issue, correction, messageIndex
-    }
 }
 
 struct SessionStats: Codable {
     let totalTurns: Int
     let sessionDuration: Int
+    let vocabularyPracticed: Int
     let correctCount: Int
     let correctedCount: Int
 }

@@ -84,9 +84,10 @@ struct ScoreResultView: View {
 
             Spacer()
 
-            Text("对话评分")
-                .font(.system(size: 17, weight: .semibold))
+            Text("对话评分 · Unit\(score.lessonId) \(score.lessonTitle)")
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color(hex: "333333"))
+                .lineLimit(1)
 
             Spacer()
 
@@ -416,16 +417,23 @@ struct ScoreResultView: View {
                     }
 
                     if let explanation = detail.explanation {
-                        Text(explanation)
-                            .font(.system(size: 13))
-                            .foregroundStyle(Color(hex: "92400E"))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color(hex: "FEF3C7"))
-                            )
+                        HStack(spacing: 8) {
+                            Text(explanation)
+                                .font(.system(size: 13))
+                                .foregroundStyle(Color(hex: "92400E"))
+                            Spacer()
+                            Button(action: { speakText(explanation) }) {
+                                Image(systemName: "speaker.wave.2.fill")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(Color(hex: "92400E").opacity(0.6))
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: "FEF3C7"))
+                        )
                     }
                 }
             }
@@ -475,16 +483,23 @@ struct ScoreResultView: View {
                         }
                     }
 
-                    Text("发音问题：\(detail.issue)")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Color(hex: "92400E"))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(hex: "FEF3C7"))
-                        )
+                    HStack(spacing: 8) {
+                        Text("发音问题：\(detail.issue)")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Color(hex: "92400E"))
+                        Spacer()
+                        Button(action: { speakText("发音问题：\(detail.issue)") }) {
+                            Image(systemName: "speaker.wave.2.fill")
+                                .font(.system(size: 13))
+                                .foregroundStyle(Color(hex: "92400E").opacity(0.6))
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color(hex: "FEF3C7"))
+                    )
                 }
             }
         }

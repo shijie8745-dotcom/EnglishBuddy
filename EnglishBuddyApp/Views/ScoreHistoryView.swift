@@ -44,7 +44,7 @@ struct ScoreHistoryView: View {
             scores = ScoreHistoryStore.shared.loadAllScores()
         }
         .fullScreenCover(item: $selectedScore) { score in
-            ScoreResultView(score: score, onDismiss: {
+            ScoreResultView(score: score, isFromHistory: true, onDismiss: {
                 selectedScore = nil
             })
         }
@@ -70,6 +70,7 @@ struct ScoreHistoryView: View {
 
             Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - Latest Score Card
@@ -110,7 +111,7 @@ struct ScoreHistoryView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(score.lessonTitle)
+                    Text("Unit\(score.lessonId) - \(score.lessonTitle)")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(Color(hex: "1F2937"))
                         .lineLimit(1)
@@ -195,7 +196,7 @@ struct ScoreHistoryView: View {
                     )
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(score.lessonTitle)
+                    Text("Unit\(score.lessonId) - \(score.lessonTitle)")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(Color(hex: "1F2937"))
                         .lineLimit(1)
