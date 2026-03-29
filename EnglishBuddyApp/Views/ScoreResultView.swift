@@ -11,6 +11,7 @@ struct ScoreResultView: View {
     @State private var showBars = false
     @State private var showConfetti = false
     @State private var audioPlayer: AVAudioPlayer?
+    @State private var speechSynthesizer = AVSpeechSynthesizer()
 
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     private var isCompact: Bool { horizontalSizeClass == .compact }
@@ -58,19 +59,14 @@ struct ScoreResultView: View {
                         // Session stats
                         sessionStatsSection
 
-                        // Vocabulary details
-                        if !score.vocabularyDetails.isEmpty {
-                            vocabularyDetailsSection
-                        }
-
-                        // Sentence details (grammar/expression errors)
+                        // Sentence correction (grammar/expression errors)
                         if !score.grammarDetails.isEmpty {
-                            sentenceDetailsSection
+                            sentenceCorrectionSection
                         }
 
-                        // Pronunciation details
+                        // Pronunciation correction
                         if !score.pronunciationDetails.isEmpty {
-                            pronunciationDetailsSection
+                            pronunciationCorrectionSection
                         }
 
                         // Teacher feedback
@@ -205,10 +201,9 @@ struct ScoreResultView: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color(hex: "1F2937"))
 
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 StatItem(label: "对话轮数", value: "\(score.stats.totalTurns)")
                 StatItem(label: "学习时长", value: formatDuration(score.stats.sessionDuration))
-                StatItem(label: "练习词汇", value: "\(score.stats.vocabularyPracticed)/\(score.stats.vocabularyTotal)")
                 StatItem(label: "正确率", value: score.stats.correctCount + score.stats.correctedCount > 0
                     ? "\(Int(Double(score.stats.correctCount) / Double(score.stats.correctCount + score.stats.correctedCount) * 100))%"
                     : "--")
@@ -222,47 +217,11 @@ struct ScoreResultView: View {
         )
     }
 
-    // MARK: - Vocabulary Details
+    // MARK: - Sentence Correction (句子纠错)
 
-    private var vocabularyDetailsSection: some View {
+    private var sentenceCorrectionSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("词汇详情", systemImage: "textformat.abc")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color(hex: "1F2937"))
-
-            FlowLayout(spacing: 8) {
-                ForEach(Array(score.vocabularyDetails.enumerated()), id: \.offset) { _, detail in
-                    HStack(spacing: 4) {
-                        Image(systemName: detail.practiced ? (detail.correct ? "checkmark.circle.fill" : "xmark.circle.fill") : "minus.circle")
-                            .font(.system(size: 12))
-                            .foregroundStyle(detail.practiced ? (detail.correct ? Color(hex: "10B981") : Color(hex: "EF4444")) : Color(hex: "9CA3AF"))
-
-                        Text(detail.word)
-                            .font(.system(size: 13))
-                            .foregroundStyle(Color(hex: "1F2937"))
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(detail.practiced ? (detail.correct ? Color(hex: "ECFDF5") : Color(hex: "FEF2F2")) : Color(hex: "F9FAFB"))
-                    )
-                }
-            }
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.white)
-                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
-        )
-    }
-
-    // MARK: - Sentence Details (Grammar/Expression Errors)
-
-    private var sentenceDetailsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("句子详情", systemImage: "text.badge.checkmark")
+            Label("句子纠错", systemImage: "text.badge.checkmark")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color(hex: "1F2937"))
 
@@ -322,55 +281,63 @@ struct ScoreResultView: View {
         )
     }
 
-    // MARK: - Pronunciation Details
+    // MARK: - Pronunciation Correction (发音纠错)
 
-    private var pronunciationDetailsSection: some View {
+    private var pronunciationCorrectionSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("发音详情", systemImage: "waveform")
+            Label("发音纠错", systemImage: "waveform")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color(hex: "1F2937"))
 
             ForEach(Array(score.pronunciationDetails.enumerated()), id: \.offset) { _, detail in
-                VStack(alignment: .leading, spacing: 6) {
-                    // 发音有问题的词/短语 + 播放按钮
-                    HStack(spacing: 6) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color(hex: "F59E0B"))
+                VStack(alignment: .leading, spacing: 8) {
+                    // 学生发音句子（错误单词红色）+ 问题描述在右边
+                    HStack(alignment: .top, spacing: 6) {
+                        // 句子（错误单词红色高亮）+ 播放学生录音
+                        HStack(spacing: 6) {
+                            highlightedSentence(detail.sentence, errorWords: detail.errorWords)
+                                .font(.system(size: 14, weight: .medium))
 
-                        Text(detail.text)
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color(hex: "1F2937"))
-
-                        if detail.audioData != nil {
-                            Button(action: { playAudio(detail.audioData) }) {
-                                Image(systemName: "speaker.wave.2.fill")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(Color(hex: "3B82F6"))
-                                    .frame(width: 26, height: 26)
-                                    .background(Circle().fill(Color(hex: "EFF6FF")))
+                            if detail.audioData != nil {
+                                Button(action: { playAudio(detail.audioData) }) {
+                                    Image(systemName: "speaker.wave.2.fill")
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(Color(hex: "3B82F6"))
+                                        .frame(width: 26, height: 26)
+                                        .background(Circle().fill(Color(hex: "EFF6FF")))
+                                }
                             }
                         }
+
+                        Spacer()
+
+                        // 发音问题描述
+                        Text(detail.issue)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color(hex: "6B7280"))
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: 120, alignment: .trailing)
                     }
 
-                    // 问题描述
-                    Text(detail.issue)
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color(hex: "EF4444"))
-                        .padding(.leading, 20)
-
-                    // 正确发音
-                    HStack(spacing: 4) {
-                        Image(systemName: "checkmark")
+                    // 正确发音（可朗读）
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.right")
                             .font(.system(size: 10))
                             .foregroundStyle(Color(hex: "10B981"))
+
                         Text(detail.correction)
-                            .font(.system(size: 13, weight: .medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(Color(hex: "10B981"))
+
+                        Button(action: { speakText(detail.correction) }) {
+                            Image(systemName: "play.circle.fill")
+                                .font(.system(size: 18))
+                                .foregroundStyle(Color(hex: "10B981"))
+                        }
                     }
-                    .padding(.leading, 20)
+                    .padding(.leading, 4)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, 6)
             }
         }
         .padding(16)
@@ -379,6 +346,26 @@ struct ScoreResultView: View {
                 .fill(.white)
                 .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
         )
+    }
+
+    // MARK: - Highlighted Sentence (错误单词红色)
+
+    private func highlightedSentence(_ sentence: String, errorWords: [String]) -> Text {
+        let words = sentence.split(separator: " ").map(String.init)
+        let lowercaseErrors = errorWords.map { $0.lowercased() }
+        var result = Text("")
+        for (index, word) in words.enumerated() {
+            if index > 0 {
+                result = result + Text(" ")
+            }
+            let cleanWord = word.lowercased().trimmingCharacters(in: .punctuationCharacters)
+            if lowercaseErrors.contains(cleanWord) {
+                result = result + Text(word).foregroundColor(Color(hex: "EF4444"))
+            } else {
+                result = result + Text(word).foregroundColor(Color(hex: "1F2937"))
+            }
+        }
+        return result
     }
 
     // MARK: - Audio Playback
@@ -391,6 +378,15 @@ struct ScoreResultView: View {
         } catch {
             print("[ScoreResultView] 播放音频失败: \(error)")
         }
+    }
+
+    /// 使用系统 TTS 朗读正确发音
+    private func speakText(_ text: String) {
+        speechSynthesizer.stopSpeaking(at: .immediate)
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.8
+        speechSynthesizer.speak(utterance)
     }
 
     // MARK: - Feedback
@@ -553,49 +549,6 @@ struct StatItem: View {
             RoundedRectangle(cornerRadius: 10)
                 .fill(Color(hex: "F9FAFB"))
         )
-    }
-}
-
-// MARK: - Flow Layout (for vocabulary tags)
-
-struct FlowLayout: Layout {
-    var spacing: CGFloat = 8
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let result = layout(in: proposal.width ?? 0, subviews: subviews)
-        return result.size
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let result = layout(in: bounds.width, subviews: subviews)
-        for (index, position) in result.positions.enumerated() {
-            subviews[index].place(at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y), proposal: .unspecified)
-        }
-    }
-
-    private func layout(in width: CGFloat, subviews: Subviews) -> (size: CGSize, positions: [CGPoint]) {
-        var positions: [CGPoint] = []
-        var x: CGFloat = 0
-        var y: CGFloat = 0
-        var maxHeight: CGFloat = 0
-        var rowHeight: CGFloat = 0
-
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-
-            if x + size.width > width && x > 0 {
-                x = 0
-                y += rowHeight + spacing
-                rowHeight = 0
-            }
-
-            positions.append(CGPoint(x: x, y: y))
-            x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
-            maxHeight = max(maxHeight, y + rowHeight)
-        }
-
-        return (CGSize(width: width, height: maxHeight), positions)
     }
 }
 

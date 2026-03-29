@@ -292,19 +292,7 @@ class ScoringService {
         // 构建可评分消息列表（学生消息），用于根据 message_index 查找音频
         let scorableMessages = messages.filter { $0.speaker == .user }
 
-        // 解析词汇详情（仅课程目标词汇的掌握情况）
-        var vocabularyDetails: [VocabularyScoreDetail] = []
-        if let vocabArray = scoreJSON["vocabulary_details"] as? [[String: Any]] {
-            for item in vocabArray {
-                vocabularyDetails.append(VocabularyScoreDetail(
-                    word: item["word"] as? String ?? "",
-                    practiced: item["practiced"] as? Bool ?? false,
-                    correct: item["correct"] as? Bool ?? false
-                ))
-            }
-        }
-
-        // 解析句子详情（语法/表达错误的完整句子）
+        // 解析句子纠错（语法/表达错误的完整句子）
         var grammarDetails: [GrammarDetail] = []
         if let grammarArray = scoreJSON["grammar_details"] as? [[String: Any]] {
             for item in grammarArray {
@@ -323,7 +311,7 @@ class ScoringService {
             }
         }
 
-        // 解析发音详情
+        // 解析发音纠错
         var pronunciationDetails: [PronunciationDetail] = []
         if let pronArray = scoreJSON["pronunciation_details"] as? [[String: Any]] {
             for item in pronArray {
@@ -332,8 +320,10 @@ class ScoringService {
                 if let idx = msgIndex, idx >= 0, idx < scorableMessages.count {
                     audioData = scorableMessages[idx].userVoiceData
                 }
+                let errorWords = item["error_words"] as? [String] ?? []
                 pronunciationDetails.append(PronunciationDetail(
-                    text: item["text"] as? String ?? "",
+                    sentence: item["sentence"] as? String ?? "",
+                    errorWords: errorWords,
                     issue: item["issue"] as? String ?? "",
                     correction: item["correction"] as? String ?? "",
                     messageIndex: msgIndex,
@@ -346,8 +336,6 @@ class ScoringService {
         let updatedStats = SessionStats(
             totalTurns: stats.totalTurns,
             sessionDuration: stats.sessionDuration,
-            vocabularyPracticed: vocabularyDetails.filter { $0.practiced }.count,
-            vocabularyTotal: vocabularyDetails.count,
             correctCount: correctCount,
             correctedCount: correctedCount
         )
@@ -364,7 +352,6 @@ class ScoringService {
             fluencyScore: fluencyScore,
             feedback: feedback,
             encouragement: encouragement,
-            vocabularyDetails: vocabularyDetails,
             grammarDetails: grammarDetails,
             pronunciationDetails: pronunciationDetails,
             stats: updatedStats
