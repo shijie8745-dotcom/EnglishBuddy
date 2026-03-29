@@ -3,7 +3,9 @@ import AVFoundation
 
 struct ScoreResultView: View {
     let score: ScoreResult
+    var isFromHistory: Bool = false
     var onDismiss: () -> Void = {}
+    var onReturnHome: (() -> Void)? = nil
     var onContinue: () -> Void = {}
 
     @State private var showStars = false
@@ -11,22 +13,12 @@ struct ScoreResultView: View {
     @State private var showBars = false
     @State private var showConfetti = false
     @State private var audioPlayer: AVAudioPlayer?
-    @State private var speechSynthesizer = AVSpeechSynthesizer()
 
-    @Environment(\.horizontalSizeClass) var horizontalSizeClass
-    private var isCompact: Bool { horizontalSizeClass == .compact }
 
     var body: some View {
         ZStack {
-            // Background
-            LinearGradient(
-                colors: [Color(hex: "FFF7ED"), Color(hex: "FFFBEB")],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            Color(hex: "F5F5F5").ignoresSafeArea()
 
-            // Confetti overlay
             if showConfetti {
                 ConfettiView()
                     .ignoresSafeArea()
@@ -34,113 +26,137 @@ struct ScoreResultView: View {
             }
 
             VStack(spacing: 0) {
-                // Close button
-                HStack {
-                    Spacer()
-                    Button(action: onDismiss) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(Color(hex: "6B7280"))
-                            .frame(width: 36, height: 36)
-                            .background(Circle().fill(Color(hex: "F3F4F6")))
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
+                headerBar
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 24) {
-                        // Stars + Overall Score
-                        overallScoreSection
-
-                        // Four dimension scores
-                        dimensionScoresSection
-
-                        // Session stats
-                        sessionStatsSection
-
-                        // Sentence correction (grammar/expression errors)
+                    VStack(spacing: 16) {
+                        scoreAndDimensionsSection
+                        statsSection
                         if !score.grammarDetails.isEmpty {
                             sentenceCorrectionSection
                         }
-
-                        // Pronunciation correction
                         if !score.pronunciationDetails.isEmpty {
                             pronunciationCorrectionSection
                         }
-
-                        // Teacher feedback
                         feedbackSection
-
-                        // Cloud coins earned
                         if score.earnedCoins > 0 {
                             coinRewardSection
                         }
-
-                        // Action buttons
-                        actionButtons
-                            .padding(.bottom, 40)
+                        // Bottom padding for sticky button
+                        if !isFromHistory {
+                            Spacer().frame(height: 70)
+                        } else {
+                            Spacer().frame(height: 20)
+                        }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                }
+
+                // Sticky button at bottom
+                if !isFromHistory {
+                    stickyActionButton
                 }
             }
         }
-        .onAppear {
-            startAnimations()
+        .onAppear { startAnimations() }
+    }
+
+    // MARK: - Header
+
+    private var headerBar: some View {
+        HStack {
+            if !isFromHistory {
+                Button(action: {
+                    if let returnHome = onReturnHome {
+                        returnHome()
+                    } else {
+                        onDismiss()
+                    }
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color(hex: "333333"))
+                }
+            } else {
+                Spacer().frame(width: 32)
+            }
+
+            Spacer()
+
+            Text("对话评分")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Color(hex: "333333"))
+
+            Spacer()
+
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color(hex: "999999"))
+                    .frame(width: 30, height: 30)
+                    .background(Circle().fill(Color(hex: "F0F0F0")))
+            }
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.white)
     }
 
     // MARK: - Animations
 
     private func startAnimations() {
-        // Stars staggered animation
         withAnimation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.3)) {
             showStars = true
         }
-
-        // Score count-up animation
         let target = score.overallScore
-        let duration = 1.5
         let steps = 30
-        let interval = duration / Double(steps)
+        let interval: Double = 1.5 / Double(steps)
         for i in 0...steps {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5 + Double(i) * interval) {
+            let delay = 0.5 + Double(i) * interval
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                let newVal = Int(Double(target) * Double(i) / Double(steps))
                 withAnimation(.linear(duration: interval)) {
-                    animatedScore = Int(Double(target) * Double(i) / Double(steps))
+                    animatedScore = newVal
                 }
             }
         }
-
-        // Progress bars
         withAnimation(.easeOut(duration: 0.8).delay(0.8)) {
             showBars = true
         }
-
-        // Confetti for high scores
         if score.overallScore >= 85 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                withAnimation {
-                    showConfetti = true
-                }
+                withAnimation { showConfetti = true }
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
-                withAnimation {
-                    showConfetti = false
-                }
+                withAnimation { showConfetti = false }
             }
         }
     }
 
-    // MARK: - Overall Score Section
+    // MARK: - Score + Dimensions
 
-    private var overallScoreSection: some View {
-        VStack(spacing: 16) {
+    private var scoreAndDimensionsSection: some View {
+        HStack(alignment: .top, spacing: 10) {
+            // Left: Overall score card
+            overallScoreCard
+
+            // Right: Dimension grid (same height as left)
+            dimensionGrid
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var overallScoreCard: some View {
+        VStack(spacing: 8) {
+            Spacer().frame(height: 6)
             // Stars
-            HStack(spacing: 8) {
+            HStack(spacing: 5) {
                 ForEach(0..<5, id: \.self) { index in
-                    Image(systemName: index < score.starRating ? "star.fill" : "star")
-                        .font(.system(size: 28))
-                        .foregroundStyle(index < score.starRating ? Color(hex: "F59E0B") : Color(hex: "D1D5DB"))
+                    let filled = index < score.starRating
+                    Image(systemName: filled ? "star.fill" : "star")
+                        .font(.system(size: 18))
+                        .foregroundStyle(filled ? Color(hex: "F59E0B") : Color(hex: "D1D5DB"))
                         .scaleEffect(showStars ? 1.0 : 0.3)
                         .opacity(showStars ? 1.0 : 0)
                         .animation(
@@ -151,224 +167,363 @@ struct ScoreResultView: View {
                 }
             }
 
-            // Score number
-            Text("\(animatedScore)")
-                .font(.system(size: 56, weight: .bold, design: .rounded))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [Color(hex: "F97316"), Color(hex: "EA580C")],
-                        startPoint: .top,
-                        endPoint: .bottom
+            // Big score with 分
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text("\(animatedScore)")
+                    .font(.system(size: 64, weight: .heavy, design: .rounded))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color(hex: "F97316"), Color(hex: "EA580C")],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
                     )
-                )
-
-            Text("综合得分")
-                .font(.system(size: 14))
-                .foregroundStyle(Color(hex: "6B7280"))
+                Text("分")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(Color(hex: "F97316"))
+            }
 
             // Encouragement
             Text(score.encouragement)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(Color(hex: "F97316"))
+                .font(.system(size: 14))
+                .foregroundStyle(Color(hex: "666666"))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
+                .lineLimit(2)
+                .padding(.horizontal, 24)
+            Spacer().frame(height: 6)
         }
-        .padding(.top, 8)
-    }
-
-    // MARK: - Dimension Scores
-
-    private var dimensionScoresSection: some View {
-        VStack(spacing: 12) {
-            DimensionBar(label: "词汇", score: score.vocabularyScore, color: Color(hex: "3B82F6"), animate: showBars)
-            DimensionBar(label: "语法", score: score.grammarScore, color: Color(hex: "8B5CF6"), animate: showBars)
-            DimensionBar(label: "发音", score: score.pronunciationScore, color: Color(hex: "10B981"), animate: showBars)
-            DimensionBar(label: "流利", score: score.fluencyScore, color: Color(hex: "F59E0B"), animate: showBars)
-        }
-        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(.white)
-                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+                .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
         )
     }
 
-    // MARK: - Session Stats
+    private var dimensionGrid: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("各维度评分")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color(hex: "333333"))
 
-    private var sessionStatsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("对话统计", systemImage: "chart.bar.fill")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color(hex: "1F2937"))
-
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                StatItem(label: "对话轮数", value: "\(score.stats.totalTurns)")
-                StatItem(label: "学习时长", value: formatDuration(score.stats.sessionDuration))
-                StatItem(label: "正确率", value: score.stats.correctCount + score.stats.correctedCount > 0
-                    ? "\(Int(Double(score.stats.correctCount) / Double(score.stats.correctCount + score.stats.correctedCount) * 100))%"
-                    : "--")
+            VStack(spacing: 7) {
+                HStack(spacing: 7) {
+                    dimensionCard(
+                        icon: "book.fill", label: "词汇",
+                        value: score.vocabularyScore,
+                        iconBg: Color(hex: "3B82F6"),
+                        barColor: Color(hex: "3B82F6")
+                    )
+                    dimensionCard(
+                        icon: "doc.text.fill", label: "语法",
+                        value: score.grammarScore,
+                        iconBg: Color(hex: "EF4444"),
+                        barColor: Color(hex: "10B981")
+                    )
+                }
+                HStack(spacing: 7) {
+                    dimensionCard(
+                        icon: "speaker.wave.2.fill", label: "发音",
+                        value: score.pronunciationScore,
+                        iconBg: Color(hex: "F59E0B"),
+                        barColor: Color(hex: "3B82F6")
+                    )
+                    dimensionCard(
+                        icon: "chart.line.uptrend.xyaxis", label: "流利",
+                        value: score.fluencyScore,
+                        iconBg: Color(hex: "10B981"),
+                        barColor: Color(hex: "F59E0B")
+                    )
+                }
             }
         }
-        .padding(16)
+        .frame(maxHeight: .infinity)
+    }
+
+    private func dimensionCard(icon: String, label: String, value: Int, iconBg: Color, barColor: Color) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 20, height: 20)
+                    .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(iconBg))
+                Text(label)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color(hex: "333333"))
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: 1) {
+                Text("\(value)")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color(hex: "333333"))
+                Text("分")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color(hex: "999999"))
+            }
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2.5)
+                        .fill(Color(hex: "F0F0F0"))
+                        .frame(height: 4)
+                    RoundedRectangle(cornerRadius: 2.5)
+                        .fill(barColor)
+                        .frame(width: showBars ? geo.size.width * CGFloat(value) / 100.0 : 0, height: 4)
+                }
+            }
+            .frame(height: 4)
+        }
+        .padding(10)
+        .frame(maxHeight: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(.white)
-                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+                .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 2)
         )
     }
 
-    // MARK: - Sentence Correction (句子纠错)
+    // MARK: - Stats Section
+
+    private var statsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("对话统计")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Color(hex: "333333"))
+
+            HStack(spacing: 8) {
+                statCard(
+                    icon: "bubble.left.fill",
+                    label: "对话轮数",
+                    value: "\(score.stats.totalTurns)",
+                    unit: "轮",
+                    gradient: [Color(hex: "7C3AED"), Color(hex: "A78BFA")]
+                )
+                statCard(
+                    icon: "clock.fill",
+                    label: "学习时长",
+                    value: formatDurationValue(score.stats.sessionDuration),
+                    unit: formatDurationUnit(score.stats.sessionDuration),
+                    gradient: [Color(hex: "F97316"), Color(hex: "FB923C")]
+                )
+                statCard(
+                    icon: "book.fill",
+                    label: "练习词汇",
+                    value: "\(score.stats.vocabularyPracticed)",
+                    unit: "个",
+                    gradient: [Color(hex: "0EA5E9"), Color(hex: "38BDF8")]
+                )
+                statCard(
+                    icon: "chart.line.uptrend.xyaxis",
+                    label: "正确率",
+                    value: accuracyText,
+                    unit: "%",
+                    gradient: [Color(hex: "EC4899"), Color(hex: "F472B6")]
+                )
+            }
+        }
+    }
+
+    private var accuracyText: String {
+        let total = score.stats.correctCount + score.stats.correctedCount
+        return total > 0 ? "\(Int(Double(score.stats.correctCount) / Double(total) * 100))" : "--"
+    }
+
+    private func statCard(icon: String, label: String, value: String, unit: String, gradient: [Color]) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 28, height: 28)
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(.white.opacity(0.25)))
+                .padding(.bottom, 8)
+
+            Text(label)
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.85))
+                .padding(.bottom, 4)
+
+            Spacer()
+
+            HStack(alignment: .firstTextBaseline, spacing: 1) {
+                Text(value)
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                Text(unit)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .frame(height: 110)
+        .background(
+            ZStack(alignment: .bottomTrailing) {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(LinearGradient(colors: gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
+                Circle()
+                    .fill(.white.opacity(0.12))
+                    .frame(width: 40, height: 40)
+                    .offset(x: 8, y: 8)
+            }
+        )
+    }
+
+    // MARK: - Sentence Correction
 
     private var sentenceCorrectionSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("句子纠错", systemImage: "text.badge.checkmark")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color(hex: "1F2937"))
+            Text("句子纠错")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(Color(hex: "333333"))
 
             ForEach(Array(score.grammarDetails.enumerated()), id: \.offset) { _, detail in
-                VStack(alignment: .leading, spacing: 6) {
-                    // 错误原句 + 播放按钮（紧挨句子）
-                    HStack(spacing: 6) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 14))
-                            .foregroundStyle(Color(hex: "EF4444"))
-
-                        Text(detail.original)
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color(hex: "1F2937"))
-                            .strikethrough(detail.corrected != nil, color: Color(hex: "EF4444").opacity(0.5))
-
-                        if detail.audioData != nil {
-                            Button(action: { playAudio(detail.audioData) }) {
-                                Image(systemName: "speaker.wave.2.fill")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(Color(hex: "3B82F6"))
-                                    .frame(width: 26, height: 26)
-                                    .background(Circle().fill(Color(hex: "EFF6FF")))
-                            }
-                        }
-                    }
-
-                    // 正确表达
-                    if let corrected = detail.corrected {
-                        HStack(spacing: 4) {
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 10))
-                                .foregroundStyle(Color(hex: "10B981"))
-                            Text(corrected)
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(Color(hex: "10B981"))
-                        }
-                        .padding(.leading, 20)
-                    }
-
-                    // 说明
-                    if let explanation = detail.explanation {
-                        Text(explanation)
+                correctionCard {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("你的回答")
                             .font(.system(size: 12))
-                            .foregroundStyle(Color(hex: "6B7280"))
-                            .padding(.leading, 20)
-                    }
-                }
-                .padding(.vertical, 4)
-            }
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.white)
-                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
-        )
-    }
-
-    // MARK: - Pronunciation Correction (发音纠错)
-
-    private var pronunciationCorrectionSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("发音纠错", systemImage: "waveform")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color(hex: "1F2937"))
-
-            ForEach(Array(score.pronunciationDetails.enumerated()), id: \.offset) { _, detail in
-                VStack(alignment: .leading, spacing: 8) {
-                    // 学生发音句子（错误单词红色）+ 问题描述在右边
-                    HStack(alignment: .top, spacing: 6) {
-                        // 句子（错误单词红色高亮）+ 播放学生录音
-                        HStack(spacing: 6) {
-                            highlightedSentence(detail.sentence, errorWords: detail.errorWords)
-                                .font(.system(size: 14, weight: .medium))
-
+                            .foregroundStyle(Color(hex: "999999"))
+                        HStack(spacing: 8) {
+                            Text(detail.original)
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(Color(hex: "EF4444"))
                             if detail.audioData != nil {
                                 Button(action: { playAudio(detail.audioData) }) {
                                     Image(systemName: "speaker.wave.2.fill")
-                                        .font(.system(size: 12))
-                                        .foregroundStyle(Color(hex: "3B82F6"))
-                                        .frame(width: 26, height: 26)
-                                        .background(Circle().fill(Color(hex: "EFF6FF")))
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(Color(hex: "999999"))
                                 }
                             }
                         }
-
-                        Spacer()
-
-                        // 发音问题描述
-                        Text(detail.issue)
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color(hex: "6B7280"))
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: 120, alignment: .trailing)
                     }
 
-                    // 正确发音（可朗读）
-                    HStack(spacing: 6) {
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 10))
-                            .foregroundStyle(Color(hex: "10B981"))
-
-                        Text(detail.correction)
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Color(hex: "10B981"))
-
-                        Button(action: { speakText(detail.correction) }) {
-                            Image(systemName: "play.circle.fill")
-                                .font(.system(size: 18))
-                                .foregroundStyle(Color(hex: "10B981"))
+                    if let corrected = detail.corrected {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("正确答案")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color(hex: "999999"))
+                            HStack(spacing: 8) {
+                                Text(corrected)
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(Color(hex: "10B981"))
+                                Button(action: { speakText(corrected) }) {
+                                    Image(systemName: "speaker.wave.2.fill")
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(Color(hex: "10B981"))
+                                }
+                            }
                         }
                     }
-                    .padding(.leading, 4)
+
+                    if let explanation = detail.explanation {
+                        Text(explanation)
+                            .font(.system(size: 13))
+                            .foregroundStyle(Color(hex: "92400E"))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color(hex: "FEF3C7"))
+                            )
+                    }
                 }
-                .padding(.vertical, 6)
             }
         }
-        .padding(16)
+    }
+
+    // MARK: - Pronunciation Correction
+
+    private var pronunciationCorrectionSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("发音纠错")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(Color(hex: "333333"))
+
+            ForEach(Array(score.pronunciationDetails.enumerated()), id: \.offset) { _, detail in
+                correctionCard {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("你的发音")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color(hex: "999999"))
+                        HStack(spacing: 8) {
+                            highlightedSentence(detail.sentence, errorWords: detail.errorWords)
+                                .font(.system(size: 15, weight: .medium))
+                            if detail.audioData != nil {
+                                Button(action: { playAudio(detail.audioData) }) {
+                                    Image(systemName: "speaker.wave.2.fill")
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(Color(hex: "999999"))
+                                }
+                            }
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("正确发音")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color(hex: "999999"))
+                        HStack(spacing: 8) {
+                            Text(detail.correction)
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(Color(hex: "10B981"))
+                            Button(action: { speakText(detail.correction) }) {
+                                Image(systemName: "speaker.wave.2.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(Color(hex: "10B981"))
+                            }
+                        }
+                    }
+
+                    Text("发音问题：\(detail.issue)")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color(hex: "92400E"))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(hex: "FEF3C7"))
+                        )
+                }
+            }
+        }
+    }
+
+    // MARK: - Correction Card
+
+    private func correctionCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            content()
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(.white)
-                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+                .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
         )
     }
 
-    // MARK: - Highlighted Sentence (错误单词红色)
+    // MARK: - Highlighted Sentence
 
     private func highlightedSentence(_ sentence: String, errorWords: [String]) -> Text {
         let words = sentence.split(separator: " ").map(String.init)
         let lowercaseErrors = errorWords.map { $0.lowercased() }
         var result = Text("")
-        for (index, word) in words.enumerated() {
-            if index > 0 {
-                result = result + Text(" ")
-            }
-            let cleanWord = word.lowercased().trimmingCharacters(in: .punctuationCharacters)
-            if lowercaseErrors.contains(cleanWord) {
-                result = result + Text(word).foregroundColor(Color(hex: "EF4444"))
+        for (i, word) in words.enumerated() {
+            if i > 0 { result = result + Text(" ") }
+            let clean = word.lowercased().trimmingCharacters(in: .punctuationCharacters)
+            if lowercaseErrors.contains(clean) {
+                result = result + Text(word).foregroundColor(Color(hex: "EF4444")).bold()
             } else {
-                result = result + Text(word).foregroundColor(Color(hex: "1F2937"))
+                result = result + Text(word).foregroundColor(Color(hex: "333333"))
             }
         }
         return result
     }
 
-    // MARK: - Audio Playback
+    // MARK: - Audio
 
     private func playAudio(_ data: Data?) {
         guard let data = data else { return }
@@ -380,29 +535,26 @@ struct ScoreResultView: View {
         }
     }
 
-    /// 使用系统 TTS 朗读正确发音
     private func speakText(_ text: String) {
-        speechSynthesizer.stopSpeaking(at: .immediate)
-        let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.8
-        speechSynthesizer.speak(utterance)
+        TTSService.shared.speak(text)
     }
 
     // MARK: - Feedback
 
     private var feedbackSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label("老师点评", systemImage: "lightbulb.fill")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color(hex: "1F2937"))
+        VStack(alignment: .leading, spacing: 10) {
+            Text("老师点评")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(Color(hex: "333333"))
 
             Text(score.feedback)
                 .font(.system(size: 14))
-                .foregroundStyle(Color(hex: "374151"))
-                .lineSpacing(4)
+                .foregroundStyle(Color(hex: "555555"))
+                .lineSpacing(5)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(.white)
@@ -413,142 +565,89 @@ struct ScoreResultView: View {
     // MARK: - Coin Reward
 
     private var coinRewardSection: some View {
-        HStack(spacing: 12) {
-            Image("coin")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 36, height: 36)
+        HStack {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Image(systemName: "gift.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color(hex: "D97706"))
+                    Text("恭喜获得奖励")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color(hex: "92400E"))
+                }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("获得 \(score.earnedCoins) 云朵币!")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Color(hex: "F59E0B"))
-
-                Text(score.overallScore >= 95 ? "超级棒！满分奖励" : "优秀表现奖励")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color(hex: "6B7280"))
+                HStack(alignment: .center, spacing: 4) {
+                    Text("+\(score.earnedCoins)")
+                        .font(.system(size: 40, weight: .heavy, design: .rounded))
+                        .foregroundStyle(Color(hex: "D97706"))
+                    Text("云朵币")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color(hex: "D97706"))
+                    Image("coin")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 22, height: 22)
+                }
             }
 
             Spacer()
+
+            Image(systemName: "cloud.fill")
+                .font(.system(size: 50))
+                .foregroundStyle(Color(hex: "FBBF24").opacity(0.4))
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(hex: "FFFBEB"))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color(hex: "F59E0B").opacity(0.3), lineWidth: 1)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(hex: "FEF3C7"), Color(hex: "FDE68A")],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                 )
         )
     }
 
-    // MARK: - Action Buttons
+    // MARK: - Sticky Action Button
 
-    private var actionButtons: some View {
-        HStack(spacing: 12) {
+    private var stickyActionButton: some View {
+        VStack(spacing: 0) {
             Button(action: {
                 onDismiss()
                 onContinue()
             }) {
                 Text("再练一次")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Color(hex: "F97316"))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 48)
-                    .background(
-                        RoundedRectangle(cornerRadius: 24)
-                            .stroke(Color(hex: "F97316"), lineWidth: 2)
-                    )
-            }
-
-            Button(action: onDismiss) {
-                Text("返回")
-                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 48)
+                    .frame(height: 50)
                     .background(
-                        LinearGradient(
-                            colors: [Color(hex: "F97316"), Color(hex: "EA580C")],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+                        RoundedRectangle(cornerRadius: 25)
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color(hex: "6366F1"), Color(hex: "8B5CF6")],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                     )
-                    .cornerRadius(24)
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
         }
-        .padding(.top, 8)
+        .background(.white)
     }
 
     // MARK: - Helpers
 
-    private func formatDuration(_ seconds: Int) -> String {
+    private func formatDurationValue(_ seconds: Int) -> String {
         let minutes = seconds / 60
-        if minutes > 0 {
-            return "\(minutes)分钟"
-        }
-        return "\(seconds)秒"
+        return minutes > 0 ? "\(minutes)" : "\(seconds)"
     }
-}
 
-// MARK: - Dimension Bar
-
-struct DimensionBar: View {
-    let label: String
-    let score: Int
-    let color: Color
-    let animate: Bool
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Text(label)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Color(hex: "6B7280"))
-                .frame(width: 32, alignment: .leading)
-
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color(hex: "F3F4F6"))
-                        .frame(height: 8)
-
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(color)
-                        .frame(width: animate ? geometry.size.width * CGFloat(score) / 100.0 : 0, height: 8)
-                }
-            }
-            .frame(height: 8)
-
-            Text("\(score)")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundStyle(color)
-                .frame(width: 30, alignment: .trailing)
-        }
-    }
-}
-
-// MARK: - Stat Item
-
-struct StatItem: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundStyle(Color(hex: "1F2937"))
-
-            Text(label)
-                .font(.system(size: 12))
-                .foregroundStyle(Color(hex: "6B7280"))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color(hex: "F9FAFB"))
-        )
+    private func formatDurationUnit(_ seconds: Int) -> String {
+        return seconds >= 60 ? "分钟" : "秒"
     }
 }
 
@@ -564,19 +663,15 @@ struct ConfettiView: View {
                 for particle in particles {
                     let age = time - particle.startTime
                     guard age < particle.lifetime else { continue }
-
-                    let progress = age / particle.lifetime
                     let x = particle.startX + sin(age * particle.wobbleSpeed) * particle.wobbleAmount
                     let y = particle.startY + age * particle.fallSpeed
-                    let opacity = 1.0 - progress
-
+                    let opacity = 1.0 - age / particle.lifetime
                     let rect = CGRect(
                         x: x - particle.size / 2,
                         y: y - particle.size / 2,
                         width: particle.size,
                         height: particle.size
                     )
-
                     context.opacity = opacity
                     context.fill(
                         Path(roundedRect: rect, cornerRadius: particle.size > 6 ? 1 : 3),
@@ -587,24 +682,19 @@ struct ConfettiView: View {
         }
         .onAppear {
             let now = Date().timeIntervalSinceReferenceDate
-            let screenWidth = UIScreen.main.bounds.width
+            let w = UIScreen.main.bounds.width
             let colors: [Color] = [
                 Color(hex: "F97316"), Color(hex: "F59E0B"),
                 Color(hex: "EF4444"), Color(hex: "3B82F6"),
                 Color(hex: "10B981"), Color(hex: "8B5CF6")
             ]
-
             particles = (0..<50).map { _ in
                 ConfettiParticle(
-                    startX: Double.random(in: 0...screenWidth),
-                    startY: Double.random(in: -50...(-10)),
-                    fallSpeed: Double.random(in: 80...160),
-                    wobbleSpeed: Double.random(in: 2...5),
-                    wobbleAmount: Double.random(in: 20...50),
-                    size: Double.random(in: 4...10),
-                    color: colors.randomElement()!,
-                    lifetime: Double.random(in: 2.5...4.0),
-                    startTime: now + Double.random(in: 0...0.5)
+                    startX: .random(in: 0...w), startY: .random(in: -50...(-10)),
+                    fallSpeed: .random(in: 80...160), wobbleSpeed: .random(in: 2...5),
+                    wobbleAmount: .random(in: 20...50), size: .random(in: 4...10),
+                    color: colors.randomElement()!, lifetime: .random(in: 2.5...4.0),
+                    startTime: now + .random(in: 0...0.5)
                 )
             }
         }
@@ -612,13 +702,7 @@ struct ConfettiView: View {
 }
 
 struct ConfettiParticle {
-    let startX: Double
-    let startY: Double
-    let fallSpeed: Double
-    let wobbleSpeed: Double
-    let wobbleAmount: Double
-    let size: Double
+    let startX, startY, fallSpeed, wobbleSpeed, wobbleAmount, size: Double
     let color: Color
-    let lifetime: Double
-    let startTime: Double
+    let lifetime, startTime: Double
 }
