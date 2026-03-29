@@ -63,9 +63,14 @@ struct ScoreResultView: View {
                             vocabularyDetailsSection
                         }
 
-                        // Grammar details
+                        // Sentence details (grammar/expression errors)
                         if !score.grammarDetails.isEmpty {
-                            grammarDetailsSection
+                            sentenceDetailsSection
+                        }
+
+                        // Pronunciation details
+                        if !score.pronunciationDetails.isEmpty {
+                            pronunciationDetailsSection
                         }
 
                         // Teacher feedback
@@ -235,15 +240,6 @@ struct ScoreResultView: View {
                         Text(detail.word)
                             .font(.system(size: 13))
                             .foregroundStyle(Color(hex: "1F2937"))
-
-                        // 播放按钮（有音频且发音有问题时显示）
-                        if detail.audioData != nil && !detail.correct {
-                            Button(action: { playAudio(detail.audioData) }) {
-                                Image(systemName: "speaker.wave.2.fill")
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(Color(hex: "3B82F6"))
-                            }
-                        }
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
@@ -252,21 +248,6 @@ struct ScoreResultView: View {
                             .fill(detail.practiced ? (detail.correct ? Color(hex: "ECFDF5") : Color(hex: "FEF2F2")) : Color(hex: "F9FAFB"))
                     )
                 }
-            }
-
-            // Pronunciation notes
-            let notedItems = score.vocabularyDetails.filter { $0.pronunciationNote != nil }
-            if !notedItems.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(Array(notedItems.enumerated()), id: \.offset) { _, detail in
-                        if let note = detail.pronunciationNote {
-                            Text("\(detail.word): \(note)")
-                                .font(.system(size: 12))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
-                    }
-                }
-                .padding(.top, 4)
             }
         }
         .padding(16)
@@ -277,61 +258,119 @@ struct ScoreResultView: View {
         )
     }
 
-    // MARK: - Grammar Details
+    // MARK: - Sentence Details (Grammar/Expression Errors)
 
-    private var grammarDetailsSection: some View {
+    private var sentenceDetailsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("语法详情", systemImage: "text.badge.checkmark")
+            Label("句子详情", systemImage: "text.badge.checkmark")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Color(hex: "1F2937"))
 
             ForEach(Array(score.grammarDetails.enumerated()), id: \.offset) { _, detail in
-                HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: detail.corrected != nil ? "xmark.circle.fill" : "checkmark.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(detail.corrected != nil ? Color(hex: "EF4444") : Color(hex: "10B981"))
-                        .padding(.top, 2)
+                VStack(alignment: .leading, spacing: 6) {
+                    // 错误原句 + 播放按钮（紧挨句子）
+                    HStack(spacing: 6) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color(hex: "EF4444"))
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        // 学生原句
                         Text(detail.original)
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(Color(hex: "1F2937"))
                             .strikethrough(detail.corrected != nil, color: Color(hex: "EF4444").opacity(0.5))
 
-                        // 正确表达
-                        if let corrected = detail.corrected {
-                            HStack(spacing: 4) {
-                                Image(systemName: "arrow.right")
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(Color(hex: "10B981"))
-                                Text(corrected)
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(Color(hex: "10B981"))
+                        if detail.audioData != nil {
+                            Button(action: { playAudio(detail.audioData) }) {
+                                Image(systemName: "speaker.wave.2.fill")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(Color(hex: "3B82F6"))
+                                    .frame(width: 26, height: 26)
+                                    .background(Circle().fill(Color(hex: "EFF6FF")))
                             }
                         }
-
-                        // 说明
-                        if let explanation = detail.explanation {
-                            Text(explanation)
-                                .font(.system(size: 12))
-                                .foregroundStyle(Color(hex: "6B7280"))
-                        }
                     }
 
-                    Spacer()
-
-                    // 播放按钮
-                    if detail.audioData != nil {
-                        Button(action: { playAudio(detail.audioData) }) {
-                            Image(systemName: "speaker.wave.2.fill")
-                                .font(.system(size: 14))
-                                .foregroundStyle(Color(hex: "3B82F6"))
-                                .frame(width: 32, height: 32)
-                                .background(Circle().fill(Color(hex: "EFF6FF")))
+                    // 正确表达
+                    if let corrected = detail.corrected {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 10))
+                                .foregroundStyle(Color(hex: "10B981"))
+                            Text(corrected)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(Color(hex: "10B981"))
                         }
+                        .padding(.leading, 20)
+                    }
+
+                    // 说明
+                    if let explanation = detail.explanation {
+                        Text(explanation)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color(hex: "6B7280"))
+                            .padding(.leading, 20)
                     }
                 }
+                .padding(.vertical, 4)
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.white)
+                .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
+        )
+    }
+
+    // MARK: - Pronunciation Details
+
+    private var pronunciationDetailsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("发音详情", systemImage: "waveform")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color(hex: "1F2937"))
+
+            ForEach(Array(score.pronunciationDetails.enumerated()), id: \.offset) { _, detail in
+                VStack(alignment: .leading, spacing: 6) {
+                    // 发音有问题的词/短语 + 播放按钮
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color(hex: "F59E0B"))
+
+                        Text(detail.text)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(Color(hex: "1F2937"))
+
+                        if detail.audioData != nil {
+                            Button(action: { playAudio(detail.audioData) }) {
+                                Image(systemName: "speaker.wave.2.fill")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(Color(hex: "3B82F6"))
+                                    .frame(width: 26, height: 26)
+                                    .background(Circle().fill(Color(hex: "EFF6FF")))
+                            }
+                        }
+                    }
+
+                    // 问题描述
+                    Text(detail.issue)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color(hex: "EF4444"))
+                        .padding(.leading, 20)
+
+                    // 正确发音
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Color(hex: "10B981"))
+                        Text(detail.correction)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(Color(hex: "10B981"))
+                    }
+                    .padding(.leading, 20)
+                }
+                .padding(.vertical, 4)
             }
         }
         .padding(16)

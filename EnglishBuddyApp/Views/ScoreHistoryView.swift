@@ -3,7 +3,6 @@ import SwiftUI
 struct ScoreHistoryView: View {
     @State private var scores: [ScoreResult] = []
     @State private var selectedScore: ScoreResult?
-    @State private var showDetail = false
 
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     private var isCompact: Bool { horizontalSizeClass == .compact }
@@ -44,12 +43,10 @@ struct ScoreHistoryView: View {
         .onAppear {
             scores = ScoreHistoryStore.shared.loadAllScores()
         }
-        .fullScreenCover(isPresented: $showDetail) {
-            if let score = selectedScore {
-                ScoreResultView(score: score, onDismiss: {
-                    showDetail = false
-                })
-            }
+        .fullScreenCover(item: $selectedScore) { score in
+            ScoreResultView(score: score, onDismiss: {
+                selectedScore = nil
+            })
         }
     }
 
@@ -154,7 +151,6 @@ struct ScoreHistoryView: View {
             // Detail button
             Button(action: {
                 selectedScore = score
-                showDetail = true
             }) {
                 Text("查看详情")
                     .font(.system(size: 14, weight: .medium))
@@ -180,7 +176,6 @@ struct ScoreHistoryView: View {
     private func historyRow(_ score: ScoreResult) -> some View {
         Button(action: {
             selectedScore = score
-            showDetail = true
         }) {
             HStack(spacing: 12) {
                 // Score badge

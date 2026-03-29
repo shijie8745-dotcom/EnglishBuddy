@@ -18,6 +18,7 @@ struct ScoreResult: Codable, Identifiable {
     let encouragement: String
     let vocabularyDetails: [VocabularyScoreDetail]
     let grammarDetails: [GrammarDetail]
+    let pronunciationDetails: [PronunciationDetail]
 
     // 统计信息
     let stats: SessionStats
@@ -43,13 +44,6 @@ struct VocabularyScoreDetail: Codable {
     let word: String
     let practiced: Bool
     let correct: Bool
-    let pronunciationNote: String?
-    let messageIndex: Int?
-    var audioData: Data?
-
-    enum CodingKeys: String, CodingKey {
-        case word, practiced, correct, pronunciationNote, messageIndex
-    }
 }
 
 struct GrammarDetail: Codable {
@@ -61,6 +55,18 @@ struct GrammarDetail: Codable {
 
     enum CodingKeys: String, CodingKey {
         case original, corrected, explanation, messageIndex
+    }
+}
+
+struct PronunciationDetail: Codable {
+    let text: String
+    let issue: String
+    let correction: String
+    let messageIndex: Int?
+    var audioData: Data?
+
+    enum CodingKeys: String, CodingKey {
+        case text, issue, correction, messageIndex
     }
 }
 

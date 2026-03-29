@@ -292,27 +292,19 @@ class ScoringService {
         // 构建可评分消息列表（学生消息），用于根据 message_index 查找音频
         let scorableMessages = messages.filter { $0.speaker == .user }
 
-        // 解析词汇详情
+        // 解析词汇详情（仅课程目标词汇的掌握情况）
         var vocabularyDetails: [VocabularyScoreDetail] = []
         if let vocabArray = scoreJSON["vocabulary_details"] as? [[String: Any]] {
             for item in vocabArray {
-                let msgIndex = item["message_index"] as? Int
-                var audioData: Data? = nil
-                if let idx = msgIndex, idx >= 0, idx < scorableMessages.count {
-                    audioData = scorableMessages[idx].userVoiceData
-                }
                 vocabularyDetails.append(VocabularyScoreDetail(
                     word: item["word"] as? String ?? "",
                     practiced: item["practiced"] as? Bool ?? false,
-                    correct: item["correct"] as? Bool ?? false,
-                    pronunciationNote: item["pronunciation_note"] as? String,
-                    messageIndex: msgIndex,
-                    audioData: audioData
+                    correct: item["correct"] as? Bool ?? false
                 ))
             }
         }
 
-        // 解析语法详情
+        // 解析句子详情（语法/表达错误的完整句子）
         var grammarDetails: [GrammarDetail] = []
         if let grammarArray = scoreJSON["grammar_details"] as? [[String: Any]] {
             for item in grammarArray {
@@ -325,6 +317,25 @@ class ScoringService {
                     original: item["original"] as? String ?? "",
                     corrected: item["corrected"] as? String,
                     explanation: item["explanation"] as? String,
+                    messageIndex: msgIndex,
+                    audioData: audioData
+                ))
+            }
+        }
+
+        // 解析发音详情
+        var pronunciationDetails: [PronunciationDetail] = []
+        if let pronArray = scoreJSON["pronunciation_details"] as? [[String: Any]] {
+            for item in pronArray {
+                let msgIndex = item["message_index"] as? Int
+                var audioData: Data? = nil
+                if let idx = msgIndex, idx >= 0, idx < scorableMessages.count {
+                    audioData = scorableMessages[idx].userVoiceData
+                }
+                pronunciationDetails.append(PronunciationDetail(
+                    text: item["text"] as? String ?? "",
+                    issue: item["issue"] as? String ?? "",
+                    correction: item["correction"] as? String ?? "",
                     messageIndex: msgIndex,
                     audioData: audioData
                 ))
@@ -355,6 +366,7 @@ class ScoringService {
             encouragement: encouragement,
             vocabularyDetails: vocabularyDetails,
             grammarDetails: grammarDetails,
+            pronunciationDetails: pronunciationDetails,
             stats: updatedStats
         )
     }
