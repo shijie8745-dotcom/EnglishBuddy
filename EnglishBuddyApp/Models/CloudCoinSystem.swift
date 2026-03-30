@@ -49,6 +49,14 @@ class CloudCoinSystem: Codable {
 
     // MARK: - Chat Count Management
 
+    /// 检查并重置跨天计数（App 启动或页面加载时调用）
+    func resetIfNewDay() {
+        guard let lastDate = lastChatDate else { return }
+        if !Calendar.current.isDateInToday(lastDate) {
+            todayChatCount = 0
+        }
+    }
+
     func incrementChatCount() {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())

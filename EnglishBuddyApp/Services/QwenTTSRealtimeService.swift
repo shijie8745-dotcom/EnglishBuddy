@@ -17,6 +17,7 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
     // MARK: - Private Properties
 
     private var webSocketTask: URLSessionWebSocketTask?
+    private var urlSession: URLSession?
     private let apiKey: String = APIConfig.dashScopeAPIKey
     private let baseURL = "wss://dashscope.aliyuncs.com/api-ws/v1/realtime"
     private let model = "qwen3-tts-instruct-flash-realtime"
@@ -165,14 +166,19 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
     func connect() async throws {
         // 清理旧连接（即使状态是 running，也强制重新连接）
         let oldTask = webSocketTask
+        let oldSession = urlSession
         webSocketTask = nil
+        urlSession = nil
         oldTask?.cancel(with: .normalClosure, reason: nil)
+        oldSession?.invalidateAndCancel()
 
         // 等待旧连接关闭
         try await Task.sleep(nanoseconds: 100_000_000)  // 0.1秒
 
-        isConnecting = true
-        errorMessage = nil
+        await MainActor.run {
+            isConnecting = true
+            errorMessage = nil
+        }
 
         // 构建 URL，包含 model 查询参数
         let urlString = "\(baseURL)?model=\(model)"
@@ -184,8 +190,8 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 30
 
-        let session = URLSession(configuration: .default)
-        webSocketTask = session.webSocketTask(with: request)
+        urlSession = URLSession(configuration: .default)
+        webSocketTask = urlSession?.webSocketTask(with: request)
         webSocketTask?.delegate = self
 
         webSocketTask?.resume()
@@ -201,7 +207,9 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
             }
         }
 
-        isConnecting = false
+        await MainActor.run {
+            isConnecting = false
+        }
 
         // 初始化音频引擎
         setupAudioEngine()
@@ -218,8 +226,10 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
             try await connect()
         } catch {
             print("[QwenTTS] 预连接失败: \(error.localizedDescription)")
-            isReady = false
-            isConnecting = false
+            await MainActor.run {
+                isReady = false
+                isConnecting = false
+            }
         }
     }
 
@@ -251,7 +261,9 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
             }
         }
 
-        isReady = true
+        await MainActor.run {
+            isReady = true
+        }
         print("[QwenTTS] Session 更新成功")
     }
 
@@ -289,17 +301,22 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
         // 先清理引用，再关闭连接
         let taskToClose = webSocketTask
+        let sessionToClose = urlSession
         webSocketTask = nil
+        urlSession = nil
 
         taskToClose?.cancel(with: .normalClosure, reason: nil)
+        sessionToClose?.invalidateAndCancel()
 
         audioEngine?.stop()
         audioEngine = nil
         playerNode = nil
 
-        isReady = false
-        isConnecting = false
-        isPlaying = false
+        DispatchQueue.main.async { [weak self] in
+            self?.isReady = false
+            self?.isConnecting = false
+            self?.isPlaying = false
+        }
     }
 
     /// 停止播放（保留音频会话以便 ASR 可以直接使用）
@@ -333,6 +350,7 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
         // 先记录要关闭的任务
         let taskToClose = webSocketTask
+        let sessionToClose = urlSession
 
         // 清理 continuation，resume 以避免 Task 永久挂起
         resumeConnectionContinuation(throwing: TTSSError.notConnected)
@@ -340,15 +358,19 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
         // 先清理引用，再关闭连接（避免委托回调干扰）
         webSocketTask = nil
+        urlSession = nil
 
         accumulatedAudioData = Data()
-        errorMessage = nil
-        isPlaying = false
-        isReady = false
-        isConnecting = false
+        DispatchQueue.main.async { [weak self] in
+            self?.errorMessage = nil
+            self?.isPlaying = false
+            self?.isReady = false
+            self?.isConnecting = false
+        }
 
         // 最后关闭旧连接
         taskToClose?.cancel(with: .normalClosure, reason: nil)
+        sessionToClose?.invalidateAndCancel()
     }
 
     // MARK: - Private Methods

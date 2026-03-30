@@ -460,6 +460,7 @@ class ChatViewModel {
     /// 获取当前对话次数
     var todayChatCount: Int {
         let user = DataStore.loadUser()
+        user.cloudCoinSystem.resetIfNewDay()
         return user.cloudCoinSystem.todayChatCount
     }
 
@@ -573,15 +574,17 @@ class ChatViewModel {
                 }
 
                 QwenTTSRealtimeService.shared.onError = { [weak self] error in
-                    guard !isFinished else { return }
-                    isFinished = true
-                    print("[ChatViewModel] TTS 错误: \(error)")
-                    continuation.yield(false)
-                    continuation.finish()
+                    Task { @MainActor in
+                        guard !isFinished else { return }
+                        isFinished = true
+                        print("[ChatViewModel] TTS 错误: \(error)")
+                        continuation.yield(false)
+                        continuation.finish()
+                    }
                 }
 
                 // 超时机制：10 秒内没有收到音频数据，认为失败
-                Task {
+                Task { @MainActor in
                     try? await Task.sleep(nanoseconds: 10_000_000_000)  // 10 秒
                     if !isFinished {
                         isFinished = true

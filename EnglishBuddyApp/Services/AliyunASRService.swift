@@ -37,6 +37,7 @@ final class AliyunASRService: NSObject, ObservableObject {
     @Published var errorMessage: String?
 
     private var webSocketTask: URLSessionWebSocketTask?
+    private var urlSession: URLSession?
     private var audioEngine: AVAudioEngine?
 
     // MARK: - Configuration
@@ -93,14 +94,19 @@ final class AliyunASRService: NSObject, ObservableObject {
     func connect() async throws {
         // 清理旧连接（即使状态是 running，也强制重新连接）
         let oldTask = webSocketTask
+        let oldSession = urlSession
         webSocketTask = nil
+        urlSession = nil
         oldTask?.cancel(with: .normalClosure, reason: nil)
+        oldSession?.invalidateAndCancel()
 
         // 等待旧连接关闭
         try await Task.sleep(nanoseconds: 100_000_000)  // 0.1秒
 
-        isConnecting = true
-        errorMessage = nil
+        await MainActor.run {
+            isConnecting = true
+            errorMessage = nil
+        }
 
         // 构建 URL，包含 model 查询参数
         let urlString = "\(baseURL)?model=\(model)"
@@ -113,8 +119,8 @@ final class AliyunASRService: NSObject, ObservableObject {
         request.setValue("realtime=v1", forHTTPHeaderField: "OpenAI-Beta")
         request.timeoutInterval = 30
 
-        let session = URLSession(configuration: .default)
-        webSocketTask = session.webSocketTask(with: request)
+        urlSession = URLSession(configuration: .default)
+        webSocketTask = urlSession?.webSocketTask(with: request)
         webSocketTask?.delegate = self
 
         webSocketTask?.resume()
@@ -130,8 +136,10 @@ final class AliyunASRService: NSObject, ObservableObject {
             }
         }
 
-        isConnecting = false
-        isReady = true
+        await MainActor.run {
+            isConnecting = false
+            isReady = true
+        }
 
         // 发送 session.update 配置会话
         try await sendSessionUpdate()
@@ -154,8 +162,10 @@ final class AliyunASRService: NSObject, ObservableObject {
             return true
         } catch {
             print("[AliyunASR] 预连接失败: \(error.localizedDescription)")
-            isReady = false
-            isConnecting = false
+            await MainActor.run {
+                isReady = false
+                isConnecting = false
+            }
             return false
         }
     }
@@ -176,20 +186,27 @@ final class AliyunASRService: NSObject, ObservableObject {
 
         // 先清理引用，再关闭连接
         let taskToClose = webSocketTask
+        let sessionToClose = urlSession
         webSocketTask = nil
+        urlSession = nil
 
         taskToClose?.cancel(with: .normalClosure, reason: nil)
+        sessionToClose?.invalidateAndCancel()
 
-        isRecording = false
-        isConnecting = false
-        isReady = false
+        DispatchQueue.main.async { [weak self] in
+            self?.isRecording = false
+            self?.isConnecting = false
+            self?.isReady = false
+        }
         onConnectionStatusChanged?(false)
     }
 
     /// 重置连接状态（用于录音完成后保持连接）
     func resetRecordingState() {
-        isRecording = false
-        transcript = ""
+        DispatchQueue.main.async { [weak self] in
+            self?.isRecording = false
+            self?.transcript = ""
+        }
         isSessionCancelled = false
         hasValidAudio = false
         validAudioFrameCount = 0
@@ -307,8 +324,10 @@ final class AliyunASRService: NSObject, ObservableObject {
         engine.prepare()
         try engine.start()
 
-        isRecording = true
-        transcript = ""
+        DispatchQueue.main.async { [weak self] in
+            self?.isRecording = true
+            self?.transcript = ""
+        }
 
         print("[AliyunASR] 开始录音，语言: \(language)")
     }
@@ -325,7 +344,9 @@ final class AliyunASRService: NSObject, ObservableObject {
         // 发送 commit 触发最终的识别结果
         sendInputBufferCommit()
 
-        isRecording = false
+        DispatchQueue.main.async { [weak self] in
+            self?.isRecording = false
+        }
 
         print("[AliyunASR] 停止录音，最终转录: \(finalTranscript)")
         return finalTranscript
@@ -344,8 +365,10 @@ final class AliyunASRService: NSObject, ObservableObject {
         }
 
         // 立即清除本地状态
-        isRecording = false
-        transcript = ""
+        DispatchQueue.main.async { [weak self] in
+            self?.isRecording = false
+            self?.transcript = ""
+        }
 
         // 阿里云 ASR 不支持 input_audio_buffer.clear，需要断开连接来清除服务器端状态
         disconnect()

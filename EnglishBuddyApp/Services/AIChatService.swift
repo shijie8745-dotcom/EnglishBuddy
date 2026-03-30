@@ -103,19 +103,26 @@ class AIChatService {
     }
 
     // Stream mode for receiving chunks
-    func streamMessage(_ message: String, lessonId: Int) -> AsyncStream<String> {
+    func streamMessage(_ message: String, lessonId: Int, historyMessages: [ChatMessage] = []) -> AsyncStream<String> {
         AsyncStream { continuation in
             Task {
                 do {
                     let systemPrompt = PromptConfig.loadPrompt(for: lessonId)
 
+                    // Build messages array with history
+                    var messagesArray: [[String: String]] = [
+                        ["role": "system", "content": systemPrompt]
+                    ]
+                    for chatMessage in historyMessages {
+                        let role = chatMessage.speaker == .user ? "user" : "assistant"
+                        messagesArray.append(["role": role, "content": chatMessage.text])
+                    }
+                    messagesArray.append(["role": "user", "content": message])
+
                     // OpenAI 兼容格式
                     let requestBody: [String: Any] = [
                         "model": model,
-                        "messages": [
-                            ["role": "system", "content": systemPrompt],
-                            ["role": "user", "content": message]
-                        ],
+                        "messages": messagesArray,
                         "temperature": 0.7,
                         "max_tokens": 200,
                         "stream": true,

@@ -62,6 +62,7 @@ class CloudShopViewModel {
     }
 
     private func loadCloudCoinData(user: User) {
+        user.cloudCoinSystem.resetIfNewDay()
         cloudCoins = user.cloudCoinSystem.coins
         totalEarned = user.cloudCoinSystem.totalEarned
         todayChatCount = user.cloudCoinSystem.todayChatCount

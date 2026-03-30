@@ -278,12 +278,17 @@ class ScoringService {
             throw ScoringError.parseError("无法解析评分 JSON")
         }
 
-        // 解析各字段
-        let overallScore = scoreJSON["overall_score"] as? Int ?? 75
-        let vocabularyScore = scoreJSON["vocabulary_score"] as? Int ?? 75
-        let grammarScore = scoreJSON["grammar_score"] as? Int ?? 75
-        let pronunciationScore = scoreJSON["pronunciation_score"] as? Int ?? 75
-        let fluencyScore = scoreJSON["fluency_score"] as? Int ?? 75
+        // 解析各字段（核心分数字段缺失时抛出错误，避免显示假分数）
+        guard let overallScore = scoreJSON["overall_score"] as? Int,
+              let vocabularyScore = scoreJSON["vocabulary_score"] as? Int,
+              let grammarScore = scoreJSON["grammar_score"] as? Int,
+              let pronunciationScore = scoreJSON["pronunciation_score"] as? Int,
+              let fluencyScore = scoreJSON["fluency_score"] as? Int else {
+            let missingKeys = ["overall_score", "vocabulary_score", "grammar_score", "pronunciation_score", "fluency_score"]
+                .filter { scoreJSON[$0] as? Int == nil }
+            print("[ScoringService] 评分字段缺失: \(missingKeys)")
+            throw ScoringError.parseError("评分结果不完整，缺少字段: \(missingKeys.joined(separator: ", "))")
+        }
         let feedback = scoreJSON["feedback"] as? String ?? "表现不错，继续加油！"
         let encouragement = scoreJSON["encouragement"] as? String ?? "你真棒！"
         let correctCount = scoreJSON["correct_count"] as? Int ?? stats.correctCount

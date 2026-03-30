@@ -62,7 +62,7 @@ class ChatHistoryStore {
     func saveHistory(for unitId: Int, messages: [ChatMessage]) {
         // 转换为可持久化格式（不保存音频数据）
         let persistableMessages = messages
-            .prefix(maxMessagesPerUnit)  // 只保留最新的 200 条
+            .suffix(maxMessagesPerUnit)  // 只保留最新的 200 条
             .map { PersistableMessage(from: $0) }
 
         history[unitId] = Array(persistableMessages)
