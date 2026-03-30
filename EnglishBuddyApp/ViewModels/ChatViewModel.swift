@@ -130,12 +130,10 @@ class ChatViewModel {
         print("[ChatViewModel] 检测到待恢复时长: \(totalSeconds) 秒 = \(studyMinutes) 分钟")
 
         if studyMinutes > 0 {
-            // 保存到用户数据
-            var user = DataStore.loadUser()
-            user.totalStudyTime += studyMinutes
-            _ = user.cloudCoinSystem.earnCoinsFromStudy(minutes: studyMinutes)
-            DataStore.shared.saveUser(user)
-
+            DataStore.shared.updateUser { user in
+                user.totalStudyTime += studyMinutes
+                _ = user.cloudCoinSystem.earnCoinsFromStudy(minutes: studyMinutes)
+            }
             print("[ChatViewModel] 恢复未保存的学习时长: \(studyMinutes) 分钟")
         }
 

@@ -54,8 +54,10 @@ class CourseViewModel {
     }
 
     func setPracticeLesson(_ lesson: Lesson) {
-        user.currentPracticeLessonId = lesson.id
-        dataStore.saveUser(user)
+        DataStore.shared.updateUser { user in
+            user.currentPracticeLessonId = lesson.id
+        }
+        refreshUserData()
     }
 
     // MARK: - Check-in Feature (Cloud Coin System)
@@ -131,18 +133,19 @@ class CourseViewModel {
         dataStore.saveProgress(progress)
 
         // Update user stats
-        user.totalStudyTime += studyTime
-        user.totalSessions += 1
-
-        // Award cloud coins for studying (1 per minute)
-        _ = user.cloudCoinSystem.earnCoinsFromStudy(minutes: studyTime)
-
-        dataStore.saveUser(user)
+        DataStore.shared.updateUser { user in
+            user.totalStudyTime += studyTime
+            user.totalSessions += 1
+            _ = user.cloudCoinSystem.earnCoinsFromStudy(minutes: studyTime)
+        }
+        refreshUserData()
     }
 
     func updateVoiceSpeed(_ speed: Float) {
-        user.aiVoiceSpeed = speed
-        dataStore.saveUser(user)
+        DataStore.shared.updateUser { user in
+            user.aiVoiceSpeed = speed
+        }
+        refreshUserData()
     }
 
     func uncompleteLesson(_ lesson: Lesson) {
@@ -158,12 +161,12 @@ class CourseViewModel {
     /// 记录一次对话，增加对话次数并检查是否可以打卡
     /// 返回获得的云朵币数量（如果触发了自动打卡）
     func recordChatSession() -> Int {
-        user.cloudCoinSystem.incrementChatCount()
-
-        // Try auto check-in
-        let earned = user.cloudCoinSystem.performCheckIn()
-
-        dataStore.saveUser(user)
+        var earned = 0
+        DataStore.shared.updateUser { user in
+            user.cloudCoinSystem.incrementChatCount()
+            earned = user.cloudCoinSystem.performCheckIn()
+        }
+        refreshUserData()
         return earned
     }
 

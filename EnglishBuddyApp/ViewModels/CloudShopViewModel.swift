@@ -83,10 +83,12 @@ class CloudShopViewModel {
 
     /// 尝试打卡，返回获得的云朵币数量（0表示未满足条件）
     func tryCheckIn(user: User) -> Int {
-        let earned = user.cloudCoinSystem.performCheckIn()
+        var earned = 0
+        DataStore.shared.updateUser { freshUser in
+            earned = freshUser.cloudCoinSystem.performCheckIn()
+        }
         if earned > 0 {
-            DataStore.shared.saveUser(user)
-            loadData(user: user)
+            loadData(user: DataStore.loadUser())
         }
         return earned
     }
@@ -116,27 +118,33 @@ class CloudShopViewModel {
             return .insufficientCoins
         }
 
-        // Deduct coins and unlock pet
-        if user.cloudCoinSystem.spendCoins(CloudCoinReward.petPrice) {
-            if let pet = BuiltInPets.petById(petId) {
-                user.petCollection.unlockPet(id: petId, name: pet.name)
-                DataStore.shared.saveUser(user)
-                loadData(user: user)
-                return .success
+        var success = false
+        DataStore.shared.updateUser { freshUser in
+            if freshUser.cloudCoinSystem.spendCoins(CloudCoinReward.petPrice) {
+                if let pet = BuiltInPets.petById(petId) {
+                    freshUser.petCollection.unlockPet(id: petId, name: pet.name)
+                    success = true
+                }
             }
         }
 
+        if success {
+            loadData(user: DataStore.loadUser())
+            return .success
+        }
         return .failed
     }
 
     /// 切换当前宠物
     func switchPet(to petId: String, user: User) -> Bool {
-        let result = user.petCollection.switchToPet(id: petId)
-        if result {
-            DataStore.shared.saveUser(user)
-            loadData(user: user)
+        var success = false
+        DataStore.shared.updateUser { freshUser in
+            success = freshUser.petCollection.switchToPet(id: petId)
         }
-        return result
+        if success {
+            loadData(user: DataStore.loadUser())
+        }
+        return success
     }
 
     /// 检查宠物是否已解锁
