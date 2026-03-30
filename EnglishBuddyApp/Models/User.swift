@@ -90,11 +90,25 @@ class User: Codable {
     }
 
     func recordStudySession(minutes: Int) {
-        let today = Calendar.current.startOfDay(for: Date())
-        if let lastDate = lastStudyDate,
-           Calendar.current.startOfDay(for: lastDate) != today {
-            streakDays += 1
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        if let lastDate = lastStudyDate {
+            let lastDay = calendar.startOfDay(for: lastDate)
+            if lastDay == today {
+                // 今天已经学习过，不更新 streak
+            } else if calendar.date(byAdding: .day, value: -1, to: today) == lastDay {
+                // 昨天学习过，连续天数 +1
+                streakDays += 1
+            } else {
+                // 跳过了至少一天，重置为 1
+                streakDays = 1
+            }
+        } else {
+            // 首次学习
+            streakDays = 1
         }
+
         totalStudyTime += minutes
         totalSessions += 1
         lastStudyDate = Date()

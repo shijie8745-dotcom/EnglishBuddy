@@ -87,10 +87,10 @@ class ScoringViewModel {
             // 奖励云朵币
             let coins = result.earnedCoins
             if coins > 0 {
-                let user = DataStore.loadUser()
-                user.cloudCoinSystem.coins += coins
-                user.cloudCoinSystem.totalEarned += coins
-                DataStore.shared.saveUser(user)
+                DataStore.shared.updateUser { user in
+                    user.cloudCoinSystem.coins += coins
+                    user.cloudCoinSystem.totalEarned += coins
+                }
                 print("[ScoringViewModel] 评分奖励 \(coins) 云朵币")
             }
 

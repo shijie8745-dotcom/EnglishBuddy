@@ -56,18 +56,35 @@ final class AliyunASRService: NSObject, ObservableObject {
     var onError: ((Error) -> Void)?
     var onConnectionStatusChanged: ((Bool) -> Void)?
 
-    // 连接完成的 continuation
+    // 连接完成的 continuation（用锁保护，防止双重 resume 崩溃）
     private var connectionContinuation: CheckedContinuation<Void, Error>?
+    private let continuationLock = NSLock()
 
     private override init() {
         super.init()
     }
 
     deinit {
-        if let cont = connectionContinuation {
-            cont.resume(throwing: ASRError.notConnected)
-        }
+        resumeConnectionContinuation(throwing: ASRError.notConnected)
         disconnect()
+    }
+
+    /// 线程安全地 resume connectionContinuation（成功）
+    private func resumeConnectionContinuation() {
+        continuationLock.lock()
+        let cont = connectionContinuation
+        connectionContinuation = nil
+        continuationLock.unlock()
+        cont?.resume()
+    }
+
+    /// 线程安全地 resume connectionContinuation（失败）
+    private func resumeConnectionContinuation(throwing error: Error) {
+        continuationLock.lock()
+        let cont = connectionContinuation
+        connectionContinuation = nil
+        continuationLock.unlock()
+        cont?.resume(throwing: error)
     }
 
     // MARK: - Connection Management
@@ -104,13 +121,12 @@ final class AliyunASRService: NSObject, ObservableObject {
 
         // 等待连接建立（使用 continuation 等待委托回调）
         try await withCheckedThrowingContinuation { continuation in
+            self.continuationLock.lock()
             self.connectionContinuation = continuation
+            self.continuationLock.unlock()
             // 设置超时
             DispatchQueue.global().asyncAfter(deadline: .now() + 10) { [weak self] in
-                if let cont = self?.connectionContinuation {
-                    self?.connectionContinuation = nil
-                    cont.resume(throwing: ASRError.connectionTimeout)
-                }
+                self?.resumeConnectionContinuation(throwing: ASRError.connectionTimeout)
             }
         }
 
@@ -147,10 +163,7 @@ final class AliyunASRService: NSObject, ObservableObject {
     /// 断开 WebSocket 连接
     func disconnect() {
         // 清理 continuation
-        if let cont = connectionContinuation {
-            connectionContinuation = nil
-            cont.resume(throwing: ASRError.notConnected)
-        }
+        resumeConnectionContinuation(throwing: ASRError.notConnected)
 
         // 停止录音
         if let engine = audioEngine, engine.isRunning {
@@ -717,10 +730,7 @@ extension AliyunASRService: URLSessionWebSocketDelegate {
         print("[AliyunASR] WebSocket 连接已打开")
 
         // 恢复等待连接的 continuation
-        if let cont = connectionContinuation {
-            connectionContinuation = nil
-            cont.resume()
-        }
+        resumeConnectionContinuation()
 
         DispatchQueue.main.async {
             self.onConnectionStatusChanged?(true)
@@ -739,10 +749,7 @@ extension AliyunASRService: URLSessionWebSocketDelegate {
         print("[AliyunASR] WebSocket 连接已关闭: \(closeCode)")
 
         // 如果有等待的 continuation，恢复它并抛出错误
-        if let cont = connectionContinuation {
-            connectionContinuation = nil
-            cont.resume(throwing: ASRError.notConnected)
-        }
+        resumeConnectionContinuation(throwing: ASRError.notConnected)
 
         DispatchQueue.main.async {
             self.isRecording = false
@@ -773,10 +780,7 @@ extension AliyunASRService: URLSessionWebSocketDelegate {
             print("[AliyunASR] WebSocket 任务错误: \(error)")
 
             // 如果有等待的 continuation，恢复它并抛出错误
-            if let cont = connectionContinuation {
-                connectionContinuation = nil
-                cont.resume(throwing: error)
-            }
+            resumeConnectionContinuation(throwing: error)
 
             DispatchQueue.main.async {
                 self.isConnecting = false

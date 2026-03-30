@@ -408,53 +408,46 @@ class ChatViewModel {
 
     /// 记录一次对话，增加对话次数
     func recordChatInteraction() {
-        // Load user
-        let user = DataStore.loadUser()
-
-        // Increment chat count (both today and total)
-        user.cloudCoinSystem.incrementChatCount()
-
-        // Save user
-        DataStore.shared.saveUser(user)
+        DataStore.shared.updateUser { user in
+            user.cloudCoinSystem.incrementChatCount()
+        }
     }
 
     /// 结束对话会话，统计学习时长并检查打卡
     /// 在退出对话页时调用
     func finishSession() {
-        let user = DataStore.loadUser()
-
-        // Calculate study time: >30秒算1分钟，<30秒不算
         var earnedCoins = 0
-        if let startTime = sessionStartTime {
-            let totalSeconds = Date().timeIntervalSince(startTime)
-            let studyMinutes: Int
-            let fullMinutes = Int(totalSeconds) / 60
-            let remainingSeconds = Int(totalSeconds) % 60
 
-            // >30秒算1分钟
-            if remainingSeconds >= 30 {
-                studyMinutes = fullMinutes + 1
-            } else {
-                studyMinutes = fullMinutes
+        DataStore.shared.updateUser { user in
+            // Calculate study time: >30秒算1分钟，<30秒不算
+            if let startTime = self.sessionStartTime {
+                let totalSeconds = Date().timeIntervalSince(startTime)
+                let studyMinutes: Int
+                let fullMinutes = Int(totalSeconds) / 60
+                let remainingSeconds = Int(totalSeconds) % 60
+
+                // >30秒算1分钟
+                if remainingSeconds >= 30 {
+                    studyMinutes = fullMinutes + 1
+                } else {
+                    studyMinutes = fullMinutes
+                }
+
+                if studyMinutes > 0 {
+                    // 更新用户学习时长
+                    user.totalStudyTime += studyMinutes
+                    // 获得云朵币（1分钟=1币）
+                    earnedCoins += user.cloudCoinSystem.earnCoinsFromStudy(minutes: studyMinutes)
+                }
             }
 
-            if studyMinutes > 0 {
-                // 更新用户学习时长
-                user.totalStudyTime += studyMinutes
-                // 获得云朵币（1分钟=1币）
-                earnedCoins = user.cloudCoinSystem.earnCoinsFromStudy(minutes: studyMinutes)
+            // Try auto check-in
+            let checkInCoins = user.cloudCoinSystem.performCheckIn()
+            if checkInCoins > 0 {
+                earnedCoins += checkInCoins
+                self.checkInMessage = "今日打卡成功！获得 \(checkInCoins) 云朵币"
             }
         }
-
-        // Try auto check-in
-        let checkInCoins = user.cloudCoinSystem.performCheckIn()
-        if checkInCoins > 0 {
-            earnedCoins += checkInCoins
-            checkInMessage = "今日打卡成功！获得 \(checkInCoins) 云朵币"
-        }
-
-        // Save user
-        DataStore.shared.saveUser(user)
 
         sessionEarnedCoins += earnedCoins
         sessionStartTime = nil  // didSet 会自动清除 UserDefaults

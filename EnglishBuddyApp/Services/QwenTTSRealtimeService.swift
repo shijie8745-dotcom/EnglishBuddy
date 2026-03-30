@@ -39,10 +39,11 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
     var onError: ((Error) -> Void)?
     var onPlayingStateChanged: ((Bool) -> Void)?  // 播放状态变化
 
-    // 连接完成的 continuation
+    // 连接完成的 continuation（用锁保护，防止双重 resume 崩溃）
     private var connectionContinuation: CheckedContinuation<Void, Error>?
     // session 更新完成的 continuation
     private var sessionUpdateContinuation: CheckedContinuation<Void, Error>?
+    private let continuationLock = NSLock()
 
     // 音频块播放追踪
     private var pendingBufferCount: Int = 0
@@ -119,10 +120,43 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
-        if let cont = connectionContinuation {
-            cont.resume(throwing: TTSSError.notConnected)
-        }
+        resumeConnectionContinuation(throwing: TTSSError.notConnected)
+        resumeSessionUpdateContinuation(throwing: TTSSError.notConnected)
         close()
+    }
+
+    // MARK: - Thread-safe Continuation Helpers
+
+    private func resumeConnectionContinuation() {
+        continuationLock.lock()
+        let cont = connectionContinuation
+        connectionContinuation = nil
+        continuationLock.unlock()
+        cont?.resume()
+    }
+
+    private func resumeConnectionContinuation(throwing error: Error) {
+        continuationLock.lock()
+        let cont = connectionContinuation
+        connectionContinuation = nil
+        continuationLock.unlock()
+        cont?.resume(throwing: error)
+    }
+
+    private func resumeSessionUpdateContinuation() {
+        continuationLock.lock()
+        let cont = sessionUpdateContinuation
+        sessionUpdateContinuation = nil
+        continuationLock.unlock()
+        cont?.resume()
+    }
+
+    private func resumeSessionUpdateContinuation(throwing error: Error) {
+        continuationLock.lock()
+        let cont = sessionUpdateContinuation
+        sessionUpdateContinuation = nil
+        continuationLock.unlock()
+        cont?.resume(throwing: error)
     }
 
     // MARK: - Public Methods
@@ -158,13 +192,12 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
         // 等待连接建立
         try await withCheckedThrowingContinuation { continuation in
+            self.continuationLock.lock()
             self.connectionContinuation = continuation
+            self.continuationLock.unlock()
             // 设置超时
             DispatchQueue.global().asyncAfter(deadline: .now() + 10) { [weak self] in
-                if let cont = self?.connectionContinuation {
-                    self?.connectionContinuation = nil
-                    cont.resume(throwing: TTSSError.connectionTimeout)
-                }
+                self?.resumeConnectionContinuation(throwing: TTSSError.connectionTimeout)
             }
         }
 
@@ -209,13 +242,12 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
         // 等待 session.updated 确认
         try await withCheckedThrowingContinuation { continuation in
+            self.continuationLock.lock()
             self.sessionUpdateContinuation = continuation
+            self.continuationLock.unlock()
             // 设置超时
             DispatchQueue.global().asyncAfter(deadline: .now() + 10) { [weak self] in
-                if let cont = self?.sessionUpdateContinuation {
-                    self?.sessionUpdateContinuation = nil
-                    cont.resume(throwing: TTSSError.connectionTimeout)
-                }
+                self?.resumeSessionUpdateContinuation(throwing: TTSSError.connectionTimeout)
             }
         }
 
@@ -252,14 +284,8 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
     /// 关闭连接
     func close() {
         // 清理 continuation
-        if let cont = connectionContinuation {
-            connectionContinuation = nil
-            cont.resume(throwing: TTSSError.notConnected)
-        }
-        if let cont = sessionUpdateContinuation {
-            sessionUpdateContinuation = nil
-            cont.resume(throwing: TTSSError.notConnected)
-        }
+        resumeConnectionContinuation(throwing: TTSSError.notConnected)
+        resumeSessionUpdateContinuation(throwing: TTSSError.notConnected)
 
         // 先清理引用，再关闭连接
         let taskToClose = webSocketTask
@@ -308,9 +334,9 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
         // 先记录要关闭的任务
         let taskToClose = webSocketTask
 
-        // 清理 continuation，避免关闭连接时影响新连接
-        connectionContinuation = nil
-        sessionUpdateContinuation = nil
+        // 清理 continuation，resume 以避免 Task 永久挂起
+        resumeConnectionContinuation(throwing: TTSSError.notConnected)
+        resumeSessionUpdateContinuation(throwing: TTSSError.notConnected)
 
         // 先清理引用，再关闭连接（避免委托回调干扰）
         webSocketTask = nil
@@ -442,10 +468,7 @@ final class QwenTTSRealtimeService: NSObject, ObservableObject {
 
             case "session.updated":
                 print("[QwenTTS] 会话更新确认")
-                if let cont = self.sessionUpdateContinuation {
-                    self.sessionUpdateContinuation = nil
-                    cont.resume()
-                }
+                self.resumeSessionUpdateContinuation()
 
             case "response.audio.delta":
                 // 收到音频数据块
@@ -666,10 +689,7 @@ extension QwenTTSRealtimeService: URLSessionWebSocketDelegate {
         print("[QwenTTS] WebSocket 连接已打开")
 
         // 恢复等待连接的 continuation
-        if let cont = connectionContinuation {
-            connectionContinuation = nil
-            cont.resume()
-        }
+        resumeConnectionContinuation()
     }
 
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
@@ -681,10 +701,7 @@ extension QwenTTSRealtimeService: URLSessionWebSocketDelegate {
         print("[QwenTTS] WebSocket 连接已关闭: \(closeCode)")
 
         // 如果有等待的 continuation，恢复它并抛出错误
-        if let cont = connectionContinuation {
-            connectionContinuation = nil
-            cont.resume(throwing: TTSSError.notConnected)
-        }
+        resumeConnectionContinuation(throwing: TTSSError.notConnected)
 
         DispatchQueue.main.async {
             self.isReady = false
@@ -702,10 +719,7 @@ extension QwenTTSRealtimeService: URLSessionWebSocketDelegate {
             print("[QwenTTS] WebSocket 任务错误: \(error)")
 
             // 如果有等待的 continuation，恢复它并抛出错误
-            if let cont = connectionContinuation {
-                connectionContinuation = nil
-                cont.resume(throwing: error)
-            }
+            resumeConnectionContinuation(throwing: error)
 
             DispatchQueue.main.async {
                 self.isConnecting = false

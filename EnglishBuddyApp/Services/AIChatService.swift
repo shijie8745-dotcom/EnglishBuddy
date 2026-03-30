@@ -51,14 +51,9 @@ class AIChatService {
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let finalKey = apiKey
-        print("[AIChatService] 使用的 API Key: \(finalKey)")
-        print("[AIChatService] 用户设置的 API Key: '\(user.apiKey)' (长度: \(user.apiKey.count))")
-        print("[AIChatService] Authorization Header: Bearer \(finalKey.prefix(15))...")
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
-        print("[AIChatService] 发送请求到: \(baseURL)")
-        print("[AIChatService] 请求体: \(requestBody)")
+        print("[AIChatService] 发送请求到: \(baseURL), model: \(model)")
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -75,31 +70,23 @@ class AIChatService {
             throw AIChatError.invalidResponse
         }
 
-        let responseString = String(data: data, encoding: .utf8) ?? "无法读取响应"
-        print("[AIChatService] 原始响应: \(responseString)")
-
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             print("[AIChatService] 错误: 无法解析JSON")
             throw AIChatError.decodingError
         }
 
-        print("[AIChatService] 解析后的JSON: \(json)")
-
         // OpenAI 兼容格式: choices 在根级别
         if let choices = json["choices"] as? [[String: Any]], let first = choices.first {
-            print("[AIChatService] 找到 choices 数组")
 
             // OpenAI 格式: message.content
             if let message = first["message"] as? [String: Any],
                let content = message["content"] as? String {
-                print("[AIChatService] 成功提取内容")
                 return content
             }
 
             // 备用: delta.content (流式响应的格式)
             if let delta = first["delta"] as? [String: Any],
                let content = delta["content"] as? String {
-                print("[AIChatService] 成功提取内容(delta)")
                 return content
             }
         }
